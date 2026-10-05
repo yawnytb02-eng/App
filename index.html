@@ -1905,6 +1905,9 @@ window.LOGBOOK = {
 /* comfort pass: identical in all 7 apps */
 body{word-spacing:.08em;}
 input,textarea,select,button{word-spacing:inherit;}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+.home-hero{margin-top:calc(8px + env(safe-area-inset-top, 0px));}
+@supports (-webkit-touch-callout:none){ html body input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]),html body textarea,html body select{font-size:16px!important;} }
 .onboard-screen{height:100vh;height:100dvh;min-height:0;}
 .onboard-hero{overflow-y:auto;justify-content:flex-start;}
 .onboard-hero::before,.onboard-hero::after{content:'';flex:1 0 0;}
@@ -1913,6 +1916,7 @@ input,textarea,select,button{word-spacing:inherit;}
   .bottom-tabs button{padding:12px 4px 10px;gap:5px;font-size:11px;}
   .bottom-tabs button svg{width:22px;height:22px;}
   .assist-toggle{bottom:calc(96px + env(safe-area-inset-bottom, 0px));}
+  .assist .assist-toggle{bottom:calc(112px + env(safe-area-inset-bottom, 0px));}
 }
 </style>
 </head>
@@ -1941,7 +1945,7 @@ input,textarea,select,button{word-spacing:inherit;}
    real device clock is always used instead. This is the only
    line that differs between the two shipped files.
    ============================================================ */
-window.APP_TEST_MODE = false;
+window.APP_TEST_MODE = (function(){ try{ return localStorage.getItem('cleanboy-logbook-v1-mode')==='test'; }catch(e){ return false; } })();
 
 /* Brand strings, read once from the config block at the end of
    <head>. The fallback object is only reached if that block was
@@ -1952,7 +1956,7 @@ const BRAND = (window.LOGBOOK && window.LOGBOOK.brand) || {
   themeColorLight:'#FAFAF7', themeColorDark:'#151210',
 };
 
-const STORAGE_KEY = 'cleanboy-logbook-v1';
+const STORAGE_KEY = 'cleanboy-logbook-v1' + (function(){ try{ return localStorage.getItem('cleanboy-logbook-v1-mode')==='test' ? '-test' : ''; }catch(e){ return ''; } })();
 
 /* Is persistence actually available? Private-browsing modes and a
    handful of locked-down webviews expose localStorage but throw on
@@ -6680,7 +6684,7 @@ function renderTestTimeSection(){
 
   return `
     <div class="settings-section test-time-section">
-      <div class="settings-heading">Test tools <span class="test-badge">tester build</span></div>
+      <div class="settings-heading">Test tools <span class="test-badge">test mode</span></div>
       <div class="test-time-card">
         <div class="test-time-row">
           <div class="test-time-display">${active?'Simulated':'Live'} time</div>
@@ -8360,6 +8364,68 @@ if(LAYOUT_MQ){
     }catch(e){}
     if(!DB.onboarded) render();
   }catch(e){ if(window.console) console.error('setup steps', e); }
+})();
+</script>
+<script>
+/* Test mode: an in-app switch between your real data and a separate test copy.
+   It never changes how the app looks. Real data lives under the normal key, test data under "<key>-test". */
+(function(){
+  try{
+    var MODE_KEY = "cleanboy-logbook-v1" + '-mode';
+    var VISIBLE = true;
+    var isTest = !!window.APP_TEST_MODE;
+    if(isTest && document.title.indexOf('TEST')!==0) document.title = 'TEST \u00b7 ' + document.title;
+    function setMode(on){ try{ if(on) localStorage.setItem(MODE_KEY,'test'); else localStorage.removeItem(MODE_KEY); }catch(e){} location.reload(); }
+    function sheet(title, text, label, action, accent){
+      openSheet('<div class="sheet-title"><span>'+title+'</span><button class="sheet-close" onclick="closeSheet()" aria-label="Close">'+icon('close',15)+'</button></div>'
+        + '<div class="confirm-body"><p>'+text+'</p>'
+        + '<button class="confirm-danger-btn" '+(accent?'style="background:var(--accent);" ':'')+'onclick="'+action+'">'+label+'</button>'
+        + '<button class="confirm-cancel-btn" onclick="closeSheet()">Cancel</button></div>');
+    }
+    window.toggleTestMode = function(){
+      if(!isTest) sheet('Switch to test mode?', 'You will use a separate copy of this app. Your real data is not touched, and you can switch back any time.', 'Switch to test mode', 'testSetMode(true)', true);
+      else sheet('Back to your real data?', 'Your test data stays saved for next time.', 'Use my real data', 'testSetMode(false)', true);
+    };
+    window.testSetMode = function(on){ setMode(on); };
+    window.testFillYear = function(){
+      var now = new Date(), total = 0, i;
+      for(i=12;i>=0;i--){ var d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+        total += randomFillMonth(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')) || 0; }
+      /* one custom box with a year of data, so the custom-box charts have something to show */
+      try{
+        var b = bxDB(), id = 'cx_testbox', from = localDateStr(new Date(now.getFullYear(), now.getMonth()-12, 1));
+        if(!b.boxes[id]){ b.boxes[id] = { id:id, custom:true, name:'Test Box', icon:null, from:from, until:null, order:90, labels:{}, hidden:{}, fields:[
+          {id:'reps', label:'Reps', type:'number', unit:'x', icon:null, created:from, deleted:null},
+          {id:'mood', label:'Mood', type:'scale', max:5, icon:null, created:from, deleted:null},
+          {id:'done', label:'Done', type:'toggle', icon:null, created:from, deleted:null}] }; }
+        /* write straight into the pages and save once: the normal setters save + redraw on every single call */
+        for(var k=0;k<=370;k++){ if(Math.random()<0.7){ var ds = localDateStr(new Date(now.getTime()-k*864e5)), pg = getPage(ds,id);
+          pg.cf_reps = 8+Math.floor(Math.random()*12); pg.cf_mood = 1+Math.floor(Math.random()*5); pg.cf_done = Math.random()<0.6;
+          pg._touched = true; pg._touchedAt = Date.now(); } }
+      }catch(e){}
+      recomputeStreak();
+      var ok = saveDB();
+      flashSaved(ok ? 'Filled '+total+' days of test data' : "Couldn't save \u2014 storage may be full");
+      render();
+    };
+    window.testClearAsk = function(){ sheet('Clear test data?', 'Only the test copy is cleared. Your real data is not touched.', 'Clear test data', 'testClearData()', false); };
+    window.testClearData = function(){ if(!isTest) return; try{ localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(ONBOARD_KEY); }catch(e){} location.reload(); };
+
+    var baseSettings = renderSettings;
+    renderSettings = function(){
+      baseSettings();
+      var show = VISIBLE || isTest || location.search.indexOf('testtools')>=0;
+      var host = document.querySelector('#app .page-body');
+      if(!show || !host) return;
+      var row = function(name, desc, fn){ return '<button class="settings-row" onclick="'+fn+'"><div><div class="sr-name">'+name+'</div><div class="sr-desc">'+desc+'</div></div><div class="sr-ico">'+icon('bolt',16)+'</div></button>'; };
+      var html = '<div class="settings-section"><div class="settings-heading">Testing</div>'
+        + row('Test mode', isTest ? 'On \u2014 using a separate test copy of the data' : 'Off \u2014 using your real data', 'toggleTestMode()')
+        + (isTest ? row('Fill a year of random data', 'Last 13 months plus a custom box \u2014 test copy only', 'testFillYear()') + row('Clear test data', 'Wipes only the test copy', 'testClearAsk()') : '')
+        + '</div>';
+      host.insertAdjacentHTML('beforeend', html);
+    };
+    if(location.hash==='#settings' || (window.ROUTE && ROUTE.view==='settings')) render();
+  }catch(e){ if(window.console) console.error('test mode', e); }
 })();
 </script>
 <script>
