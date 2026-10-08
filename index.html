@@ -1,4 +1,21 @@
 <!DOCTYPE html>
+<!--
+  Clean Boy Logbook: one self-contained, offline-capable web app (PWA).
+
+  HOW THIS FILE IS ORGANISED (search for the CAPITALISED banner comments):
+    1. <head>      manifest + icons, fonts.css (this app's own typefaces: Manrope headings, Manrope text), theme colour.
+    2. <style>     the look. Colours are tokens (--bg, --ink, --accent ...); the COMFORT BLOCK at the end tunes
+                   spacing, the iPhone notch and iPhone field size.
+    3. <script>    the app. Main sections, in order: LOGBOOK config (name, palette, wording), DATA STORAGE,
+                   TIMETABLE (time -> box), BOXES, pages, SETTINGS, HOME, ROUTER, FIRST-RUN SETUP.
+    4. Extra scripts at the very end: POLISH (stops the redraw jitter, timetable quick-fill, Clean product rotation),
+                   SETUP STEPS (the first-run flow), TEST MODE (switch to a separate test copy of your data).
+
+  DATA: everything lives in this browser's localStorage under STORAGE_KEY. Test mode uses STORAGE_KEY + '-test',
+  so your real data is never touched. Use Settings > Backup to move data between phones.
+  This file is produced by the build scripts; change those rather than hand-editing where you can.
+-->
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -8,6 +25,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -59,8 +77,8 @@
   --r-pill:999px;
   --ease:cubic-bezier(.34,1.2,.64,1);
   --ease-out:cubic-bezier(.16,1,.3,1);
-  --font-display:'Plus Jakarta Sans', -apple-system, sans-serif;
-  --font-body:'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-display:'Manrope', -apple-system, 'Segoe UI', sans-serif;
+  --font-body:'Manrope', -apple-system, 'Segoe UI', sans-serif;
   /* Home hero gradient stops. Overridden per-brand from the config
      block at the end of <head>; these are the stock fallbacks. */
   --hero-from:#F5323A;
@@ -1117,7 +1135,7 @@ tr.row-completing td{ padding-top:0; padding-bottom:0; transition:padding .22s v
 .stat-mini .sl{ font-size:10.5px; text-transform:uppercase; color:var(--on-ink-soft); margin-top:3px; font-weight:600; letter-spacing:0.03em; }
 
 /* page transition */
-#app > *:not(.bottom-tabs):not(.save-toast){ animation:pageIn .3s var(--ease-out); }
+#app.route-anim > *:not(.bottom-tabs):not(.save-toast){ animation:pageIn .3s var(--ease-out); }
 @keyframes pageIn{
   from{ opacity:0; transform:translateY(6px); }
   to{ opacity:1; transform:translateY(0); }
@@ -1902,20 +1920,40 @@ window.LOGBOOK = {
 })();
 </script>
 <style id="comfort">
-/* comfort pass: identical in all 7 apps */
-body{word-spacing:.08em;}
-input,textarea,select,button{word-spacing:inherit;}
+/* ============================================================
+   COMFORT BLOCK: identical in all 7 apps, placed last so it wins.
+   Everything here is about how the app FEELS on a phone. To undo any
+   part, delete the rule. Colours and fonts are NOT set here.
+   ============================================================ */
+
+/* Space between words. Each typeface draws its space differently, so this is set per app. */
+body{word-spacing:.02em;}
+input,textarea,select,button{word-spacing:inherit;}   /* form controls ignore body, so pass it down */
+
+/* Stop iPhones enlarging text on their own when you rotate the phone. */
 html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+
+/* NOTCH / DYNAMIC ISLAND: push the Home card down by the phone's top inset (0 on phones without one). */
 .home-hero{margin-top:calc(8px + env(safe-area-inset-top, 0px));}
+
+/* iPHONE ONLY (that @supports test is true only on iOS): fields under 16px make Safari zoom the page when
+   you tap them. Forcing 16px stops the zoom. !important because field sizes are set in many places. */
 @supports (-webkit-touch-callout:none){ html body input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=range]):not([type=color]),html body textarea,html body select{font-size:16px!important;} }
+
+/* FIRST-RUN SETUP: pin the setup screen to the phone's height so the middle scrolls and the button stays put... */
 .onboard-screen{height:100vh;height:100dvh;min-height:0;}
+/* ...and remove the app's usual bottom padding there, otherwise the whole page scrolls 128px past the screen. */
+#app:has(> .onboard-screen){padding:0!important;min-height:0!important;}
+/* Welcome screen: centre when short, scroll when tall (a plain centre would clip the top). */
 .onboard-hero{overflow-y:auto;justify-content:flex-start;}
 .onboard-hero::before,.onboard-hero::after{content:'';flex:1 0 0;}
+
+/* PHONE WIDTHS ONLY */
 @media (max-width:619px){
-  #app{padding-left:4px;padding-right:4px;}
-  .bottom-tabs button{padding:12px 4px 10px;gap:5px;font-size:11px;}
-  .bottom-tabs button svg{width:22px;height:22px;}
-  .assist-toggle{bottom:calc(96px + env(safe-area-inset-bottom, 0px));}
+  #app{padding-left:4px;padding-right:4px;}                                  /* 4px more breathing room at the sides */
+  .bottom-tabs button{padding:12px 4px 10px;gap:5px;font-size:11px;}         /* roomier bottom bar... */
+  .bottom-tabs button svg{width:22px;height:22px;}                           /* ...with slightly bigger icons */
+  .assist-toggle{bottom:calc(96px + env(safe-area-inset-bottom, 0px));}      /* keep the Assist button clear of the bar */
   .assist .assist-toggle{bottom:calc(112px + env(safe-area-inset-bottom, 0px));}
 }
 </style>
@@ -1956,6 +1994,10 @@ const BRAND = (window.LOGBOOK && window.LOGBOOK.brand) || {
   themeColorLight:'#FAFAF7', themeColorDark:'#151210',
 };
 
+/* ============================================================
+   DATA STORAGE
+   All your data is one object (DB) saved in localStorage under STORAGE_KEY. Test mode swaps the key to STORAGE_KEY + '-test'.
+   ============================================================ */
 const STORAGE_KEY = 'cleanboy-logbook-v1' + (function(){ try{ return localStorage.getItem('cleanboy-logbook-v1-mode')==='test' ? '-test' : ''; }catch(e){ return ''; } })();
 
 /* Is persistence actually available? Private-browsing modes and a
@@ -2170,8 +2212,8 @@ function renderFocusCard(dateStr){
         <div class="focus-idle">
           <div class="focus-idle-quote">"${esc(quote)}"</div>
           ${time ? `
-            <button class="focus-idle-map-link" onclick="openPage('timetable')">
-              <span>${icon('grid',13)} Nothing linked to this hour — set it up in Timetable</span>
+            <button class="focus-idle-map-link" onclick="${laneUnavailable?"openPage('lane')":"openPage('timetable')"}">
+              <span>${icon('grid',13)} ${laneUnavailable ? 'Choose your '+esc(bxBoxMeta('lane').name)+' first, then it shows up here' : 'Nothing linked to this hour — set it up in Timetable'}</span>
               ${icon('chevright',14)}
             </button>` : ''}
         </div>
@@ -2249,6 +2291,10 @@ function loadDB(){
   }catch(e){ parsed = null; }
   return normalizeDB(parsed);
 }
+/* ============================================================
+   SAVING
+   Writes DB to localStorage. Returns true/false so callers (like importing a backup or adding a picture) can undo themselves if the phone's storage is full.
+   ============================================================ */
 function saveDB(){
   try{
     localStorage.setItem(STORAGE_KEY, JSON.stringify(DB));
@@ -2524,6 +2570,10 @@ function rngFieldValue(label){
   if(isCount) return String(rngInt(1,60));
   return rngPick(['Usual spot','Regular client','Same as last time','Quick session','—']);
 }
+/* ============================================================
+   TEST DATA
+   Fills one month with random entries. Used by Test mode's 'Fill a year of random data'.
+   ============================================================ */
 function randomFillMonth(monthKey, opts){
   opts = opts || {};
   const skipLoggedDays = opts.skipLoggedDays !== false; // default true
@@ -3141,6 +3191,10 @@ function computeNextUp(dateStr){
    BACKUP — export/import the whole DB as JSON so switching
    phones or clearing browser data doesn't wipe the logbook.
    ============================================================ */
+/* ============================================================
+   BACKUP (export / import)
+   Exports DB as a JSON file; importing restores it exactly and rolls back if the phone cannot store it.
+   ============================================================ */
 function exportData(){
   const payload = JSON.stringify(DB, null, 2);
   const blob = new Blob([payload], {type:'application/json'});
@@ -3631,6 +3685,10 @@ const LANES = [
   { id:'RS', name:'Reselling', desc:'Inventory & sales, sourcing, fees, net profit', glyph:'RS' },
 ];
 
+/* ============================================================
+   TIMETABLE (time -> box)
+   Your day is a list of hour blocks. Each block can be LINKED to a box (a page you log in). When that hour arrives, Home shows that box. Hours with nothing linked show an idle quote. First-run setup and the Timetable page both edit this.
+   ============================================================ */
 const TIMETABLE_SLOTS = ['05:00','06:00','07:00','08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00'];
 
 /* One-tap starting timetables for onboarding and for "reset to a
@@ -3730,6 +3788,10 @@ const IDLE_QUOTES = [
   "Cologne on, pressure off.",
   "Clean slate, clean sheets.",
 ];
+/* ============================================================
+   IDLE QUOTES
+   The line shown for an hour with no box. Picked from this app's own pool, shuffled by date so neighbouring hours never repeat. A quote you type for an hour wins.
+   ============================================================ */
 function idleQuoteFor(time, dateStr){
   const custom = DB.timetable.idleQuotes && DB.timetable.idleQuotes[time];
   if(custom && custom.trim()) return custom.trim();
@@ -4044,6 +4106,10 @@ function onboardSetMapping(time, pageId){
   render();
 }
 
+/* ============================================================
+   FIRST-RUN SETUP
+   The welcome flow. The steps list (ONBOARD_STEPS) is extended at the bottom of the file by the SETUP STEPS script.
+   ============================================================ */
 function renderOnboarding(){
   if(ONSTEP==='welcome') return renderOnboardWelcome();
   if(ONSTEP==='timetable-pick') return renderOnboardTimetablePick();
@@ -4183,6 +4249,10 @@ function renderOnboardTimetableFocus(){
   });
 }
 
+/* ============================================================
+   HOME
+   The Today screen: week strip, streak, and the box for the current hour.
+   ============================================================ */
 function renderHome(){
   const today = todayStr();
   const weekDates = [];
@@ -4258,22 +4328,7 @@ function renderHome(){
 
   const nextUp = computeNextUp(selDate);
   const isToday = selDate===today;
-  const nextUpHtml = !nextUp
-    ? `<div class="nextup-card" style="border-color:var(--green);">
-        <div class="nextup-alldone">
-          <div class="ok-badge">${icon('check',18)}</div>
-          <div>
-            <div class="nextup-title" style="margin:0;">All caught up</div>
-            <div class="nextup-sub">Every page is logged for ${isToday?'today':'this day'}.</div>
-          </div>
-        </div>
-      </div>`
-    : `<div class="nextup-card">
-        <div class="nextup-eyebrow">${icon('flame',13)}${isToday?'Keep the streak going':'Still open'}</div>
-        <div class="nextup-title">${esc(nextUp.name)}</div>
-        <div class="nextup-sub">${pagesForDate.length-doneCount} page${pagesForDate.length-doneCount===1?'':'s'} left ${isToday?'today':'this day'}</div>
-        <button class="nextup-btn" onclick="${(nextUp.id==='lane'&&DB.lane)?'openLaneLog()':`openPage('${nextUp.id}')`}">Log it ${icon('chevright',14)}</button>
-      </div>`;
+  const nextUpHtml = '';   /* the streak suggestion card was removed on request */
 
   const restOpen = isToday ? !!HOME_REST_OPEN : true;
   const restBody = `
@@ -6090,6 +6145,10 @@ function monthlyTextField(pageId, mk, key, placeholder, val){
 /* ============================================================
    PAGE: VISION BOARD (monthly — one page per calendar month)
    ============================================================ */
+/* ============================================================
+   VISION BOARD
+   Monthly page. The SETUP STEPS script replaces this with a picture-first version in the apps that have a Vision Board.
+   ============================================================ */
 function bucketBody(monthKey){
   const mk = monthKey || currentMonthKey();
   const locked = isMonthlyPageLocked('bucket', mk);
@@ -6295,6 +6354,10 @@ function updateTimetable(time,val){
    ============================================================ */
 /* ============================================================
    PAGE: INCOME STREAMS (monthly — one page per calendar month)
+   ============================================================ */
+/* ============================================================
+   MONTHLY VAULT PAGE
+   Monthly page. In Clean Boy and Clean Girl the POLISH script turns it into a list of products in rotation.
    ============================================================ */
 function incomeBody(monthKey){
   const mk = monthKey || currentMonthKey();
@@ -6581,6 +6644,10 @@ const PAGE_RENDERERS = {
    ============================================================ */
 /* ============================================================
    SETTINGS
+   ============================================================ */
+/* ============================================================
+   SETTINGS
+   The Settings screen. Test mode adds its 'Testing' section at the bottom (see the end of the file).
    ============================================================ */
 function renderSettings(){
   const laneInfo = DB.lane ? LANES.find(l=>l.id===DB.lane) : null;
@@ -7434,6 +7501,10 @@ function bxFocusBody(id, ds, html){
   if(bxIsBox(id)) return bxFieldsHtml(ds, id, false) || '<div class="bx-empty" style="margin:0">No fields yet. Open the box to add some.</div>';
   return html + (bxIsCore(id) ? bxFieldsHtml(ds, id, false) : '');
 }
+/* ============================================================
+   BOXES YOU CAN LINK TO AN HOUR
+   The built-in pages plus any custom boxes you made. This list feeds every 'link an hour to a box' picker.
+   ============================================================ */
 function bxFocusPages(){
   const extra = bxCustomBoxes().filter(b=>!b.until).map(b=>({ id:b.id, name:bxBoxMeta(b.id).name }));
   const base = FOCUS_PAGES.map(f=>{ const c = bxCfg(f.id); return (c && c.name && bxIsCore(f.id)) ? Object.assign({}, f, { name:c.name }) : f; });
@@ -8224,6 +8295,10 @@ function renderUpgrade(){
   };
 })();
 
+/* ============================================================
+   ROUTER
+   render() draws whichever screen ROUTE points at. Nearly every tap calls it, so it redraws the whole screen.
+   ============================================================ */
 function render(){
   // Every route starts from "no rail" and only the tab-root views
   // (Home, Tracker, History, Settings, Library) put one back, via
@@ -8309,47 +8384,440 @@ if(LAYOUT_MQ){
   else if(LAYOUT_MQ.addListener) LAYOUT_MQ.addListener(onLayoutChange); // older Safari
 }
 </script>
+<style id="polish-extra">
+/* ---- shared by all 7 apps: timetable quick-fill / link tools, and the Clean "in rotation" list ---- */
+.tt-tool{margin:0 0 14px;padding:14px;border-radius:18px;border:1.5px dashed var(--line);}
+.tt-tool-title{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:10px;}
+.tt-tool-row{display:flex;gap:8px;margin-bottom:8px;}
+.tt-tool-row label{flex:1;min-width:0;font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px;}
+.tt-tool select,.tt-tool input{width:100%;box-sizing:border-box;padding:11px 12px;border-radius:12px;border:1px solid var(--line);background:var(--surface-2);color:var(--ink);font:inherit;font-size:14px;}
+.tt-tool-btn{width:100%;padding:12px;border-radius:14px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:700;font-family:inherit;cursor:pointer;margin-top:4px;}
+.tt-tool-note{font-size:12px;color:var(--muted);margin:8px 0 0;line-height:1.45;}
+.tt-all-btn{width:100%;margin:0 0 14px;padding:12px;border-radius:14px;border:1.5px solid var(--line);background:transparent;color:var(--ink);font-weight:700;font-family:inherit;cursor:pointer;}
+.rot-add{display:flex;flex-direction:column;gap:8px;margin-bottom:12px;}
+.rot-card{padding:12px;border-radius:16px;background:var(--surface-2);margin-bottom:10px;position:relative;}
+.rot-card .textline{margin-bottom:8px;}
+.rot-x{position:absolute;top:8px;right:8px;width:30px;height:30px;border-radius:50%;border:0;background:var(--surface);color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.rot-card .rot-name{padding-right:40px;}
+</style>
 <script>
-/* First-run setup: one step per monthly setup page (Vision Board, Vault, Reflections, Habits...).
-   Shared by all 7 apps; reads SETUP_PAGES so each app gets exactly its own pages, in its own order.
-   Each step shows that page's real body, so every field edits the real month data. */
+/* Shared polish for all 7 apps. Four jobs:
+   1. STOP THE JITTER: the app redraws a whole screen on every tap, and each redraw replayed a 6px slide-in.
+      Now the slide-in only plays when you actually move to a different screen.
+   2. TIMETABLE HELPERS: a full-24-hours model (no presets), "quick fill" for stretches like sleep, and
+      "link a stretch to a box". Used by first-run setup AND the Timetable page.
+   3. TIMETABLE PAGE: swaps the old preset buttons for those helpers.
+   4. CLEAN COLLECTION (Clean Boy / Clean Girl only): the vault becomes a list of products IN ROTATION. */
+(function(){
+  try{
+    var app = document.getElementById('app');
+
+    /* ---- 1) slide-in only on a real screen change ---- */
+    var lastKey = null, baseRender = render;
+    render = function(){
+      /* "where am I": the route (or setup step), NOT the date/tab — those re-render in place */
+      var key = DB.onboarded ? (ROUTE.view+'|'+(ROUTE.pageId||'')) : ('setup|'+ONSTEP);
+      if(app) app.classList.toggle('route-anim', key!==lastKey);
+      lastKey = key;
+      return baseRender.apply(this, arguments);
+    };
+
+    /* ---- 2) timetable helpers (window.TT) ---- */
+    var HOURS = []; for(var h=0;h<24;h++) HOURS.push((h<10?'0':'')+h+':00');
+    var TT = window.TT = { HOURS: HOURS };
+    var val = function(id){ var e = document.getElementById(id); return e ? e.value : ''; };
+    /* <option>s for every hour of the day, shown as 12-hour clock labels */
+    TT.opts = function(sel){ return HOURS.map(function(t){ return '<option value="'+t+'"'+(t===sel?' selected':'')+'>'+esc(fmtBlockTime(t))+'</option>'; }).join(''); };
+    /* hours from `from` up to (not including) `to`, wrapping past midnight: 23:00 -> 06:00 gives 7 hours */
+    TT.between = function(from, to){
+      var i = parseInt(from,10), j = parseInt(to,10), out = [];
+      if(i===j) return out;
+      while(i!==j){ out.push(HOURS[i]); i = (i+1)%24; }
+      return out;
+    };
+    /* make sure every hour 00:00-23:00 has a block (empty ones are fine); keeps any in-between times like 06:30 */
+    TT.withAllHours = function(blocks){
+      var by = {}; (blocks||[]).forEach(function(b){ by[b.time] = b; });
+      var out = HOURS.map(function(t){ return by[t] || { time:t, task:'' }; });
+      (blocks||[]).forEach(function(b){ if(HOURS.indexOf(b.time)<0) out.push(b); });
+      out.sort(function(a,b){ return timeStrToMinutes(a.time)-timeStrToMinutes(b.time); });
+      return out;
+    };
+    /* "Quick fill" card: type a label once, apply it to a whole stretch (e.g. 11 PM -> 6 AM = Sleep) */
+    TT.quickFillHtml = function(handler){
+      return '<div class="tt-tool"><div class="tt-tool-title">Quick fill a stretch</div>'
+        + '<div class="tt-tool-row"><label>From<select id="qf-from">'+TT.opts('23:00')+'</select></label><label>Until<select id="qf-to">'+TT.opts('06:00')+'</select></label></div>'
+        + '<input id="qf-label" maxlength="60" placeholder="e.g. Sleep" onkeydown="if(event.key===\'Enter\'){event.preventDefault();'+handler+'();}">'
+        + '<button class="tt-tool-btn" onclick="'+handler+'()">Fill these hours</button>'
+        + '<p class="tt-tool-note">Fills every hour from the first time up to (not including) the second, and it works across midnight. Good for sleep, work, commute.</p></div>';
+    };
+    /* "Link a stretch" card: point a whole stretch at one box (only hours that have a name get linked) */
+    TT.linkRangeHtml = function(handler){
+      var boxes = bxFocusPages().map(function(f){ return '<option value="'+f.id+'">'+esc(f.name)+'</option>'; }).join('');
+      return '<div class="tt-tool"><div class="tt-tool-title">Link a stretch to a box</div>'
+        + '<div class="tt-tool-row"><label>From<select id="lr-from">'+TT.opts('18:00')+'</select></label><label>Until<select id="lr-to">'+TT.opts('21:00')+'</select></label></div>'
+        + '<label class="tt-tool-row" style="flex-direction:column;"><span style="font-size:12px;color:var(--muted);">Box</span><select id="lr-box">'+boxes+'</select></label>'
+        + '<button class="tt-tool-btn" onclick="'+handler+'()">Link these hours</button>'
+        + '<p class="tt-tool-note">Only hours that already have a name are linked. Name them first, or use Quick fill above.</p></div>';
+    };
+    /* how many of the 24 hours have a name (a hand-typed "Free" counts), and whether all 24 do */
+    TT.filledCount = function(blocks){ var by = {}; (blocks||[]).forEach(function(b){ if(b && b.task && String(b.task).trim()) by[b.time] = 1; }); return HOURS.filter(function(t){ return by[t]; }).length; };
+    TT.complete = function(blocks){ return TT.filledCount(blocks) === 24; };
+    var plural = function(n){ return n+' hour'+(n===1?'':'s'); };
+
+    /* ---- 3) Timetable page: presets out, helpers in ---- */
+    window.ttQuickFill = function(){
+      var label = (val('qf-label')||'').trim(), hrs = TT.between(val('qf-from'), val('qf-to'));
+      if(!label){ flashSaved('Type what happens in those hours'); return; }
+      if(!hrs.length){ flashSaved('Pick two different times'); return; }
+      var blocks = TT.withAllHours(normalizeTimetableBlocks());
+      hrs.forEach(function(t){ blocks.find(function(b){ return b.time===t; }).task = label; });
+      DB.timetable.blocks = blocks; touchSetupPage('timetable'); render();
+      flashSaved('Filled '+plural(hrs.length)+' with "'+label+'"');
+    };
+    window.ttShowAll = function(){
+      DB.timetable.blocks = TT.withAllHours(normalizeTimetableBlocks()); touchSetupPage('timetable'); render();
+      flashSaved('All 24 hours are here');
+    };
+    window.ttLinkRange = function(){
+      var box = val('lr-box'), hrs = TT.between(val('lr-from'), val('lr-to')), n = 0;
+      if(!hrs.length){ flashSaved('Pick two different times'); return; }
+      normalizeTimetableBlocks().forEach(function(b){ if(hrs.indexOf(b.time)>=0 && b.task && b.task.trim()){ setSlotMapping(b.time, box); n++; } });
+      render(); flashSaved(n ? 'Linked '+plural(n) : 'Name those hours first, then link them');
+    };
+    var baseTT = renderTimetable;
+    var wrappedTT = function(dateStr){
+      baseTT(dateStr);
+      var pills = document.querySelector('#app .pill-row'); if(!pills) return;
+      var all = TT.withAllHours(normalizeTimetableBlocks()).length, have = normalizeTimetableBlocks().filter(function(b){ return HOURS.indexOf(b.time)>=0; }).length;
+      pills.outerHTML = (have<24 ? '<button class="tt-all-btn" onclick="ttShowAll()">Show all 24 hours</button>' : '')
+        + TT.quickFillHtml('ttQuickFill') + TT.linkRangeHtml('ttLinkRange');
+    };
+    renderTimetable = wrappedTT;
+    if(typeof PAGE_RENDERERS!=='undefined' && PAGE_RENDERERS.timetable) PAGE_RENDERERS.timetable = wrappedTT; /* the page table holds its own reference */
+
+    /* ---- 5) LINKING FIX ----
+       The "link an hour to a box" list used to be a fixed template (Workout Log, Business Lane, Daily Dashboard...)
+       copied from one app, so it showed names that did not exist in your app, left out real boxes (Mind & Focus,
+       Night Wind-down, Shower...) and Home could only draw five of them. Now the list is built from THIS app's own
+       boxes (CORE_PAGES) with their real names, plus any boxes you made, and Home can draw every one of them. */
+    FOCUS_PAGES.length = 0;
+    CORE_PAGES.forEach(function(p){ FOCUS_PAGES.push({ id:p.id, name:p.name }); });
+    var HOME_DRAWS = { dashboard:1, workout:1, journal:1, reading:1, lane:1 };   /* these Home already knew how to draw */
+    var baseFocusBody = bxFocusBody;
+    bxFocusBody = function(id, ds, html){
+      if(!html && !HOME_DRAWS[id] && bxIsCore(id) && typeof window[id+'Body']==='function'){
+        try{ html = window[id+'Body'](ds); }catch(e){ html = ''; }
+      }
+      return baseFocusBody(id, ds, html);
+    };
+
+    /* ---- 4) Clean collection: products IN ROTATION, as many as you like ---- */
+    var inc = SETUP_PAGES.find(function(p){ return p.id==='income'; });
+    if(inc && /product/i.test(inc.name) && typeof incomeBody==='function'){
+      window.__rotOn = true;
+      /* the list for one month. A new month starts as a copy of the last month that had one,
+         so you only edit what changed instead of retyping your shelf. Old single-product data is carried over once. */
+      var rotList = function(mk){
+        var pg = getMonthlyPage('income', mk);
+        if(!Array.isArray(pg.inRotation)){
+          var list = null, keys = Object.keys(DB.monthly||{}).filter(function(k){ return k<mk; }).sort().reverse();
+          for(var i=0;i<keys.length && !list;i++){ var prev = DB.monthly[keys[i]].income; if(prev && Array.isArray(prev.inRotation) && prev.inRotation.length) list = JSON.parse(JSON.stringify(prev.inRotation)); }
+          if(!list) list = (pg.rotation && pg.rotation.name) ? [{ name:pg.rotation.name, brand:pg.rotation.brand||'', note:pg.rotation.characteristics||'' }] : [];
+          pg.inRotation = list;
+        }
+        return pg.inRotation;
+      };
+      window.rotAdd = function(mk){
+        var name = (val('rot-name')||'').trim(), brand = (val('rot-brand')||'').trim();
+        if(!name){ flashSaved('Type the product name first'); return; }
+        rotList(mk).unshift({ name:name, brand:brand, note:'' }); saveDB(); render(); /* newest first, so it shows right under the form */
+      };
+      window.rotEdit = function(mk, i, key, v){ var l = rotList(mk); if(l[i]){ l[i][key] = v; saveDB(); } }; /* no redraw: it fires per keystroke */
+      window.rotRemove = function(mk, i){ rotList(mk).splice(i,1); saveDB(); render(); flashSaved('Removed from rotation'); };
+      incomeBody = function(monthKey){
+        var mk = monthKey || currentMonthKey(), list = rotList(mk);
+        if(isMonthlyPageLocked('income', mk)){
+          var rows = list.filter(function(p){ return p.name; }).map(function(p){
+            return '<div class="locked-item-row" style="align-items:flex-start;"><span style="font-weight:700;">'+esc(p.name)+'</span><span class="muted-inline">'+esc(p.brand||'')+'</span></div>'; }).join('');
+          return monthlyLockedBody(rows ? '<div class="field-card">'+rows+'</div>' : '<div class="empty-note">Nothing in rotation for '+monthLabelShort(mk)+'.</div>', 'income', mk);
+        }
+        var cards = list.map(function(p,i){
+          return '<div class="rot-card"><input class="textline rot-name" placeholder="Product name" value="'+esc(p.name)+'" oninput="rotEdit(\''+mk+'\','+i+',\'name\',this.value)">'
+            + '<input class="textline" placeholder="Brand" value="'+esc(p.brand)+'" oninput="rotEdit(\''+mk+'\','+i+',\'brand\',this.value)">'
+            + '<input class="textline" placeholder="Notes (scent, texture, how long it lasts...)" value="'+esc(p.note)+'" oninput="rotEdit(\''+mk+'\','+i+',\'note\',this.value)">'
+            + '<button class="rot-x" aria-label="Remove '+esc(p.name||'product')+' from rotation" onclick="rotRemove(\''+mk+'\','+i+')">'+icon('close',13)+'</button></div>'; }).join('');
+        var add = '<div class="rot-add"><input id="rot-name" class="textline" maxlength="80" placeholder="Add a product or perfume" onkeydown="if(event.key===\'Enter\'){event.preventDefault();rotAdd(\''+mk+'\');}">'
+          + '<input id="rot-brand" class="textline" maxlength="60" placeholder="Brand (optional)" onkeydown="if(event.key===\'Enter\'){event.preventDefault();rotAdd(\''+mk+'\');}">'
+          + '<button class="tt-tool-btn" onclick="rotAdd(\''+mk+'\')">'+icon('plus',14)+' Add to rotation</button></div>';
+        return fieldWrap('In rotation', 'Only what you are using right now. Add as many as you like, and remove anything you have finished or put away.', add + (cards || '<div class="empty-note">Nothing in rotation yet.</div>'))
+          + '<button class="add-row-btn" onclick="lockMonthlyPageNow(\'income\',\''+mk+'\')">'+icon('check',14)+' Mark done for '+monthLabelShort(mk)+'</button>';
+      };
+    }
+  }catch(e){ if(window.console) console.error('polish', e); }
+})();
+</script>
+<style id="setup-extra">
+/* setup flow: time -> box explainer, add-an-hour, new box, picture-first vision board */
+.onb-tt-time{flex:none;min-width:64px;white-space:nowrap;}
+.onb-hours-meter{margin:0 0 12px;}
+.onb-hours-meter .bar{height:6px;border-radius:3px;background:var(--line);overflow:hidden;}
+.onb-hours-meter i{display:block;height:100%;background:var(--accent);transition:width .2s;}
+.onb-hours-meter span{font-size:12.5px;color:var(--muted);display:block;margin-top:6px;}
+.onb-how-card{display:flex;gap:14px;padding:14px;border-radius:18px;background:var(--surface);border:1px solid var(--line);margin-bottom:10px;}
+.onb-how-n{width:28px;height:28px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;flex:none;}
+.onb-how-card b{display:block;font-size:14.5px;margin-bottom:3px;color:var(--ink);}
+.onb-how-card p{margin:0;font-size:13px;line-height:1.5;color:var(--ink-soft);}
+.onb-demo{display:flex;align-items:center;gap:10px;padding:14px;border-radius:18px;background:var(--surface-2);margin:4px 0 6px;font-size:13px;flex-wrap:wrap;}
+.onb-demo .t{font-weight:800;color:var(--muted);}
+.onb-demo .task{font-weight:700;color:var(--ink);}
+.onb-demo .arrow{color:var(--muted);}
+.onb-demo .box{margin-left:auto;padding:7px 12px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font-weight:800;}
+.onb-demo-cap{font-size:11.5px;color:var(--muted);text-align:center;margin:0 0 10px;}
+.onb-add-hour{margin-top:16px;padding:14px;border-radius:18px;border:1.5px dashed var(--line);}
+.onb-add-title{font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:8px;}
+.onb-add-row{display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;}
+.onb-add-row input[type=time]{flex:1 1 130px;min-width:0;order:1;}
+.onb-add-btn{flex:0 0 auto;order:2;padding:12px 26px;border-radius:14px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:800;font-family:inherit;cursor:pointer;}
+.onb-add-row input:not([type=time]){flex:1 1 100%;min-width:0;order:3;}
+.onb-tt-x{flex:none;width:34px;height:34px;border-radius:50%;border:0;background:var(--surface-2);color:var(--muted);display:flex;align-items:center;justify-content:center;margin-left:6px;cursor:pointer;}
+.onb-note{font-size:12px;color:var(--muted);text-align:center;margin:4px 0 14px;}
+.vb-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:4px 14px 6px;}
+.vb-tile{position:relative;aspect-ratio:3/4;border-radius:18px;overflow:hidden;background:var(--surface-2);}
+.vb-tile img{width:100%;height:100%;object-fit:cover;display:block;}
+.vb-x{position:absolute;top:8px;right:8px;width:32px;height:32px;border-radius:50%;border:0;background:rgba(0,0,0,.55);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.vb-add{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;border:1.5px dashed var(--line);background:transparent;color:var(--ink-soft);font-weight:700;font-size:13px;cursor:pointer;}
+.vb-add input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer;}
+.vb-count{padding:2px 18px 12px;font-size:12px;color:var(--muted);}
+.vb-words{margin:12px 0 4px;}
+.vb-words summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-radius:18px;border:1px solid var(--line);background:var(--surface);font-weight:700;color:var(--ink);}
+.vb-words summary span{font-weight:600;font-size:12px;color:var(--muted);}
+.vb-words summary::-webkit-details-marker{display:none;}
+.vb-words[open] summary{margin-bottom:10px;}
+</style>
+<script>
+/* First-run setup, shared by all 7 apps.
+   - one step per monthly setup page (Vault, Reflections, Habits...), reading each app's own SETUP_PAGES
+   - a MANDATORY timetable (all 24 hours named before anything else), and a plain-language "time -> box" explainer, a full 24-hour grid with quick fill (no presets), link-a-stretch and new-box inside the timetable step
+   - one consistent step count + progress bar (steps = the groups the welcome screen lists)
+   - Vision Board is picture-first */
 (function(){
   try{
     if(typeof ONBOARD_STEPS==='undefined' || typeof SETUP_PAGES==='undefined') return;
+    var TT_GROUP = 'Plan your day in boxes';
+
+    /* ---- steps ---- */
     var have = {}; ONBOARD_STEPS.forEach(function(s){ have[s.id] = 1; });
-    var pages = SETUP_PAGES.filter(function(p){
-      return p.id!=='timetable' && !have[p.id] && typeof window[p.id+'Body']==='function';
-    });
-    if(!pages.length) return;
-    var fresh = pages.map(function(p){ return { id:'setup-'+p.id, group:'Set up '+p.name }; });
+    ONBOARD_STEPS.forEach(function(s){ if(/^timetable-/.test(s.id)) s.group = TT_GROUP; });
+    var pi = ONBOARD_STEPS.findIndex(function(s){ return s.id==='timetable-pick'; });
+    if(pi>=0) ONBOARD_STEPS.splice(pi, 0, { id:'timetable-intro', group:TT_GROUP }, { id:'timetable-hours', group:TT_GROUP });
+    /* No more presets (Early Riser / 9-to-5 / Night Owl): people type their own 24 hours,
+       so the old "pick" and "review" screens are removed from the flow. */
+    for(var r=ONBOARD_STEPS.length-1; r>=0; r--){ if(ONBOARD_STEPS[r].id==='timetable-pick' || ONBOARD_STEPS[r].id==='timetable-review') ONBOARD_STEPS.splice(r,1); }
+    /* The timetable is mandatory and comes first in every app. Hustler used to open on "pick your lane". */
+    var li = ONBOARD_STEPS.findIndex(function(s){ return s.id==='lane'; });
+    if(li>=0){
+      var laneStep = ONBOARD_STEPS.splice(li,1)[0], bi = ONBOARD_STEPS.findIndex(function(s){ return s.id==='bucket'; });
+      ONBOARD_STEPS.splice(bi>=0 ? bi : ONBOARD_STEPS.length, 0, laneStep);
+    }
+    var pages = SETUP_PAGES.filter(function(p){ return p.id!=='timetable' && !have[p.id] && typeof window[p.id+'Body']==='function'; });
+    var fresh = pages.map(function(p){ return { id:'setup-'+p.id, group:(p.id==='income' && window.__rotOn) ? 'Add your products in rotation' : 'Set up '+p.name }; });
     var at = ONBOARD_STEPS.findIndex(function(s){ return s.id==='objectives'; }); /* Hustler ends on its own objectives step */
     if(at < 0) at = ONBOARD_STEPS.length;
     ONBOARD_STEPS.splice.apply(ONBOARD_STEPS, [at, 0].concat(fresh));
     ONSTEPS_ORDER.length = 0; ONBOARD_GROUPS.length = 0;
     ONBOARD_STEPS.forEach(function(s){ ONSTEPS_ORDER.push(s.id); if(ONBOARD_GROUPS.indexOf(s.group)<0) ONBOARD_GROUPS.push(s.group); });
 
+    /* ---- consistent "Step n of N" + progress bar, counted in groups ---- */
+    var PARTS = { 'timetable-intro':'How it works', 'timetable-hours':'Your 24 hours', 'timetable-focus':'Link hours to boxes' };
+    var baseShell = onboardShell;
+    onboardShell = function(opts){
+      var step = ONBOARD_STEPS.find(function(s){ return s.id===ONSTEP; });
+      var G = ONBOARD_GROUPS.length, gi = step ? ONBOARD_GROUPS.indexOf(step.group) : -1;
+      var o = Object.assign({}, opts);
+      if(gi>=0) o.eyebrow = 'Step '+(gi+1)+' of '+G + (PARTS[ONSTEP] ? ' \u00b7 '+PARTS[ONSTEP] : '');
+      baseShell(o);
+      var bar = document.querySelector('#app .onb-progress');
+      if(!ttDone()){ var sk = document.querySelector('#app .onboard-skip'); if(sk) sk.replaceWith(document.createElement('span')); }   /* no "Skip setup" until the timetable is done */
+      if(bar && gi>=0) bar.innerHTML = Array.from({length:G}).map(function(_,i){ return '<div class="onb-seg '+(i<=gi?'filled':'')+'"></div>'; }).join('');
+    };
+
+    /* ---- routing ---- */
+    /* ---- MANDATORY TIMETABLE ----
+       Nothing past the timetable can be reached until all 24 hours have a name (type "Free" for empty ones):
+       the Continue button stays locked, the Skip buttons are hidden, and finishing is refused. */
+    var draftBlocks = function(){ return ONDRAFT.blocks || (DB.timetable && DB.timetable.blocks) || []; };
+    var ttDone = function(){ return TT.complete(draftBlocks()); };
+    var baseFinish = finishOnboarding;
+    finishOnboarding = function(){
+      if(!ttDone()){ flashSaved('Name all 24 hours of your timetable first'); onboardGoto(ONSTEP==='welcome' ? 'timetable-intro' : 'timetable-hours'); return; }
+      return baseFinish.apply(this, arguments);
+    };
+    var baseNext = onboardNext;
+    onboardNext = function(){
+      if(ONSTEP==='timetable-hours' && !ttDone()){ flashSaved('Name every hour first \u2014 type "Free" for empty ones'); return; }
+      return baseNext.apply(this, arguments);
+    };
     var baseRender = renderOnboarding;
     renderOnboarding = function(){
+      if(ONSTEP==='welcome'){ var r = baseRender(); if(!ttDone()){ Array.prototype.forEach.call(document.querySelectorAll('#app button'), function(b){ if(/Skip, take me/i.test(b.innerText)) b.remove(); });
+          var top = document.querySelector('#app .onboard-skip'); if(top) top.replaceWith(document.createElement('span')); }   /* the welcome screen draws its own skip links */
+        return r; }
+      if(ONSTEP==='timetable-intro') return renderOnboardTimetableIntro();
+      if(ONSTEP==='timetable-hours') return renderOnboardTimetableHours();
       if(String(ONSTEP).indexOf('setup-')===0) return renderOnboardSetupPage(ONSTEP.slice(6));
       return baseRender();
     };
     var baseBack = onboardBack;
     onboardBack = function(){
       var i = onboardStepIndex(), prev = ONSTEPS_ORDER[i-1];
-      /* with no timetable, review and focus skip themselves forward, so Back must hop to the picker */
-      if(prev==='timetable-focus' && !(ONDRAFT.blocks && ONDRAFT.blocks.length)){ onboardGoto('timetable-pick'); return; }
+      /* the link screen skips itself when there are no hours, so Back must hop to where hours are typed */
+      if(prev==='timetable-focus' && !(ONDRAFT.blocks && ONDRAFT.blocks.length)){ onboardGoto('timetable-hours'); return; }
       baseBack();
     };
+
+    /* ---- 1) the time -> box explainer ---- */
+    window.renderOnboardTimetableIntro = function(){
+      var names = bxFocusPages().map(function(f){ return f.name; });
+      var a = names[0] || 'Workout', b = names[1] || a;
+      var card = function(n,t,p){ return '<div class="onb-how-card"><div class="onb-how-n">'+n+'</div><div><b>'+t+'</b><p>'+p+'</p></div></div>'; };
+      onboardShell({
+        title: 'Your day, in boxes.',
+        sub: 'The one idea this app is built on. Takes ten seconds.',
+        body: '<div class="onb-demo"><span class="t">7:00 AM</span><span class="task">Gym</span><span class="arrow">\u2192</span><span class="box">'+esc(a)+' box</span></div>'
+            + '<p class="onb-demo-cap">Example: at 7:00 AM, Home opens the '+esc(a)+' box.</p>'
+            + card(1,'Build your day','Your timetable splits the day into hours \u2014 wake up, work, train, wind down.')
+            + card(2,'Link an hour to a box','A box is one page you log in, like <i>'+esc(a)+'</i> or <i>'+esc(b)+'</i> \u2014 or one you make yourself.')
+            + card(3,'Home shows the right box, right on time','When that hour arrives, its box sits front and centre on Home. One tap to log. Hours with nothing linked just show a little line.'),
+        ctaLabel: 'Got it', ctaEnabled: true, showSkip: true, showBack: true
+      });
+    };
+
+    /* ---- 2) "Fill in your 24 hours": every hour of the day is a row you type into ---- */
+    window.renderOnboardTimetableHours = function(){
+      /* make sure all 24 hours exist before drawing (keeps anything already typed, e.g. when re-running setup) */
+      /* start from what is already saved when running setup again, otherwise from nothing */
+      ONDRAFT.blocks = TT.withAllHours(ONDRAFT.blocks || (DB.timetable.blocks||[]).map(function(b){ return { time:b.time, task:b.task||'' }; }));
+      var filled = TT.filledCount(ONDRAFT.blocks);
+      var rows = ONDRAFT.blocks.map(function(b,i){
+        var custom = TT.HOURS.indexOf(b.time) < 0;   /* an in-between time like 06:30 can be removed; the 24 hours stay */
+        return '<div class="onb-tt-row"><div class="onb-tt-time">'+esc(fmtBlockTime(b.time))+'</div>'
+          + '<input class="onb-tt-input" value="'+esc(b.task)+'" placeholder="Name this hour" maxlength="60" oninput="onboardHourInput('+i+',this.value)">'
+          + (custom ? '<button class="onb-tt-x" aria-label="Remove '+esc(b.time)+'" onclick="onboardRemoveBlock('+i+')">'+icon('close',13)+'</button>' : '')+'</div>'; }).join('');
+      var extra = '<details class="vb-words"><summary>Need a time like 6:30? <span>optional</span></summary>'
+        + '<div class="onb-add-hour" style="margin-top:0;"><div class="onb-add-row">'
+        + '<input type="time" id="onb-add-time" class="onb-tt-input" value="06:30">'
+        + '<button class="onb-add-btn" onclick="onboardAddBlock()">Add</button>'
+        + '<input id="onb-add-task" class="onb-tt-input" maxlength="60" placeholder="What happens then..." onkeydown="if(event.key===\'Enter\'){event.preventDefault();onboardAddBlock();}">'
+        + '</div></div></details>';
+      onboardShell({
+        title: 'Fill in your 24 hours.',
+        sub: 'Every hour needs a name before you can go on. Use Quick fill for stretches like sleep, and type "Free" for hours with nothing planned. You can change it any time.',
+        body: '<div class="onb-hours-meter"><div class="bar"><i style="width:'+(filled/24*100)+'%"></i></div><span id="hours-count">'+filled+' of 24 hours named</span></div>'
+            + TT.quickFillHtml('onboardQuickFill') + '<div class="onb-tt-list">'+rows+'</div>' + extra,
+        ctaLabel: filled===24 ? 'Continue' : 'Name all 24 hours to continue', ctaEnabled: filled===24, showSkip: false, showBack: true
+      });
+    };
+    /* typing in an hour: save the draft, then update the counter and unlock/lock the button WITHOUT redrawing (a redraw would drop the cursor) */
+    window.onboardHourInput = function(i, v){
+      onboardEditBlock(i, v);
+      var n = TT.filledCount(ONDRAFT.blocks), c = document.getElementById('hours-count'), bar = document.querySelector('.onb-hours-meter i'), cta = document.querySelector('#app .onboard-cta');
+      if(c) c.textContent = n+' of 24 hours named';
+      if(bar) bar.style.width = (n/24*100)+'%';
+      if(cta){ cta.disabled = n<24; cta.innerHTML = (n===24 ? 'Continue' : 'Name all 24 hours to continue') + ' ' + icon('chevright',16); }
+    };
+    window.onboardQuickFill = function(){
+      var g = function(id){ var e = document.getElementById(id); return e ? e.value : ''; };
+      var label = (g('qf-label')||'').trim(), hrs = TT.between(g('qf-from'), g('qf-to'));
+      if(!label){ flashSaved('Type what happens in those hours'); return; }
+      if(!hrs.length){ flashSaved('Pick two different times'); return; }
+      ONDRAFT.blocks = TT.withAllHours(ONDRAFT.blocks || []);
+      hrs.forEach(function(t){ ONDRAFT.blocks.find(function(b){ return b.time===t; }).task = label; });
+      saveOnboardDraft(); render();
+      flashSaved('Filled '+hrs.length+' hour'+(hrs.length===1?'':'s')+' with "'+label+'"');
+    };
+    window.onboardAddBlock = function(){
+      var tEl = document.getElementById('onb-add-time'), kEl = document.getElementById('onb-add-task');
+      var time = normalizeTimeStr(tEl && tEl.value), task = ((kEl && kEl.value) || '').trim();
+      if(!time){ flashSaved('Pick a time first'); return; }
+      if(!task){ flashSaved('Say what happens at that time'); return; }
+      var blocks = ONDRAFT.blocks = TT.withAllHours(ONDRAFT.blocks || []);
+      var hit = blocks.find(function(b){ return b.time===time; });
+      if(hit) hit.task = task; else blocks.push({ time:time, task:task });
+      blocks.sort(function(x,y){ return timeStrToMinutes(x.time)-timeStrToMinutes(y.time); });
+      saveOnboardDraft(); render();
+    };
+    window.onboardRemoveBlock = function(i){
+      var blocks = ONDRAFT.blocks; if(!blocks || !blocks[i]) return;
+      var t = blocks[i].time; blocks.splice(i,1);
+      if(ONDRAFT.mapping) delete ONDRAFT.mapping[t];
+      saveOnboardDraft(); render();
+    };
+
+    /* ---- 3) link screen: plain words + create a box right here ---- */
+    window.renderOnboardTimetableFocus = function(){
+      if(!ONDRAFT.blocks || !ONDRAFT.blocks.length){ onboardNext(); return; }
+      var rows = ONDRAFT.blocks.filter(function(b){ return b.task && b.task.trim(); }).map(function(b){
+        var mapped = ONDRAFT.mapping ? ONDRAFT.mapping[b.time] : null;
+        return '<div class="onb-focus-row"><div class="onb-focus-top"><div class="onb-tt-time">'+esc(fmtBlockTime(b.time))+'</div><div class="onb-focus-task">'+esc(b.task)+'</div></div>'
+          + '<select class="onb-focus-select" onchange="onboardSetMapping(\''+b.time+'\', this.value || null)"><option value="">No box</option>'
+          + bxFocusPages().map(function(f){ return '<option value="'+f.id+'" '+(f.id===mapped?'selected':'')+'>'+esc(f.name)+'</option>'; }).join('')
+          + '</select></div>'; }).join('');
+      onboardShell({
+        title: 'Link hours to boxes.',
+        sub: "Pick the box you'll want when that hour comes \u2014 it will sit front and centre on Home. Skip any hour that doesn't need one.",
+        body: (rows ? TT.linkRangeHtml('onboardLinkRange') + '<div class="onb-tt-list">'+rows+'</div>' : '<p class="onb-sub">None of your hours have a name yet, so there is nothing to link. You can set this up later from the Timetable page.</p>')
+            + '<button class="bx-add-row" style="width:100%;margin:6px 0 4px;" onclick="onboardNewBoxSheet()">'+icon('plus',15)+' New box</button>'
+            + '<p class="onb-note">Boxes you make show up in these lists and under Customize.</p>',
+        ctaLabel: 'Continue', ctaEnabled: true, showSkip: true, showBack: true
+      });
+    };
+    window.onboardLinkRange = function(){
+      var g = function(id){ var e = document.getElementById(id); return e ? e.value : ''; };
+      var box = g('lr-box'), hrs = TT.between(g('lr-from'), g('lr-to')), n = 0;
+      if(!hrs.length){ flashSaved('Pick two different times'); return; }
+      ONDRAFT.mapping = ONDRAFT.mapping || {};
+      (ONDRAFT.blocks||[]).forEach(function(b){ if(hrs.indexOf(b.time)>=0 && b.task && b.task.trim()){ ONDRAFT.mapping[b.time] = box; n++; } });
+      saveOnboardDraft(); render();
+      flashSaved(n ? 'Linked '+n+' hour'+(n===1?'':'s') : 'Name those hours first, then link them');
+    };
+    var KINDS = [['toggle','Done / not done','Done'],['number','A number','Amount'],['scale','A 1\u20135 rating','Rating'],['short','A quick note','Note']];
+    var BOXKIND = 'toggle';
+    window.onboardNewBoxSheet = function(){
+      BOXKIND = 'toggle';
+      openSheet('<div class="sheet-title"><span>New box</span><button class="sheet-close" onclick="closeSheet()" aria-label="Close">'+icon('close',15)+'</button></div>'
+        + '<div class="bx-form"><label class="bx-l" for="onb-box-name">Name</label>'
+        + '<input id="onb-box-name" class="textline" maxlength="40" placeholder="e.g. Skin check" onkeydown="if(event.key===\'Enter\'){event.preventDefault();onboardCreateBox();}">'
+        + '<label class="bx-l">What will you log?</label>'
+        + '<div class="bx-seg2" style="flex-wrap:wrap;">'+KINDS.map(function(k,i){ return '<button class="'+(i===0?'on':'')+'" onclick="onboardPickKind(\''+k[0]+'\',this)">'+k[1]+'</button>'; }).join('')+'</div>'
+        + '<div class="bx-err" id="onb-box-err" role="alert"></div>'
+        + '<div class="bx-actions"><button class="sec" onclick="closeSheet()">Cancel</button><button class="pri" onclick="onboardCreateBox()">Create box</button></div></div>');
+    };
+    window.onboardPickKind = function(kind, btn){ BOXKIND = kind; var row = btn.parentNode; Array.prototype.forEach.call(row.children, function(x){ x.classList.toggle('on', x===btn); }); };
+    window.onboardCreateBox = function(){
+      var name = ((document.getElementById('onb-box-name')||{}).value||'').trim();
+      if(!name){ var e = document.getElementById('onb-box-err'); if(e) e.textContent = 'Give the box a name.'; return; }
+      var kind = KINDS.find(function(k){ return k[0]===BOXKIND; }) || KINDS[0];
+      var b = bxDB(), order = Math.max.apply(null, [1].concat(bxCustomBoxes().map(function(x){ return x.order||0; }))) + 1, id = bxNewId('cx_');
+      var f = { id:bxNewId('f'), label:kind[2], type:kind[0], icon:null, created:todayStr(), deleted:null };
+      if(kind[0]==='scale') f.max = 5; if(kind[0]==='number') f.unit = '';
+      b.boxes[id] = { id:id, custom:true, name:name, icon:null, from:todayStr(), until:null, order:order, fields:[f], labels:{}, hidden:{} };
+      if(!saveDB()){ delete b.boxes[id]; return; }
+      closeSheet(); render(); flashSaved('Box created \u2014 now link an hour to it');
+    };
+
+    /* ---- 4) one step per monthly setup page ---- */
     window.renderOnboardSetupPage = function(pageId){
       var sp = SETUP_PAGES.find(function(p){ return p.id===pageId; }) || {name:pageId};
       var mk = currentMonthKey();
       var locked = isMonthlyPageLocked(pageId, mk);
-      var html = window[pageId+'Body'](mk)
-        .replace(/<button class="add-row-btn" onclick="lockMonthlyPageNow\([^"]*"[^>]*>[\s\S]*?<\/button>/, '');
+      var html = window[pageId+'Body'](mk).replace(/<button class="add-row-btn" onclick="lockMonthlyPageNow\([^"]*"[^>]*>[\s\S]*?<\/button>/, '');
+      var vision = pageId==='bucket' && window.__vbOn, rot = pageId==='income' && window.__rotOn;
       onboardShell({
-        eyebrow: 'Step '+(onboardStepIndex()+1)+' of '+ONSTEPS_ORDER.length,
-        title: 'Set up your '+esc(sp.name),
-        sub: 'For '+monthLabel(mk)+'. Fill in what you can \u2014 change any of it later from Settings.',
+        title: vision ? 'Build your '+esc(sp.name)+'.' : rot ? 'What is in rotation?' : 'Set up your '+esc(sp.name),
+        sub: vision ? 'Add the pictures that show the version of you you are working towards. Pictures first \u2014 words are optional.'
+           : rot ? 'Add the products and perfumes you are using right now, as many as you like. Anything finished can be removed later.'
+                    : 'For '+monthLabel(mk)+'. Fill in what you can \u2014 change any of it later from Settings.',
         body: html + (locked ? '' : '<button class="onboard-ghost" style="margin-top:6px;" onclick="onboardNext()">Skip for now</button>'),
         ctaLabel: locked ? 'Continue' : 'Mark done & continue',
         ctaAction: locked ? 'onboardNext()' : "onboardSetupDone('"+pageId+"')",
@@ -8357,10 +8825,62 @@ if(LAYOUT_MQ){
       });
     };
     window.onboardSetupDone = function(pageId){ touchMonthlyPage(pageId, currentMonthKey()); onboardNext(); };
+
+    /* ---- 5) picture-first Vision Board (the page itself, so setup, the page and the monthly tab all agree) ---- */
+    var vp = SETUP_PAGES.find(function(p){ return p.id==='bucket'; });
+    if(vp && /vision/i.test(vp.name) && typeof bucketBody==='function'){
+      window.__vbOn = true;
+      var VB_MAX = 6;
+      var vbPics = function(mk){ var p = getMonthlyPage('bucket', mk); if(!Array.isArray(p.pics)) p.pics = []; return p.pics; };
+      var vbGrid = function(mk, editable){
+        var pics = vbPics(mk); if(!pics.length && !editable) return '';
+        var tiles = pics.map(function(src,i){ return '<div class="vb-tile"><img src="'+src+'" alt="Vision picture '+(i+1)+'">'
+          + (editable ? '<button class="vb-x" aria-label="Remove picture '+(i+1)+'" onclick="vbRemove(\''+mk+'\','+i+')">'+icon('close',13)+'</button>' : '')+'</div>'; }).join('');
+        var add = editable && pics.length<VB_MAX ? '<label class="vb-tile vb-add"><input type="file" accept="image/*" aria-label="Add a picture" onchange="vbPicked(this,\''+mk+'\')">'+icon('plus',22)+'<span>Add picture</span></label>' : '';
+        return '<div class="vb-grid">'+tiles+add+'</div>' + (editable ? '<div class="vb-count">'+pics.length+' of '+VB_MAX+' \u00b7 tap + to pick from your photos</div>' : '');
+      };
+      var vbCompress = function(file){ return new Promise(function(res,rej){
+        var url = URL.createObjectURL(file), img = new Image();
+        img.onload = function(){ try{
+          var S=[560,480,400,320], Q=[0.66,0.56,0.46,0.4], out=null;
+          for(var i=0;i<S.length;i++){ var sc = Math.min(1, S[i]/Math.max(img.naturalWidth,img.naturalHeight));
+            var w = Math.max(1,Math.round(img.naturalWidth*sc)), h = Math.max(1,Math.round(img.naturalHeight*sc));
+            var cv = document.createElement('canvas'); cv.width=w; cv.height=h; var cx = cv.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,w,h); cx.drawImage(img,0,0,w,h);
+            out = cv.toDataURL('image/jpeg', Q[i]); if(out.length<=60000) break; }
+          URL.revokeObjectURL(url); out && out.length<=140000 ? res(out) : rej(new Error('big')); }catch(e){ URL.revokeObjectURL(url); rej(e); } };
+        img.onerror = function(){ URL.revokeObjectURL(url); rej(new Error('decode')); };
+        img.src = url; }); };
+      window.vbPicked = function(input, mk){
+        var file = input.files && input.files[0]; input.value = ''; if(!file) return;
+        flashSaved('Adding picture\u2026');
+        vbCompress(file).then(function(uri){
+          var arr = vbPics(mk); arr.push(uri);
+          if(!saveDB()){ arr.pop(); flashSaved('Storage is full \u2014 picture not saved'); return; }
+          flashSaved('Picture added'); render();
+        }).catch(function(){ flashSaved("Couldn't read that picture"); });
+      };
+      window.vbRemove = function(mk, i){ var arr = vbPics(mk); if(!arr[i]) return; arr.splice(i,1); saveDB(); render(); };
+      var baseBucket = bucketBody;
+      bucketBody = function(monthKey){
+        var mk = monthKey || currentMonthKey();
+        var locked = isMonthlyPageLocked('bucket', mk);
+        if(locked) return vbGrid(mk,false) ? fieldWrap(esc(vp.name), null, vbGrid(mk,false)) + baseBucket(mk) : baseBucket(mk);
+        var first = null, fw = fieldWrap, html;
+        fieldWrap = function(t,s,i){ if(!first && (i===''||i==null)){ first = {t:t,s:s}; return ''; } return fw.apply(this, arguments); };
+        try{ html = baseBucket(mk); } finally { fieldWrap = fw; }
+        var btn = (html.match(/<button class="add-row-btn" onclick="lockMonthlyPageNow\([^"]*"[^>]*>[\s\S]*?<\/button>/)||[''])[0];
+        var foot = (html.match(/<p class="fc-footnote">[\s\S]*?<\/p>/)||[''])[0];
+        var cards = html.replace(btn,'').replace(foot,'');
+        return fieldWrap(first ? first.t : esc(vp.name), first ? first.s : null, vbGrid(mk,true))
+          + '<details class="vb-words"><summary>Add a few words <span>optional</span></summary>'+cards+'</details>'
+          + foot + btn;
+      };
+    }
+
     /* the saved-draft restore ran before these steps existed; re-check it so reloads resume on them */
     try{
       var raw = localStorage.getItem(ONBOARD_KEY), saved = raw && JSON.parse(raw);
-      if(!DB.onboarded && saved && String(saved.step).indexOf('setup-')===0 && ONSTEPS_ORDER.indexOf(saved.step)>=0) ONSTEP = saved.step;
+      if(!DB.onboarded && saved && saved.step && ONSTEPS_ORDER.indexOf(saved.step)>=0) ONSTEP = saved.step;
     }catch(e){}
     if(!DB.onboarded) render();
   }catch(e){ if(window.console) console.error('setup steps', e); }
@@ -8388,6 +8908,19 @@ if(LAYOUT_MQ){
     };
     window.testSetMode = function(on){ setMode(on); };
     window.testFillYear = function(){
+      /* randomFillMonth saves, recomputes the streak and redraws on every single entry (1,600+ times for a year).
+         Hold all three still while filling, then do each once at the end. */
+      var _save = saveDB, _rec = recomputeStreak, _flash = flashSaved, _render = render;
+      saveDB = function(){ return true; }; recomputeStreak = function(){}; flashSaved = function(){}; render = function(){};
+      try{ return fillYear(); } finally { saveDB = _save; recomputeStreak = _rec; flashSaved = _flash; render = _render; finish(); }
+      function finish(){
+        recomputeStreak();
+        var ok = saveDB();
+        flashSaved(ok ? 'Filled '+window.__testFilled+' days of test data' : "Couldn't save \u2014 storage may be full");
+        render();
+      }
+    };
+    function fillYear(){
       var now = new Date(), total = 0, i;
       for(i=12;i>=0;i--){ var d = new Date(now.getFullYear(), now.getMonth()-i, 1);
         total += randomFillMonth(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')) || 0; }
@@ -8403,11 +8936,8 @@ if(LAYOUT_MQ){
           pg.cf_reps = 8+Math.floor(Math.random()*12); pg.cf_mood = 1+Math.floor(Math.random()*5); pg.cf_done = Math.random()<0.6;
           pg._touched = true; pg._touchedAt = Date.now(); } }
       }catch(e){}
-      recomputeStreak();
-      var ok = saveDB();
-      flashSaved(ok ? 'Filled '+total+' days of test data' : "Couldn't save \u2014 storage may be full");
-      render();
-    };
+      window.__testFilled = total;
+    }
     window.testClearAsk = function(){ sheet('Clear test data?', 'Only the test copy is cleared. Your real data is not touched.', 'Clear test data', 'testClearData()', false); };
     window.testClearData = function(){ if(!isTest) return; try{ localStorage.removeItem(STORAGE_KEY); localStorage.removeItem(ONBOARD_KEY); }catch(e){} location.reload(); };
 
