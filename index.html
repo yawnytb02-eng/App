@@ -8808,6 +8808,7 @@ if(LAYOUT_MQ){
         }
         return pg.inRotation;
       };
+      window.rotList = rotList; /* shared with the lists patch (tap-first adding) */
       window.rotAdd = function(mk){
         var name = (val('rot-name')||'').trim(), brand = (val('rot-brand')||'').trim();
         if(!name){ flashSaved('Type the product name first'); return; }
@@ -9871,6 +9872,681 @@ if(LAYOUT_MQ){
 </script>
 <script>
 /* =====================================================================================================
+   UNLIMITED LISTS, TAP-FIRST  (Bot A, task 10)
+   -----------------------------------------------------------------------------------------------------
+   What this does, in plain words:
+   1. Every list in setup and on the monthly pages (products, perfumes, books, objectives, income streams,
+      goals, rewards, habits) now has an "Add" button, and you can add as many as you like. Each card can be
+      removed again (tap the x twice, so a slip of the thumb cannot delete anything).
+   2. Adding is done by TAPPING: a sheet of choices opens, you tap one or several, then "Add". Typing is the
+      last resort and always sits behind a "+ Other" chip, also inside setup.
+   3. The boxes that used to be typed (vision-board words, brand, author, notes, money amounts...) are now
+      buttons that open a sheet of tap choices. Money and hours use + / - steppers with quick chips.
+   4. Your saved data keeps the same shape. Old backups still import: the first book in a group still lives where
+      it always did, extra ones sit in a new "..._more" list that older versions simply ignore.
+   ===================================================================================================== */
+(function(){
+  try{
+    var KEY = String(typeof STORAGE_KEY!=='undefined' ? STORAGE_KEY : '');
+    var FAM = /^clean/.test(KEY) ? 'clean' : /^reading/.test(KEY) ? 'reading' : /^sober/.test(KEY) ? 'sober' : /^hustler/.test(KEY) ? 'hustler' : '';
+    if(!FAM) return;
+    var BOY = /boy/.test(KEY);
+    var E = esc;
+
+    /* ------------------------------------------------------------------ styles ------------------------- */
+    var css = ''
+    + '.ls-lab{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:14px 0 8px;}'
+    + '.ls-lab:first-child{margin-top:2px;}'
+    + '.ls-body{display:block;}'
+    + '.ls-go{display:block;width:100%;margin-top:16px;min-height:50px;border:none;border-radius:16px;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:800;font-size:15px;cursor:pointer;touch-action:manipulation;transition:transform .12s var(--ease),opacity .15s;}'
+    + '.ls-go:active{transform:scale(.98);}'
+    + '.ls-go[disabled]{opacity:.4;}'
+    + '.ls-go{position:sticky;bottom:calc(6px + env(safe-area-inset-bottom,0px));z-index:2;box-shadow:0 -12px 14px -4px var(--surface,#fff),0 6px 18px rgba(0,0,0,.18);}'
+    + '.ls-num{display:flex;align-items:center;justify-content:center;gap:8px;margin:6px 0 10px;}'
+    + '.ls-num button{min-width:48px;height:48px;border:none;border-radius:14px;background:var(--surface-2);color:var(--ink);font:inherit;font-weight:800;font-size:16px;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}'
+    + '.ls-num button:active{transform:scale(.94);}'
+    + '.ls-nv{flex:1;text-align:center;font-family:var(--font-display);font-weight:800;font-size:30px;letter-spacing:-.02em;}'
+    + '.ls-nv small{font-size:13px;opacity:.6;margin-left:3px;}'
+    + '.ls-card{position:relative;}'
+    + '.ls-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;}'
+    + '.ls-title{font-family:var(--font-display);font-weight:800;font-size:15px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}'
+    + '.ls-x{flex:none;min-width:34px;height:34px;padding:0 8px;border:none;border-radius:12px;background:var(--surface-2);color:var(--muted);font:inherit;font-size:11.5px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:4px;cursor:pointer;touch-action:manipulation;}'
+    + '.ls-x.armed{background:#D64545;color:#fff;}'
+    + '.ls-f{margin-top:10px;}'
+    + '.ls-f .fc-hint{margin:0 0 4px;}'
+    + '.ls-two{display:flex;gap:10px;}.ls-two>.ls-f{flex:1;min-width:0;}'
+    + '.ls-add{margin-top:10px;}'
+    + '.ui-pick.ls-wrap{height:auto;}.ui-pick.ls-wrap span{white-space:normal;line-height:1.3;}'
+    + '.habit-name-input.ls-hbtn{display:flex;align-items:center;text-align:left;border:none;background:transparent;color:var(--ink);font:inherit;font-weight:700;cursor:pointer;padding:0 6px;touch-action:manipulation;overflow:hidden;}'
+    + '.habit-name-input.ls-hbtn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}'
+    + '.habit-name-input.ls-hbtn.empty{color:var(--muted);font-weight:600;}'
+    + '.ls-names{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;}'
+    + '.ls-goalbtn{flex:1;min-width:0;}'
+    + '.ls-empty{padding:14px 4px;color:var(--muted);font-size:13px;}';
+    var st = document.createElement('style'); st.id = 'lists-extra'; st.textContent = css; document.head.appendChild(st);
+
+    /* ------------------------------------------------------------------ small helpers ------------------ */
+    function uniq(a){ var o = []; a.forEach(function(x){ if(x!=null && x!=='' && o.indexOf(x)<0) o.push(x); }); return o; }
+    function getPath(obj, key){ var p = String(key).split('.'), o = obj; for(var i=0;i<p.length;i++){ if(o==null) return undefined; o = o[p[i]]; } return o; }
+    function norm(key){ return String(key).replace(/\d+/g, '#'); }
+    function isBlank(o){ if(!o) return true; return Object.keys(o).every(function(k){ var v = o[k]; return v==null || v==='' || v===0 || (typeof v==='object' && !Object.keys(v).length); }); }
+    function mkOf(m){ return m || currentMonthKey(); }
+    function pg(pid, mk){ return getMonthlyPage(pid, mk); }
+    var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    function fmtShort(d){ var y = d.getFullYear() === new Date().getFullYear() ? '' : ', '+d.getFullYear(); return MONTHS[d.getMonth()]+' '+d.getDate()+y; }
+    function plusDays(n){ var d = new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+n); return d; }
+
+    /* ------------------------------------------------------------------ choices (the tap menus) --------- */
+    var KINDS = ['Cleanser','Moisturiser','Sunscreen','Serum','Toner','Face mask','Eye cream','Lip balm','Shampoo','Conditioner','Hair oil','Body wash','Body lotion','Deodorant','Toothpaste','Mouthwash','Razor','Face wash','Exfoliator','Hand cream'];
+    var PERF = [['Sauvage','Dior'],['Bleu de Chanel','Chanel'],['Y','YSL'],['Eros','Versace'],['Aventus','Creed'],['Acqua di Gio','Armani'],['1 Million','Paco Rabanne'],['Light Blue','Dolce & Gabbana'],['Chanel No. 5','Chanel'],['Miss Dior','Dior'],['Coco Mademoiselle','Chanel'],['Libre','YSL'],['Black Opium','YSL'],['La Vie Est Belle','Lancome'],['Flowerbomb','Viktor & Rolf'],['Daisy','Marc Jacobs'],['Good Girl','Carolina Herrera'],['Wood Sage & Sea Salt','Jo Malone'],['Tobacco Vanille','Tom Ford'],['Club de Nuit Intense','Armaf']];
+    var BRANDS = ['CeraVe','La Roche-Posay','The Ordinary','Neutrogena','Cetaphil','Nivea','Dove','Innisfree','Laneige','COSRX','Simple','Garnier','Biore','Vaseline','Olay','Eucerin','Bioderma','Head & Shoulders','Axe','Dior','Chanel','YSL','Versace','Jo Malone','Tom Ford','Armani','Calvin Klein','Hugo Boss'];
+    var CHARS = ['Hydrating','Lightweight','Gentle','Fragrance-free','Oil-control','Brightening','Soothing','Rich','Fast-absorbing','Fresh','Woody','Sweet','Citrus','Floral','Spicy','Musky','Powdery','Long-lasting'];
+    var NOTE_PRODUCT = ['Love it','Would repurchase','Worth the price','Too strong','Too expensive','Broke me out','Not for me','Gentle on skin','Nearly finished','Gets compliments'];
+    var GENRES = ['Self-help','Business','Finance','Psychology','Philosophy','Fiction','Classics','Fantasy','Sci-fi','Mystery','Romance','History','Biography','Memoir','Poetry','Non-fiction'];
+    var BOOKS = [
+      ['Atomic Habits','James Clear','Self-help'],['The 7 Habits of Highly Effective People','Stephen R. Covey','Self-help'],['Make Your Bed','William H. McRaven','Self-help'],['The Subtle Art of Not Giving a F*ck','Mark Manson','Self-help'],["Can't Hurt Me",'David Goggins','Self-help'],['Ikigai','Hector Garcia & Francesc Miralles','Self-help'],['The Power of Now','Eckhart Tolle','Self-help'],['How to Win Friends and Influence People','Dale Carnegie','Self-help'],['Mindset','Carol S. Dweck','Self-help'],
+      ['Deep Work','Cal Newport','Business'],['Zero to One','Peter Thiel','Business'],['The Lean Startup','Eric Ries','Business'],['Essentialism','Greg McKeown','Business'],['$100M Offers','Alex Hormozi','Business'],['Good to Great','Jim Collins','Business'],['The E-Myth Revisited','Michael E. Gerber','Business'],['Hooked','Nir Eyal','Business'],['The Hard Thing About Hard Things','Ben Horowitz','Business'],
+      ['The Psychology of Money','Morgan Housel','Finance'],['Rich Dad Poor Dad','Robert T. Kiyosaki','Finance'],['The Intelligent Investor','Benjamin Graham','Finance'],['The Millionaire Fastlane','MJ DeMarco','Finance'],['I Will Teach You to Be Rich','Ramit Sethi','Finance'],
+      ['Thinking, Fast and Slow','Daniel Kahneman','Psychology'],["Man's Search for Meaning",'Viktor E. Frankl','Psychology'],['The Body Keeps the Score','Bessel van der Kolk','Psychology'],['Quiet','Susan Cain','Psychology'],['Influence','Robert B. Cialdini','Psychology'],['Grit','Angela Duckworth','Psychology'],
+      ['Meditations','Marcus Aurelius','Philosophy'],['The Daily Stoic','Ryan Holiday & Stephen Hanselman','Philosophy'],['Letters from a Stoic','Seneca','Philosophy'],['The Prophet','Kahlil Gibran','Philosophy'],["Sophie's World",'Jostein Gaarder','Philosophy'],
+      ['The Alchemist','Paulo Coelho','Fiction'],['The Midnight Library','Matt Haig','Fiction'],['Normal People','Sally Rooney','Fiction'],['Where the Crawdads Sing','Delia Owens','Fiction'],['It Ends with Us','Colleen Hoover','Fiction'],['The Little Prince','Antoine de Saint-Exupery','Fiction'],
+      ['1984','George Orwell','Classics'],['Animal Farm','George Orwell','Classics'],['To Kill a Mockingbird','Harper Lee','Classics'],['The Great Gatsby','F. Scott Fitzgerald','Classics'],['Pride and Prejudice','Jane Austen','Classics'],['The Catcher in the Rye','J.D. Salinger','Classics'],['Brave New World','Aldous Huxley','Classics'],
+      ['The Hobbit','J.R.R. Tolkien','Fantasy'],["Harry Potter and the Sorcerer's Stone",'J.K. Rowling','Fantasy'],['The Name of the Wind','Patrick Rothfuss','Fantasy'],['A Court of Thorns and Roses','Sarah J. Maas','Fantasy'],['Mistborn','Brandon Sanderson','Fantasy'],
+      ['Dune','Frank Herbert','Sci-fi'],['Project Hail Mary','Andy Weir','Sci-fi'],['The Martian','Andy Weir','Sci-fi'],["Ender's Game",'Orson Scott Card','Sci-fi'],['Foundation','Isaac Asimov','Sci-fi'],
+      ['The Girl with the Dragon Tattoo','Stieg Larsson','Mystery'],['Gone Girl','Gillian Flynn','Mystery'],['And Then There Were None','Agatha Christie','Mystery'],['The Silent Patient','Alex Michaelides','Mystery'],
+      ['The Seven Husbands of Evelyn Hugo','Taylor Jenkins Reid','Romance'],['Beach Read','Emily Henry','Romance'],
+      ['Sapiens','Yuval Noah Harari','History'],['Educated','Tara Westover','Memoir'],['Born a Crime','Trevor Noah','Memoir'],['Becoming','Michelle Obama','Memoir'],['Steve Jobs','Walter Isaacson','Biography']
+    ];
+    function bookByTitle(t){ for(var i=0;i<BOOKS.length;i++) if(BOOKS[i][0]===t) return BOOKS[i]; return null; }
+    var AUTHORS = uniq(BOOKS.map(function(b){ return b[1]; }));
+    var OWNED = ['Owned','Borrowed','Library','E-book','Audiobook','Gift'];
+    var IMPRESSION = ['Gripping','Slow start','Beautiful writing','Life-changing','Dense','Easy read','Inspiring','Disappointing','Made me think','Could not put it down'];
+    var NOTE_BOOK = ['Great quotes','Worth a reread','Take notes next time','Recommend to a friend','Too long','Practical','Emotional','Learned a lot'];
+    var ACTIVITIES = ['Walk','Run','Gym','Meditation','Breathing exercise','Journaling','Cold shower','Yoga','Call a friend','Support meeting','Cooking','Reading','Music','Hobby project','Volunteering','Nature hike','Drawing','Swimming','Cycling','Therapy session','Baking','Stretching'];
+    var WENT = ['Really helped','Helped a little','Calming','Gave me energy','Hard to start','Did not help','Want to repeat','Better with company'];
+    var REWARDS = ['Nice meal','New book','Movie night','Massage','Day trip','New gear','Spa day','Gift to myself','Concert','Haircut','New shoes','Sweet treat'];
+    var MILESTONES = ['1 week','2 weeks','30 days','60 days','90 days','6 months','1 year','Got through a trigger','Hard week done','Told someone'];
+    var STREAMS = ['Freelance','Consulting','Agency','Affiliate','E-commerce','Dropshipping','Content / ads','Online course','Newsletter','Software / SaaS','Coaching','Real estate','Dividends','Print on demand','YouTube','Services','Product sales','Day job'];
+    var NEXTACT = ['Land first client','Raise prices','Launch an offer','Automate it','Run ads','Reach out to 20 leads','Build a funnel','Post daily','Hire help','Collect testimonials','Cut costs','Upsell clients'];
+    var OBJ_H = ['Grow revenue','Launch my offer','Ship the product','Get 10 clients','Build my email list','Post every day','Learn a skill','Hire help','Systemise operations','Save money','Get fit','Finish a big project'];
+    var WHY_H = ['More freedom','Pay off debt','Family','Prove myself','Scale up','Security','Impact','Time back'];
+    var METRIC_H = ['$1k / month','$5k / month','$10k / month','10 clients','100 leads','1,000 followers','5 launches','+20% revenue','30 posts','4 workouts / week'];
+    var GOALS = {
+      MUST:['Hit $10k a month','Build an audience','Launch my product','Get out of debt','6-month emergency fund','Buy a home','Quit my job'],
+      WANT:['Travel to Japan','Buy a car','Learn to code','Run a marathon','Build a team','Read 50 books','Get a six-pack'],
+      SOMEDAY:['Retire early','Write a book','Own a business','Live abroad','Invest in property','Start a foundation','Learn an instrument']
+    };
+    var HABITS = {
+      clean:['AM Skincare','PM Skincare','Movement','Reading','Journal','No Phone Before Bed','Drink water','Sunscreen','Meditate','Stretch','Walk','Vitamins','Floss','Sleep by 11','Tidy up','Gratitude','Meal prep','Hair care'],
+      reading:['Reading Session','Deep Work Block','Movement','Journal','No Phone Before Bed','Lights Out On Time','Read 20 pages','Take notes','Audiobook walk','Review highlights','Drink water','Meditate','Stretch','Plan tomorrow'],
+      sober:['Meeting or check-in','Meditate','Exercise','Call a friend','Journal','Gratitude list','Drink water','Healthy meal','Early bedtime','Avoid triggers','Help someone','Morning routine','Therapy / support','Walk outside','Cook at home'],
+      hustler:['Deep work','Outreach','Workout','Read 10 pages','Plan tomorrow','No social scrolling','Cold shower','Ship something','Review finances','Sleep by 11']
+    }[FAM];
+    var BOX_NAMES = ['Skin check','Meditation','Stretching','Cold shower','Study','Cardio','Language practice','Cleaning','Meal prep','Budget check','Prayer','Walk','Sunlight','Water','Vitamins','Breathwork','Gratitude','Side project'];
+    var FIELD_NAMES = ['Minutes','Reps','Rating','Mood','Notes','Amount','Done','Time','Sets','Distance','Weight','Calories'];
+    var HOUR_NAMES = ['Gym','Study','Commute','Lunch','Cook','Family time','Nap','Walk','Read','Shower','Deep work','Meetings','Clean','Chill','Hobby','Errands'];
+
+    /* the vision-board words per app: pick several, "+ Other" for anything else */
+    var W_WORD = ['Discipline','Focus','Growth','Consistency','Confidence','Calm','Strength','Gratitude','Balance','Courage','Presence','Glow','Softness','Grace'];
+    var W_MOOD = ['Fresh','Confident','Calm','Energised','Relaxed','Sharp','Tired','Stressed','Motivated','Content','Hopeful','Curious'];
+    var W_GO = ['Procrastination','Comparison','Late nights','Junk food','Doomscrolling','Overthinking','Self-doubt','Skipping my routine','Perfectionism','Negative self-talk'];
+    var W_CALL = ['Clear skin','Confidence','Good energy','Peace','A strong body','Better sleep','Healthy habits','Success','Self-respect','Love','Abundance','Clarity'];
+    var W_AFF = ['I take care of myself','I am consistent','I am enough','I am disciplined','My routine works for me','I choose health','Small steps count','I trust myself','I glow from within','I am worthy of good things'];
+    var W_GOALS = ['Daily skincare','Work out 4x a week','Sleep 8 hours','Drink 2L of water','Try a new fragrance','Finish a product','Declutter my shelf','Haircut','Less sugar','Walk every day'];
+    var W_FOCUS = ['Skincare routine','Fitness','Sleep','Hydration','Grooming','Style','Fragrance','Mindset','Posture','Eating well'];
+    var MS = {};
+    function S(pid, key, spec){ MS[pid+'.'+key] = spec; }
+    function multi(title, opts){ return { t:'multi', title:title, opts:opts }; }
+    function single(title, opts, o){ var s = { t:'single', title:title, opts:opts }; if(o) for(var k in o) s[k] = o[k]; return s; }
+    function num(title, o){ var s = { t:'num', title:title }; for(var k in o) s[k] = o[k]; return s; }
+
+    if(FAM==='clean'){
+      if(BOY){
+        S('bucket','wordOfYear', multi('Word of the year', W_WORD)); S('bucket','focus', multi("This month's focus", W_FOCUS)); S('bucket','mood', multi('How I want to feel', W_MOOD));
+        S('bucket','affirmations', multi('Affirmations', W_AFF)); S('bucket','lettingGo', multi("What I'm letting go of", W_GO)); S('bucket','callingIn', multi("What I'm calling in", W_CALL)); S('bucket','goals', multi('Goals this month', W_GOALS));
+      } else {
+        S('bucket','intention', multi('Word of the year', W_WORD)); S('bucket','goals', multi("This month's focus", W_FOCUS)); S('bucket','feeling', multi('How I want to feel', W_MOOD));
+        S('bucket','speak', multi('Affirmations', W_AFF)); S('bucket','release', multi("What I'm letting go of", W_GO)); S('bucket','attract', multi("What I'm calling in", W_CALL));
+      }
+      var P_NAME = single('Product', KINDS.concat(PERF.map(function(p){ return p[0]; })), { fill:function(v){ for(var i=0;i<PERF.length;i++) if(PERF[i][0]===v) return { brand:PERF[i][1] }; return null; } });
+      var P_BRAND = single('Brand', BRANDS, { rec:true });
+      S('objectives','list.#.name', P_NAME); S('objectives','list.#.brand', P_BRAND); S('objectives','list.#.characteristics', multi('Characteristics', CHARS)); S('objectives','list.#.note', multi('My note', NOTE_PRODUCT));
+      S('income','inRotation.#.name', P_NAME); S('income','inRotation.#.brand', P_BRAND); S('income','inRotation.#.note', multi('Notes', CHARS.concat(['Nearly finished','Repurchase'])));
+    }
+    if(FAM==='reading'){
+      var R_TITLE = single('Title', BOOKS.map(function(b){ return b[0]; }), { rec:true, fill:function(v){ var b = bookByTitle(v); return b ? { author:b[1], genre:b[2] } : null; } });
+      var R_AUTH = single('Author', AUTHORS, { rec:true }), R_GENRE = single('Genre', GENRES);
+      if(BOY){
+        S('bucket','yearlyGoal', single('Yearly book goal', ['12 books','24 books','36 books','50 books','52 books','100 books'])); S('bucket','wordOfYear', multi('Word of the year', W_WORD));
+        S('bucket','topics', multi('Topics to study', ['Psychology','Business','History','Philosophy','Science','Biography','Finance','Health','Fiction','Productivity','Spirituality','Technology']));
+        S('bucket','mood', multi('Mood', ['Curious','Calm','Focused','Cosy','Inspired','Restless','Tired','Hopeful'])); S('bucket','intentions', multi('Intentions', ['Read daily','Finish what I start','Read before bed','Less phone','Take notes','Re-read favourites','Try new genres','Visit the library']));
+        S('habits','booksFinished', num('Books finished', { step:1, min:0, max:200, quick:[1,2,3,4,5,6], def:1 }));
+        S('habits','avgScreen', num('Average screen time (hrs / day)', { step:.5, min:0, max:24, unit:'h', quick:[1,2,3,4,5,6], def:3 }));
+        S('habits','keeping', multi('Keeping next month', ['Reading session','Deep work','Movement','Journaling','Early bedtime','Phone-free nights','Tracking pages']));
+        S('habits','dropping', multi('Dropping next month', ['Doomscrolling','Late nights','Snacking while reading','Multitasking','Phone in bed','Overcommitting','Skipping sessions']));
+        S('habits','energy.#', single('Energy this week (1 low, 5 high)', ['1','2','3','4','5'], { other:false }));
+      } else {
+        S('bucket','yearlyGoal', single('Yearly book goal', ['12 books','24 books','36 books','50 books','52 books','100 books'])); S('bucket','booksThisYear', num('Books so far this year', { step:1, min:0, max:300, quick:[1,3,5,10,20], def:1 }));
+        S('bucket','wordOfYear', multi('Word of the year', W_WORD)); S('bucket','intention', multi('Intention', ['Read daily','Finish what I start','Read before bed','Less phone','Try new genres','Slow down','Enjoy it']));
+        S('bucket','genres', multi('Genres to explore', GENRES)); S('bucket','moodShelf', multi('Mood shelf', ['Cosy','Dark and twisty','Uplifting','Romantic','Adventurous','Thoughtful','Funny','Comforting','Empowering']));
+        S('readtt','week', single('Which week', ['This week','Next week','Week 1','Week 2','Week 3','Week 4']));
+        S('readtt','d#.block', single('Reading block', ['Morning','Lunch break','Afternoon','Evening','Before bed','Weekend binge','Commute','Rest day']));
+        S('readtt','d#.where', single('Where I read', ['Bed','Couch','Cafe','Library','Park','Desk','Commute','Garden','Bath']));
+        ['morning','afternoon','night'].forEach(function(k){ S('readtt','hrs.'+k, num('Hours of reading', { step:.5, min:0, max:24, unit:'h', quick:[.5,1,1.5,2,3], def:1 })); });
+        S('readtt','spotNotes', multi('Reading spots', ['Cosy corner','Bed','Cafe','Park','Library','Commute','Bath','Balcony']));
+      }
+      var BK = [['reading', ['title','author','genre','owned','note','rating']], ['finished', ['title','author','genre','owned','status','rating']], ['onDeck', ['title','why']], ['tbr', ['title','author','status','genre']]];
+      var STATUS = BOY ? ['Finished','DNF','Loved it','Reread','Skimmed'] : ['TBR','DNF','Paused','Library hold','Wishlist'];
+      ['reading','finished','onDeck','tbr'].forEach(function(g){
+        [g+'.', g+'_more.#.'].forEach(function(pre){
+          S('income',pre+'title', R_TITLE); S('income',pre+'author', R_AUTH); S('income',pre+'genre', R_GENRE);
+          S('income',pre+'owned', single('Owned or borrowed', OWNED)); S('income',pre+'status', single('Status', STATUS));
+          S('income',pre+'note', multi('Note', NOTE_BOOK)); S('income',pre+'why', multi('Why this one next', ['To learn','To relax','To grow','Curiosity','Recommended','Escape','Next in series','Author I love']));
+        });
+      });
+      S('objectives','list.#.title', R_TITLE); S('objectives','list.#.author', R_AUTH);
+      S('objectives','list.#.impression', multi('First impression', IMPRESSION)); S('objectives','list.#.note', multi('Note', NOTE_BOOK));
+    }
+    if(FAM==='sober'){
+      var WHY = ['My health','My family','Peace of mind','A clear mind','Better sleep','Saving money','Self-respect','My future','Being present','Rebuilding trust','More energy','My mental health'];
+      var LIFE = ['Clear mornings','Better sleep','Present with family','A fitter body','Calm days','New hobbies','Savings growing','Trusting myself','Real friendships'];
+      var AFFS = ['One day at a time','I am stronger than cravings','I choose me','I am proud of my progress','Progress, not perfection','I deserve a clear mind','This too shall pass','I am not alone'];
+      var MIL = ['1 week','2 weeks','30 days','60 days','90 days','6 months','1 year','Got through a trigger','Told someone','Went to a meeting','Slept well'];
+      S('bucket','why', multi("Why I'm doing this", WHY)); S('bucket','milestones', multi('Milestones', MIL));
+      if(BOY){ S('bucket','next', multi("Next month's picture", LIFE)); S('bucket','intentions', multi('Intentions', AFFS)); }
+      else { S('bucket','life', multi('What sober life looks like', LIFE)); S('bucket','affirm', multi('Affirmations', AFFS)); }
+      S('income','longest', single('Longest streak', ['3 days','7 days','14 days','30 days','60 days','90 days','6 months','1 year']));
+      S('income','note', multi('Note', ['Felt strong','Hard week','Proud of myself','Had support','Close call','Celebrated','Rested']));
+      S('income','rewards.#.reward', single('Reward', REWARDS)); S('income','rewards.#.milestone', single('Milestone it marked', MILESTONES)); S('income','rewards.#.note', multi('Note', ['Well earned','Shared it','Simple joy','Kept it small']));
+      S('objectives','list.#.name', single('Activity or coping tool', ACTIVITIES, { rec:true })); S('objectives','list.#.went', multi('How it went', WENT)); S('objectives','list.#.note', multi('Note', ['Do again','Better with company','Best in the morning','Needs prep','Add to my routine']));
+    }
+    if(FAM==='hustler'){
+      S('income','streams.#.name', single('Income source', STREAMS, { rec:true }));
+      S('income','streams.#.current', num('Current $ per month', { step:100, min:0, max:10000000, prefix:'$', quick:[0,100,250,500,1000,2500,5000,10000], def:500 }));
+      S('income','streams.#.target', num('Target $ per month', { step:100, min:0, max:10000000, prefix:'$', quick:[500,1000,2500,5000,10000,25000], def:1000 }));
+      S('income','streams.#.next', single('Next action', NEXTACT, { rec:true }));
+      S('objectives','list.#.title', single('Objective', OBJ_H, { rec:true })); S('objectives','list.#.why', single('Why it matters', WHY_H));
+      S('objectives','list.#.metric', single('Success metric', METRIC_H)); S('objectives','list.#.deadline', { t:'date', title:'Deadline' });
+    }
+
+    /* ------------------------------------------------------------------ "recent answers" for a field ---- */
+    function collect(obj, parts, out){
+      if(obj==null) return;
+      if(!parts.length){ if(typeof obj==='string' && obj.trim() && obj.length<=40) out.push(obj.trim()); return; }
+      var p = parts[0], rest = parts.slice(1);
+      if(p==='#'){ Object.keys(obj).forEach(function(k){ collect(obj[k], rest, out); }); }
+      else collect(obj[p], rest, out);
+    }
+    function recentsMF(pid, key){
+      var out = [], parts = norm(key).split('.');
+      Object.keys(DB.monthly||{}).sort().reverse().slice(0,8).forEach(function(m){ collect((DB.monthly[m]||{})[pid], parts, out); });
+      return uniq(out).slice(0,6);
+    }
+
+    /* ------------------------------------------------------------------ the tap sheet ------------------ */
+    var SH = null;
+    function stateOf(){ var o = {}; SH.secs.forEach(function(s){ o[s.id] = (s.num||s.date) ? s.val : s.sel.slice(); }); return o; }
+    function fmtN(n){ n = Number(n); if(!isFinite(n)) return '0'; return Math.abs(n-Math.round(n))<1e-9 ? String(Math.round(n)) : String(Math.round(n*10)/10); }
+    function secHtml(s, si){
+      var h = '<div class="ls-sec">' + (s.label ? '<div class="ls-lab">'+E(s.label)+'</div>' : '');
+      if(s.num){
+        var n = s.num, big = n.step*10;
+        h += '<div class="ls-num"><button type="button" data-ls="nstep" data-s="'+si+'" data-d="'+(-big)+'" aria-label="Minus '+fmtN(big)+'">−'+fmtN(big)+'</button><button type="button" data-ls="nstep" data-s="'+si+'" data-d="'+(-n.step)+'" aria-label="Minus">−</button>'
+          + '<div class="ls-nv">'+E((n.prefix||'')+fmtN(s.val||0))+(n.unit?'<small>'+E(n.unit)+'</small>':'')+'</div>'
+          + '<button type="button" data-ls="nstep" data-s="'+si+'" data-d="'+n.step+'" aria-label="Plus">+</button><button type="button" data-ls="nstep" data-s="'+si+'" data-d="'+big+'" aria-label="Plus '+fmtN(big)+'">+'+fmtN(big)+'</button></div>';
+        if(n.quick) h += '<div class="pill-row ui-chips">'+n.quick.map(function(q){ return '<button type="button" class="pill ui-chip'+(Number(s.val)===q?' on':'')+'" data-ls="nq" data-s="'+si+'" data-v="'+q+'">'+E((n.prefix||'')+fmtN(q)+(n.unit||''))+'</button>'; }).join('')+'</div>';
+        return h + '</div>';
+      }
+      if(s.date){
+        h += '<div class="pill-row ui-chips">'+s.date.map(function(q,qi){ return '<button type="button" class="pill ui-chip" data-ls="dq" data-s="'+si+'" data-v="'+qi+'">'+E(q[0])+'</button>'; }).join('')+'</div>'
+          + '<div class="ls-lab">Or pick a day</div><input type="date" class="textline" data-ls-date="'+si+'">';
+        return h + '</div>';
+      }
+      var opts = typeof s.opts==='function' ? s.opts(stateOf()) : s.opts;
+      s._all = opts.concat(s.sel.filter(function(v){ return opts.indexOf(v)<0; }));
+      h += '<div class="pill-row ui-chips">' + s._all.map(function(o,oi){ var on = s.sel.indexOf(o)>=0; return '<button type="button" class="pill ui-chip'+(on?' on':'')+'" data-ls="chip" data-s="'+si+'" data-o="'+oi+'" aria-pressed="'+(on?'true':'false')+'">'+E(o)+'</button>'; }).join('');
+      if(s.other!==false) h += '<button type="button" class="pill ui-chip more" data-ls="oth" data-s="'+si+'">+ Other</button>';
+      h += '</div>';
+      if(s.openO) h += '<div class="ui-otherrow"><input class="textline ls-other" data-s="'+si+'" maxlength="80" placeholder="Type it here"><button type="button" class="pill active red" data-ls="addoth" data-s="'+si+'">Add</button></div>';
+      return h + '</div>';
+    }
+    function bodyHtml(){
+      var h = SH.secs.map(secHtml).join('');
+      if(!SH.instant){
+        var st = stateOf(), n = SH.count ? SH.count(st) : 1, lab = SH.cta ? SH.cta(st, n) : 'Done';
+        h += '<button type="button" class="ls-go" data-ls="done"'+(SH.needs && n<1 ? ' disabled' : '')+'>'+E(lab)+'</button>';
+      }
+      (SH.extra||[]).forEach(function(x,xi){ h += '<button type="button" class="ui-notebtn" data-ls="x" data-n="'+xi+'">'+E(x.label)+'</button>'; });
+      return h;
+    }
+    function repaint(){ var b = document.getElementById('ls-body'); if(b && SH) b.innerHTML = bodyHtml(); }
+    function openLS(cfg){
+      SH = cfg; cfg.secs.forEach(function(s){ s.sel = s.sel || []; });
+      openSheet('<div class="sheet-title"><span>'+E(cfg.title)+'</span><button class="sheet-close" onclick="closeSheet()" aria-label="Close">'+icon('close',15)+'</button></div><div class="ui-sheetbody"><div class="ls-body" id="ls-body">'+bodyHtml()+'</div></div>');
+    }
+    function finish(){ var cb = SH && SH.done, st = SH && stateOf(); closeSheet(); SH = null; if(cb) cb(st); }
+    function pickChip(si, val){
+      var s = SH.secs[si], ix = s.sel.indexOf(val);
+      if(s.multi){ if(ix>=0) s.sel.splice(ix,1); else s.sel.push(val); repaint(); return; }
+      if(ix>=0) s.sel = []; else s.sel = [val];
+      if(SH.instant) return finish();
+      repaint();
+    }
+    function onLS(b){
+      var a = b.getAttribute('data-ls'), si = Number(b.getAttribute('data-s')), s;
+      if(a==='chip'){ s = SH.secs[si]; return pickChip(si, s._all[Number(b.getAttribute('data-o'))]); }
+      if(a==='oth'){ SH.secs[si].openO = !SH.secs[si].openO; repaint(); var i = document.querySelector('.ls-other'); if(i) setTimeout(function(){ i.focus(); }, 30); return; }
+      if(a==='addoth'){ var inp = document.querySelector('.ls-other[data-s="'+si+'"]'), t = inp ? inp.value.trim() : ''; SH.secs[si].openO = false; if(!t) return repaint(); s = SH.secs[si]; if(s.multi){ if(s.sel.indexOf(t)<0) s.sel.push(t); repaint(); } else { s.sel = [t]; if(SH.instant) return finish(); repaint(); } return; }
+      if(a==='nstep'){ s = SH.secs[si]; var n = s.num, v = Number(s.val||0) + Number(b.getAttribute('data-d')); v = Math.max(n.min!=null?n.min:0, Math.min(n.max!=null?n.max:1e9, Math.round(v*100)/100)); s.val = v; repaint(); return; }
+      if(a==='nq'){ SH.secs[si].val = Number(b.getAttribute('data-v')); repaint(); return; }
+      if(a==='dq'){ s = SH.secs[si]; s.val = s.date[Number(b.getAttribute('data-v'))][1]; return finish(); }
+      if(a==='done') return finish();
+      if(a==='x'){ var x = SH.extra[Number(b.getAttribute('data-n'))]; closeSheet(); SH = null; if(x && x.act) x.act(); return; }
+    }
+
+    /* ------------------------------------------------------------------ monthly fields as tap buttons --- */
+    function specFor(pid, key){ return MS[pid+'.'+norm(key)] || null; }
+    function disp(sp, val){ if(sp.t==='num') return (sp.prefix||'')+fmtN(val)+(sp.unit?' '+sp.unit:''); return String(val); }
+    function fbtn(pid, mk, key, ph, val, sp){
+      var has = val!=null && String(val)!=='', label = has ? disp(sp, val) : (sp.ph || 'Tap to choose');
+      return '<button type="button" class="ui-pick'+(has?' on':'')+(sp.t==='multi'?' ls-wrap':'')+'" data-ls-mf="1" data-p="'+pid+'" data-m="'+mk+'" data-k="'+E(key)+'"><span>'+E(label)+'</span></button>';
+    }
+    /* Hustler's never had the shared monthly-field helpers (its pages typed straight into their own fields), so give it the same ones */
+    if(typeof updateMonthlyField==='undefined'){
+      window.updateMonthlyField = function(pageId, mk, key, val){ var o = getMonthlyPage(pageId, mk), p = String(key).split('.'); for(var i=0;i<p.length-1;i++){ if(!o[p[i]] || typeof o[p[i]]!=='object') o[p[i]] = {}; o = o[p[i]]; } o[p[p.length-1]] = val; saveDB(); };
+    }
+    if(typeof monthlyTextField==='undefined'){
+      window.monthlyTextField = function(pid, mk, key, ph, val){ return '<input class="textline" placeholder="'+E(ph)+'" value="'+E(val||'')+'" oninput="updateMonthlyField(\''+pid+'\',\''+mk+'\',\''+key+'\',this.value)">'; };
+      window.monthlyAreaField = function(pid, mk, key, ph, val, cls){ return '<textarea class="'+(cls||'freewrite')+'" placeholder="'+E(ph)+'" oninput="updateMonthlyField(\''+pid+'\',\''+mk+'\',\''+key+'\',this.value)">'+E(val||'')+'</textarea>'; };
+    }
+    var baseText = monthlyTextField, baseArea = monthlyAreaField;
+    monthlyTextField = function(pid, mk, key, ph, val){ var sp = specFor(pid, key); return sp ? fbtn(pid, mk, key, ph, val, sp) : baseText.apply(this, arguments); };
+    monthlyAreaField = function(pid, mk, key, ph, val, cls){ var sp = specFor(pid, key); return sp ? fbtn(pid, mk, key, ph, val, sp) : baseArea.apply(this, arguments); };
+
+    function setMF(pid, mk, key, val, sp){
+      updateMonthlyField(pid, mk, key, val);
+      if(sp.fill && val){
+        var f = sp.fill(val), page = pg(pid, mk);
+        if(f) Object.keys(f).forEach(function(sib){
+          var sk = key.replace(/[^.]+$/, sib);
+          if(specFor(pid, sk) && !getPath(page, sk)) updateMonthlyField(pid, mk, sk, f[sib]);
+        });
+      }
+      render();
+    }
+    function openMF(pid, mk, key){
+      var sp = specFor(pid, key); if(!sp) return;
+      var cur = getPath(pg(pid, mk), key); cur = cur==null ? '' : String(cur);
+      var clear = cur ? [{ label:'Clear this', act:function(){ setMF(pid, mk, key, '', sp); } }] : [];
+      if(sp.t==='single'){
+        var opts = uniq((sp.rec ? recentsMF(pid, key) : []).concat(sp.opts));
+        return openLS({ title:sp.title, instant:true, secs:[{ id:'v', opts:opts, sel:cur?[cur]:[], other:sp.other }], extra:clear,
+          done:function(st){ setMF(pid, mk, key, st.v[0] || '', sp); } });
+      }
+      if(sp.t==='multi'){
+        var m = window.UI.parseMulti(cur);
+        return openLS({ title:sp.title, secs:[{ id:'v', multi:true, opts:uniq(recentsMF(pid, key).filter(function(x){ return sp.opts.indexOf(x)<0 && x.length<=28 && !/[.!?]/.test(x); }).concat(sp.opts)), sel:m.tok.slice() }], extra:clear,
+          cta:function(st){ return st.v.length ? 'Done · '+st.v.length+' picked' : 'Done'; },
+          done:function(st){ setMF(pid, mk, key, window.UI.buildMulti(st.v, m.note), sp); } });
+      }
+      if(sp.t==='num'){
+        var n0 = parseFloat(cur); if(!isFinite(n0)) n0 = sp.def || 0;
+        return openLS({ title:sp.title, secs:[{ id:'v', num:sp, val:n0 }], extra:clear, cta:function(){ return 'Done'; },
+          done:function(st){ setMF(pid, mk, key, fmtN(st.v), sp); } });
+      }
+      if(sp.t==='date'){
+        var qs = [['Today', 0], ['End of this week', (7-new Date().getDay())%7], ['End of this month', null], ['In 2 weeks', 14], ['In 30 days', 30], ['In 90 days', 90], ['End of the year', 'y']].map(function(q){
+          var d; if(q[1]===null){ d = new Date(); d = new Date(d.getFullYear(), d.getMonth()+1, 0, 12); } else if(q[1]==='y'){ d = new Date(new Date().getFullYear(), 11, 31, 12); } else d = plusDays(q[1]);
+          return [q[0]+' · '+fmtShort(d), fmtShort(d)]; });
+        return openLS({ title:sp.title, instant:true, secs:[{ id:'v', date:qs, val:'' }], extra:clear, done:function(st){ if(st.v) setMF(pid, mk, key, st.v, sp); } });
+      }
+    }
+
+    /* ------------------------------------------------------------------ list cards: the shared pieces --- */
+    function card(h, mk, i, title, inner){
+      return '<div class="field-card ls-card"><div class="ls-head"><div class="ls-title">'+E(title)+'</div><button type="button" class="ls-x" data-ls-rm="1" data-h="'+h+'" data-m="'+mk+'" data-i="'+i+'" aria-label="Remove '+E(title)+'">'+icon('close',13)+'</button></div>'+inner+'</div>';
+    }
+    function frow(label, inner){ return '<div class="ls-f"><div class="fc-hint">'+E(label)+'</div>'+inner+'</div>'; }
+    function addBtn(h, mk, label){ return '<button type="button" class="add-row-btn ls-add" data-ls-add="1" data-h="'+h+'" data-m="'+mk+'">'+icon('plus',14)+' '+E(label)+'</button>'; }
+    function doneBtn(pid, mk){ return '<button class="add-row-btn" onclick="lockMonthlyPageNow(\''+pid+'\',\''+mk+'\')">'+icon('check',14)+' Mark done for '+monthLabelShort(mk)+'</button>'; }
+
+    /* where each list lives. "vault:reading" = the Reading Vault group, whose first book stays in its old place */
+    function listOf(h, mk){
+      var t = h.split(':'), g = t[1], page;
+      if(t[0]==='obj'){ page = pg('objectives', mk); if(!Array.isArray(page.list)) page.list = FAM==='clean' && !BOY ? [{},{},{},{}] : [{},{},{}]; return page.list; }
+      if(t[0]==='rot') return window.rotList(mk);
+      if(t[0]==='rew'){ page = pg('income', mk); if(!Array.isArray(page.rewards)) page.rewards = []; return page.rewards; }
+      if(t[0]==='streams'){ page = pg('income', mk); if(!Array.isArray(page.streams)) page.streams = []; return page.streams; }
+      if(t[0]==='bucket') return pg('bucket', mk).items;
+      if(t[0]==='vault'){ page = pg('income', mk); if(!page[g]) page[g] = {}; return [page[g]].concat(page[g+'_more'] || []); }
+      return [];
+    }
+    function addItems(h, mk, items){
+      var t = h.split(':'), g = t[1];
+      if(t[0]==='vault'){
+        var page = pg('income', mk); if(!page[g]) page[g] = {}; if(!Array.isArray(page[g+'_more'])) page[g+'_more'] = [];
+        items.forEach(function(it){ if(isBlank(page[g])) page[g] = it; else page[g+'_more'].push(it); });
+      } else { var arr = listOf(h, mk); items.forEach(function(it){ arr.push(it); }); }
+      saveDB(); render();
+    }
+    function removeAt(h, mk, i){
+      var t = h.split(':'), g = t[1];
+      if(t[0]==='vault'){ var page = pg('income', mk), more = page[g+'_more'] || []; if(i===0){ page[g] = more.length ? more.shift() : {}; } else more.splice(i-1, 1); }
+      else listOf(h, mk).splice(i, 1);
+      saveDB(); render(); flashSaved('Removed');
+    }
+    function vPath(g, i, k){ return i===0 ? g+'.'+k : g+'_more.'+(i-1)+'.'+k; }
+
+    /* ------------------------------------------------------------------ "Add" sheets (tap several, then Add) */
+    function addCfg(h, mk){
+      var t = h.split(':')[0], g = h.split(':')[1];
+      if((t==='obj' || t==='rot') && FAM==='clean'){
+        return { title: t==='rot' ? 'Add to your rotation' : 'Add products to review', noun:'product',
+          secs:[{ id:'k', label:'Skincare, hair and body', multi:true, opts:KINDS, sel:[] }, { id:'p', label:'Fragrances', multi:true, opts:PERF.map(function(p){ return p[0]; }), sel:[] }, { id:'b', label:'Brand for the products above (optional)', opts:BRANDS, sel:[] }],
+          make:function(st){ var o = []; st.k.forEach(function(n){ var it = { name:n, brand:st.b[0]||'' }; if(t==='rot') it.note = ''; o.push(it); }); st.p.forEach(function(n){ var b = ''; PERF.forEach(function(p){ if(p[0]===n) b = p[1]; }); var it = { name:n, brand:b }; if(t==='rot') it.note = ''; o.push(it); }); return o; },
+          blank:function(){ return t==='rot' ? { name:'', brand:'', note:'' } : {}; } };
+      }
+      if(FAM==='reading' && (t==='obj' || t==='vault')){
+        return { title: t==='vault' ? 'Add books' : 'Add books to review', noun:'book',
+          secs:[{ id:'g', label:'Pick a genre to browse', opts:GENRES, sel:['Self-help'], other:false }, { id:'b', label:'Books', multi:true, sel:[], opts:function(st){ var gg = st.g[0]; return BOOKS.filter(function(b){ return !gg || b[2]===gg; }).map(function(b){ return b[0]; }); } }],
+          make:function(st){ return st.b.map(function(ti){ var b = bookByTitle(ti), it = { title:ti, author:b?b[1]:'' }; if(t==='vault') it.genre = b?b[2]:''; return it; }); }, blank:function(){ return {}; } };
+      }
+      if(FAM==='sober' && t==='obj') return { title:'Add things you tried', noun:'activity', secs:[{ id:'a', multi:true, opts:ACTIVITIES, sel:[] }], make:function(st){ return st.a.map(function(n){ return { name:n }; }); }, blank:function(){ return {}; } };
+      if(FAM==='sober' && t==='rew') return { title:'Add rewards', noun:'reward', secs:[{ id:'r', label:'Reward', multi:true, opts:REWARDS, sel:[] }, { id:'m', label:'Milestone it marked (optional)', opts:MILESTONES, sel:[] }], make:function(st){ return st.r.map(function(n){ return { reward:n, milestone:st.m[0]||'' }; }); }, blank:function(){ return {}; } };
+      if(FAM==='hustler' && t==='obj') return { title:'Add objectives', noun:'objective', secs:[{ id:'o', multi:true, opts:OBJ_H, sel:[] }], make:function(st){ return st.o.map(function(n){ return { title:n }; }); }, blank:function(){ return {}; } };
+      if(FAM==='hustler' && t==='streams') return { title:'Add income streams', noun:'stream', secs:[{ id:'s', multi:true, opts:STREAMS, sel:[] }], make:function(st){ return st.s.map(function(n){ return { name:n, status:'Testing' }; }); }, blank:function(){ return { status:'Testing' }; } };
+      if(FAM==='hustler' && t==='bucket') return { title:'Add goals', noun:'goal', secs:[{ id:'t', label:'How much do you want it?', opts:['MUST','WANT','SOMEDAY'], sel:['MUST'], other:false }, { id:'g', label:'Goals', multi:true, sel:[], opts:function(st){ return GOALS[st.t[0]||'MUST']; } }],
+        make:function(st){ return st.g.map(function(n){ return { tier:st.t[0]||'MUST', text:n }; }); }, blank:function(){ return { tier:'SOMEDAY', text:'' }; } };
+      return null;
+    }
+    function openAdd(h, mk, into){
+      var c = addCfg(h, mk); if(!c) return;
+      c.secs.forEach(function(s){ s.sel = (s.sel||[]).slice(); });
+      var multiSec = c.secs.filter(function(s){ return s.multi; });
+      openLS({ title:c.title, secs:c.secs, needs:false,
+        count:function(st){ return multiSec.reduce(function(a,s){ return a + st[s.id].length; }, 0); },
+        cta:function(st, n){ return n ? 'Add '+n+' '+c.noun+(n===1?'':'s') : 'Add an empty '+c.noun+' card'; },
+        done:function(st){ var items = c.make(st); if(!items.length) items = [c.blank()]; (into || function(it){ addItems(h, mk, it); })(items); flashSaved(items.length+' added'); } });
+    }
+
+    /* ------------------------------------------------------------------ objectives (all apps) ------------- */
+    var OBJ_CFG = {
+      clean:  { noun:'product', primary:'name', order:['name','brand','characteristics','note','@rating'], labels:{ name:'Product', brand:'Brand', characteristics:'Characteristics', note:'My note' } },
+      readingBoy:  { noun:'book', primary:'title', order:['title','author','impression','note','@rating'], labels:{ title:'Title', author:'Author', impression:'First impression', note:'Note' } },
+      readingGirl: { noun:'book', primary:'title', order:['title','author','@rating','@rec','impression'], labels:{ title:'Title', author:'Author', impression:'First impression' } },
+      soberBoy:  { noun:'activity', primary:'name', order:['name','@rating','went','note'], labels:{ name:'Activity or tool', went:'How it went', note:'Note' } },
+      soberGirl: { noun:'activity', primary:'name', order:['name','@rating','went'], labels:{ name:'Activity or tool', went:'How it went' } },
+      hustler: { noun:'objective', primary:'title', order:['title','why','metric','deadline','@progress'], labels:{ title:'Objective', why:'Why it matters', metric:'Success metric', deadline:'Deadline' } }
+    };
+    var OC = OBJ_CFG[FAM==='clean' ? 'clean' : FAM==='hustler' ? 'hustler' : FAM+(BOY?'Boy':'Girl')];
+    var baseObjectives = objectivesBody;
+    objectivesBody = function(monthKey){
+      var mk = mkOf(monthKey);
+      if(isMonthlyPageLocked('objectives', mk)) return baseObjectives(mk);
+      var list = listOf('obj', mk);
+      var cards = list.map(function(o, i){
+        var inner = '';
+        OC.order.forEach(function(tok){
+          if(tok==='@rating') inner += frow('Rating', monthlyScaleRow10('objectives', mk, 'list.'+i+'.rating', o.rating));
+          else if(tok==='@progress') inner += frow('Progress — tap to set', scaleRow10Objectives(mk, i, o.progress));
+          else if(tok==='@rec') inner += frow('Would recommend', '<div class="pill-row">'+['Y','N'].map(function(v){ return '<button class="pill '+(o.recommend===v?'active red':'')+'" onclick="setRecommend(\''+mk+'\','+i+',\''+v+'\')">'+v+'</button>'; }).join('')+'</div>');
+          else inner += frow(OC.labels[tok], monthlyTextField('objectives', mk, 'list.'+i+'.'+tok, OC.labels[tok], o[tok]));
+        });
+        var title = FAM==='hustler' ? ('Objective '+(i+1)+(o.title ? ' · '+o.title : '')) : (o[OC.primary] || 'New '+OC.noun);
+        return card('obj', mk, i, title, inner);
+      }).join('');
+      var head = FAM==='hustler' ? fieldWrap('Your objectives this month', 'Name them clearly or they won\'t happen. Add as many as you need.', '')
+        : fieldWrap(FAM==='clean' ? 'Thoughts on new products' : FAM==='reading' ? 'Thoughts on new reads' : 'Wins & reflections',
+            FAM==='clean' ? 'First impressions · what you think · honest rating. Add as many as you like.' : FAM==='reading' ? 'First impressions · honest rating · notes. Add as many as you like.' : 'New tools you tried · what actually worked. Add as many as you like.', '');
+      return head + (cards || '<div class="ls-empty">Nothing here yet. Tap the button below.</div>') + addBtn('obj', mk, 'Add another '+OC.noun) + doneBtn('objectives', mk);
+    };
+
+    /* ------------------------------------------------------------------ Clean: products in rotation ------ */
+    if(FAM==='clean' && window.rotList){
+      var baseRot = incomeBody;
+      incomeBody = function(monthKey){
+        var mk = mkOf(monthKey);
+        if(isMonthlyPageLocked('income', mk)) return baseRot(mk);
+        var list = window.rotList(mk);
+        var cards = list.map(function(p, i){
+          return card('rot', mk, i, p.name || 'New product',
+            frow('Product', monthlyTextField('income', mk, 'inRotation.'+i+'.name', 'Product', p.name))
+            + frow('Brand', monthlyTextField('income', mk, 'inRotation.'+i+'.brand', 'Brand', p.brand))
+            + frow('Notes', monthlyTextField('income', mk, 'inRotation.'+i+'.note', 'Notes', p.note)));
+        }).join('');
+        return fieldWrap('In rotation', 'Only what you are using right now. Add as many as you like, and remove anything you have finished or put away.', '')
+          + (cards || '<div class="ls-empty">Nothing in rotation yet. Tap the button below.</div>') + addBtn('rot', mk, 'Add products or perfumes') + doneBtn('income', mk);
+      };
+    }
+
+    /* ------------------------------------------------------------------ Reading: the vault -------------- */
+    if(FAM==='reading'){
+      var baseVault = incomeBody;
+      var GROUPS = BOY
+        ? [{ key:'reading', label:'Reading', f:['title','author','genre','owned'], note:1, rating:1 }, { key:'finished', label:'Finished', f:['title','author','genre','status'], rating:1 }, { key:'onDeck', label:'On deck', f:['title','why'] }]
+        : [{ key:'reading', label:'Reading', f:['title','author','genre','owned'], note:1, rating:1 }, { key:'finished', label:'Finished', f:['title','author','genre','owned'], rating:1 }, { key:'tbr', label:'TBR / DNF', f:['title','author','status','genre'] }];
+      var FL = { title:'Title', author:'Author', genre:'Genre', owned:'Owned / borrowed', status:'Status', why:'Why this one next' };
+      incomeBody = function(monthKey){
+        var mk = mkOf(monthKey), page = pg('income', mk);
+        if(isMonthlyPageLocked('income', mk)){
+          var rows = '';
+          GROUPS.forEach(function(g){ listOf('vault:'+g.key, mk).forEach(function(it){ if(it && it.title) rows += '<div class="locked-item-row" style="align-items:flex-start;"><span style="font-weight:700;">'+E(g.label)+'</span><span class="muted-inline">'+E(it.title)+(it.author?' · '+E(it.author):'')+'</span></div>'; }); });
+          return monthlyLockedBody(rows ? '<div class="field-card">'+rows+'</div>' : '<div class="empty-note">Nothing logged yet for '+monthLabelShort(mk)+'.</div>', 'income', mk);
+        }
+        var out = fieldWrap(BOY ? 'Reading vault' : 'Book vault', 'Add as many books as you like in each shelf.', '');
+        GROUPS.forEach(function(g){
+          var items = listOf('vault:'+g.key, mk);
+          out += '<div class="section-label" style="padding:14px 0 8px;">'+E(g.label)+'</div>';
+          out += items.map(function(it, i){
+            var inner = g.f.map(function(k){ return frow(FL[k], monthlyTextField('income', mk, vPath(g.key, i, k), FL[k], it[k])); }).join('');
+            if(g.note) inner += frow('Note', monthlyAreaField('income', mk, vPath(g.key, i, 'note'), 'Note', it.note));
+            if(g.rating) inner += frow('Rating', monthlyScaleRow10('income', mk, vPath(g.key, i, 'rating'), it.rating));
+            return card('vault:'+g.key, mk, i, it.title || 'New book', inner);
+          }).join('');
+          out += addBtn('vault:'+g.key, mk, 'Add books to '+g.label.toLowerCase());
+        });
+        return out + doneBtn('income', mk);
+      };
+    }
+
+    /* ------------------------------------------------------------------ Sober: milestone vault ---------- */
+    if(FAM==='sober'){
+      var baseSober = incomeBody;
+      var QD = [['Today',0],['Yesterday',1],['1 week ago',7],['2 weeks ago',14],['30 days ago',30],['90 days ago',90],['6 months ago',182],['1 year ago',365]];
+      window.lsQDate = function(mk, key, n){ var d = new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-n); updateMonthlyField('income', mk, key, localDateStr(d)); render(); };
+      function qdates(mk, key, cur){
+        return '<div class="pill-row ui-chips" style="margin-top:8px;">'+QD.map(function(q){ var d = new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()-q[1]); var on = cur===localDateStr(d); return '<button type="button" class="pill ui-chip'+(on?' on':'')+'" onclick="lsQDate(\''+mk+'\',\''+key+'\','+q[1]+')">'+q[0]+'</button>'; }).join('')+'</div>';
+      }
+      incomeBody = function(monthKey){
+        var mk = mkOf(monthKey), page = pg('income', mk), rew = listOf('rew', mk);
+        if(isMonthlyPageLocked('income', mk)){
+          var rows = [['Start date',page.startDate],['Longest streak',page.longest],['Date achieved',page.achieved],['Note',page.note]].filter(function(r){ return r[1]; }).map(function(r){ return [r[0], r[1]]; });
+          rew.forEach(function(r){ if(r.reward) rows.push(['Reward', r.reward+(r.milestone?' · '+r.milestone:'')]); });
+          var summary = rows.length ? '<div class="field-card">'+rows.map(function(r){ return '<div class="locked-item-row" style="align-items:flex-start;"><span style="font-weight:700;">'+E(r[0])+'</span><span class="muted-inline">'+E(r[1])+'</span></div>'; }).join('')+'</div>' : '<div class="empty-note">Nothing logged yet for '+monthLabelShort(mk)+'.</div>';
+          return monthlyLockedBody(summary, 'income', mk);
+        }
+        var start = soberStartDate(), today = todayStr(), days = start ? soberDaysAt(today) : null;
+        var unit = days===null ? '—' : (days>=60 ? Math.floor(days/30)+' months' : days>=14 ? Math.floor(days/7)+' weeks' : days+' days');
+        var cards = rew.map(function(r, i){
+          return card('rew', mk, i, r.reward || 'New reward', frow('Reward', monthlyTextField('income', mk, 'rewards.'+i+'.reward', 'Reward', r.reward)) + frow('Milestone it marked', monthlyTextField('income', mk, 'rewards.'+i+'.milestone', 'Milestone', r.milestone)));
+        }).join('');
+        return fieldWrap('Milestone vault', BOY ? 'Track the streak. Respect the work.' : 'Your streak, your record, your small rewards', '')
+          + fieldWrap('Start date', 'Days / weeks / months sober counts up from here', '<input type="date" class="textline" value="'+E(page.startDate||'')+'" onchange="updateMonthlyField(\'income\',\''+mk+'\',\'startDate\',this.value); render();">'+qdates(mk,'startDate',page.startDate))
+          + '<div class="field-card" style="text-align:center;"><div class="fc-label">Current streak</div><div style="font-family:var(--font-display); font-size:44px; font-weight:800; line-height:1.1; color:var(--accent);">'+(days===null?'——':days)+'</div><div class="fc-hint" style="margin:4px 0 0;">Days sober right now'+(days!==null?' · '+unit:'')+'</div></div>'
+          + '<div class="section-label" style="padding:14px 0 8px;">Streak record</div>'
+          + fieldWrap('Longest streak', null, monthlyTextField('income', mk, 'longest', 'Longest streak', page.longest))
+          + fieldWrap('Date achieved', null, '<input type="date" class="textline" value="'+E(page.achieved||'')+'" onchange="updateMonthlyField(\'income\',\''+mk+'\',\'achieved\',this.value); render();">'+qdates(mk,'achieved',page.achieved))
+          + '<div class="section-label" style="padding:14px 0 8px;">Small rewards earned</div>'
+          + (cards || '<div class="ls-empty">No rewards yet. Tap below when you earn one.</div>') + addBtn('rew', mk, 'Add rewards')
+          + fieldWrap('Note', null, monthlyAreaField('income', mk, 'note', 'Note', page.note))
+          + doneBtn('income', mk);
+      };
+    }
+
+    /* ------------------------------------------------------------------ Hustler: income streams --------- */
+    if(FAM==='hustler'){
+      var baseInc = incomeBody;
+      incomeBody = function(monthKey){
+        var mk = mkOf(monthKey);
+        if(isMonthlyPageLocked('income', mk)) return baseInc(mk);
+        var streams = listOf('streams', mk);
+        var total = streams.reduce(function(s,x){ return s + (+x.current||0); }, 0), target = streams.reduce(function(s,x){ return s + (+x.target||0); }, 0);
+        var cards = streams.map(function(s, i){
+          return card('streams', mk, i, s.name || 'New stream',
+            frow('Source', monthlyTextField('income', mk, 'streams.'+i+'.name', 'Source', s.name))
+            + '<div class="ls-two">'+frow('Current $ / month', monthlyTextField('income', mk, 'streams.'+i+'.current', '$', s.current))+frow('Target $ / month', monthlyTextField('income', mk, 'streams.'+i+'.target', '$', s.target))+'</div>'
+            + frow('Next action', monthlyTextField('income', mk, 'streams.'+i+'.next', 'Next action', s.next))
+            + frow('Status', '<div class="pill-row">'+['Active','Testing','Paused'].map(function(x){ return '<button class="pill '+(s.status===x?'active red':'')+'" onclick="setIncomeStatus(\''+mk+'\','+i+',\''+x+'\')">'+x+'</button>'; }).join('')+'</div>'));
+        }).join('');
+        return '<div class="two-col" style="margin-bottom:16px;"><div class="stat-mini"><div class="sv">$'+total.toLocaleString()+'</div><div class="sl">Total monthly rev</div></div><div class="stat-mini"><div class="sv">$'+target.toLocaleString()+'</div><div class="sl">Combined target</div></div></div>'
+          + '<div class="section-label" style="padding:0 0 10px;">Active streams</div>' + (cards || '<div class="ls-empty">No streams yet. Tap below to add as many as you have.</div>')
+          + addBtn('streams', mk, 'Add income streams') + doneBtn('income', mk);
+      };
+      window.addIncomeStream = function(mk){ openAdd('streams', mk); };
+    }
+
+    /* ------------------------------------------------------------------ Hustler: goals (bucket) ---------- */
+    function goalSheet(tier, cur, onPick, onRemove){
+      var extra = onRemove ? [{ label:'Remove this goal', act:onRemove }] : [];
+      openLS({ title:'Pick a goal', instant:true, secs:[{ id:'v', opts:uniq(GOALS[tier] || GOALS.WANT), sel:cur?[cur]:[] }], extra:extra, done:function(st){ onPick(st.v[0] || ''); } });
+    }
+    if(FAM==='hustler'){
+      window.addBucketItem = function(mk){ openAdd('bucket', mk); };
+    }
+
+    /* ------------------------------------------------------------------ Habits: tap to name, add many ---- */
+    function habitsOf(mk){ return habitsPage(mk); }
+    function habitRemove(mk, i){
+      var page = habitsOf(mk); page.names.splice(i, 1);
+      Object.keys(page.marks || {}).forEach(function(ds){ var o = page.marks[ds], n = {}; Object.keys(o).forEach(function(k){ var x = Number(k); if(x<i) n[x] = o[k]; else if(x>i) n[x-1] = o[k]; }); page.marks[ds] = n; });
+      saveDB(); render(); flashSaved('Habit removed');
+    }
+    function habitEdit(mk, i){
+      var page = habitsOf(mk), cur = page.names[i] || '';
+      openLS({ title: cur ? 'Change habit' : 'Pick a habit', instant:true, secs:[{ id:'v', opts:uniq(HABITS.concat(cur?[cur]:[])), sel:cur?[cur]:[] }],
+        extra: [{ label:'Remove this habit (its ticks go too)', act:function(){ habitRemove(mk, i); } }],
+        done:function(st){ var v = st.v[0] || ''; if(!v) return; page.names[i] = v; saveDB(); render(); } });
+    }
+    function habitAdd(mk){
+      var page = habitsOf(mk), have = page.names.filter(Boolean);
+      openLS({ title:'Add habits', secs:[{ id:'v', multi:true, opts:HABITS.filter(function(h){ return have.indexOf(h)<0; }), sel:[] }], needs:true,
+        count:function(st){ return st.v.length; }, cta:function(st, n){ return n ? 'Add '+n+' habit'+(n===1?'':'s') : 'Pick at least one'; },
+        done:function(st){ st.v.forEach(function(n){ var blank = page.names.indexOf(''); if(blank>=0) page.names[blank] = n; else page.names.push(n); }); saveDB(); render(); flashSaved(st.v.length+' added'); } });
+    }
+
+    /* ------------------------------------------------------------------ after every redraw: swap typed boxes for tap buttons */
+    function btnHtml(cls, inner, attrs){ return '<button type="button" class="'+cls+'" '+attrs+'>'+inner+'</button>'; }
+    function enhance(){
+      var app = document.getElementById('app'); if(!app) return;
+      /* habits */
+      Array.prototype.forEach.call(app.querySelectorAll('.habit-grid-wrap:not([data-enh])'), function(wrap){
+        wrap.setAttribute('data-enh', '1'); var mk = currentMonthKey();
+        Array.prototype.forEach.call(wrap.querySelectorAll('input.habit-name-input'), function(inp){
+          var m = /updateHabitName\('([^']+)',(\d+)/.exec(inp.getAttribute('oninput') || ''); if(!m) return; mk = m[1];
+          var name = inp.value;
+          inp.style.display = 'none'; inp.setAttribute('tabindex', '-1');
+          inp.insertAdjacentHTML('beforebegin', btnHtml('habit-name-input ls-hbtn'+(name?'':' empty'), '<span>'+E(name || 'Pick a habit')+'</span>', 'data-ls-habit="1" data-m="'+m[1]+'" data-i="'+m[2]+'"'));
+        });
+        wrap.insertAdjacentHTML('afterend', '<button type="button" class="add-row-btn ls-add" data-ls-habitadd="1" data-m="'+mk+'">'+icon('plus',14)+' Add habits</button>');
+      });
+      /* any other leftover typed monthly box that has a tap menu (e.g. the 1-5 energy boxes) */
+      Array.prototype.forEach.call(app.querySelectorAll('input[oninput*="updateMonthlyField("]:not([data-enh])'), function(inp){
+        var m = /updateMonthlyField\('([^']+)','([^']+)','([^']+)'/.exec(inp.getAttribute('oninput') || ''); if(!m) return;
+        var sp = specFor(m[1], m[3]); if(!sp) return; inp.setAttribute('data-enh', '1'); inp.style.display = 'none'; inp.setAttribute('tabindex', '-1');
+        inp.insertAdjacentHTML('beforebegin', fbtn(m[1], m[2], m[3], '', inp.value, sp));
+      });
+      if(FAM!=='hustler') return;
+      /* goals (monthly page): tap the goal text to pick, Add goal opens a sheet */
+      Array.prototype.forEach.call(app.querySelectorAll('input.textline[oninput*="updateBucket("]:not([data-enh])'), function(inp){
+        var m = /updateBucket\('([^']+)',(\d+)/.exec(inp.getAttribute('oninput') || ''); if(!m) return; inp.setAttribute('data-enh', '1');
+        if(inp.disabled) return;
+        inp.style.display = 'none'; inp.setAttribute('tabindex', '-1');
+        inp.insertAdjacentHTML('beforebegin', btnHtml('ui-pick ls-goalbtn'+(inp.value?' on':''), '<span>'+E(inp.value || 'Tap to pick a goal')+'</span>', 'data-ls-goal="m" data-m="'+m[1]+'" data-i="'+m[2]+'"'));
+      });
+      /* setup: goals and objectives steps */
+      Array.prototype.forEach.call(app.querySelectorAll('.onb-tt-list:not([data-enh])'), function(box){
+        box.setAttribute('data-enh', '1');
+        var gi = box.querySelectorAll('input[oninput^="onboardBucketUpdate("]'), oi = box.querySelectorAll('input[oninput^="onboardObjUpdate("]');
+        Array.prototype.forEach.call(gi, function(inp, i){ inp.style.display = 'none'; inp.setAttribute('tabindex', '-1'); inp.insertAdjacentHTML('beforebegin', btnHtml('ui-pick ls-goalbtn'+(inp.value?' on':''), '<span>'+E(inp.value || 'Tap to pick a goal')+'</span>', 'data-ls-goal="o" data-i="'+i+'"')); });
+        Array.prototype.forEach.call(oi, function(inp, i){ inp.style.display = 'none'; inp.setAttribute('tabindex', '-1'); inp.insertAdjacentHTML('beforebegin', btnHtml('ui-pick ls-goalbtn'+(inp.value?' on':''), '<span>'+E(inp.value || 'Tap to pick an objective')+'</span>', 'data-ls-goal="b" data-i="'+i+'"')); });
+        if(gi.length) box.insertAdjacentHTML('afterend', '<button type="button" class="add-row-btn ls-add" data-ls-onbadd="g">'+icon('plus',14)+' Add goals</button>');
+        else if(oi.length) box.insertAdjacentHTML('afterend', '<button type="button" class="add-row-btn ls-add" data-ls-onbadd="b">'+icon('plus',14)+' Add objectives</button>');
+      });
+    }
+    function onbAdd(kind){
+      if(kind==='g'){
+        var items = ONDRAFT.bucketItems || (ONDRAFT.bucketItems = [{tier:'MUST',text:''},{tier:'MUST',text:''},{tier:'WANT',text:''}]);
+        return openAdd('bucket', null, function(its){ its.forEach(function(it){ var e = -1; items.forEach(function(x, ix){ if(e<0 && !(x.text||'').trim()) e = ix; }); if(e>=0) items[e] = it; else items.push(it); }); saveOnboardDraft(); render(); });
+      }
+      var ts = ONDRAFT.objTitles || (ONDRAFT.objTitles = ['','','']);
+      openAdd('obj', null, function(its){ its.forEach(function(it){ var e = ts.findIndex(function(x){ return !(x||'').trim(); }); if(e>=0) ts[e] = it.title || ''; else ts.push(it.title || ''); }); saveOnboardDraft(); render(); });
+    }
+    /* the Hustler setup sheets take their items from the "add" sheet above without touching a month page */
+    function onbGoal(kind, i){
+      if(kind==='o'){
+        var it = ONDRAFT.bucketItems[i]; if(!it) return;
+        return goalSheet(it.tier, it.text, function(v){ if(v) { it.text = v; saveOnboardDraft(); render(); } }, function(){ ONDRAFT.bucketItems.splice(i,1); saveOnboardDraft(); render(); });
+      }
+      var cur = ONDRAFT.objTitles[i] || '';
+      openLS({ title:'Pick an objective', instant:true, secs:[{ id:'v', opts:uniq(OBJ_H.concat(cur?[cur]:[])), sel:cur?[cur]:[] }], extra:[{ label:'Remove this one', act:function(){ ONDRAFT.objTitles.splice(i,1); saveOnboardDraft(); render(); } }],
+        done:function(st){ var v = st.v[0]; if(v){ ONDRAFT.objTitles[i] = v; saveOnboardDraft(); render(); } } });
+    }
+
+    /* ------------------------------------------------------------------ one click handler for everything --- */
+    document.addEventListener('click', function(ev){
+      var t = ev.target; if(!t || !t.closest) return; var b;
+      if((b = t.closest('[data-ls]'))){ if(SH) onLS(b); return; }
+      if((b = t.closest('[data-ls-mf]'))){ openMF(b.getAttribute('data-p'), b.getAttribute('data-m'), b.getAttribute('data-k')); return; }
+      if((b = t.closest('[data-ls-add]'))){ openAdd(b.getAttribute('data-h'), b.getAttribute('data-m')); return; }
+      if((b = t.closest('[data-ls-rm]'))){
+        if(b.classList.contains('armed')){ clearTimeout(b._t); removeAt(b.getAttribute('data-h'), b.getAttribute('data-m'), Number(b.getAttribute('data-i'))); return; }
+        var old = b.innerHTML; b.classList.add('armed'); b.textContent = 'Remove?'; b._t = setTimeout(function(){ if(b.isConnected){ b.classList.remove('armed'); b.innerHTML = old; } }, 3000); return;
+      }
+      if((b = t.closest('[data-ls-habit]'))){ habitEdit(b.getAttribute('data-m'), Number(b.getAttribute('data-i'))); return; }
+      if((b = t.closest('[data-ls-habitadd]'))){ habitAdd(b.getAttribute('data-m')); return; }
+      if((b = t.closest('[data-ls-goal]'))){
+        var w = b.getAttribute('data-ls-goal'), i = Number(b.getAttribute('data-i'));
+        if(w==='m'){ var mk = b.getAttribute('data-m'), it = pg('bucket', mk).items[i]; if(!it) return;
+          goalSheet(it.tier, it.text, function(v){ if(v){ updateBucket(mk, i, 'text', v); render(); } }, function(){ deleteBucketItemToTrash(mk, i); }); return; }
+        onbGoal(w, i); return;
+      }
+      if((b = t.closest('[data-ls-onbadd]'))){ onbAdd(b.getAttribute('data-ls-onbadd')); return; }
+    });
+    document.addEventListener('change', function(ev){
+      var t = ev.target; if(!t || !t.getAttribute || t.getAttribute('data-ls-date')==null || !SH) return;
+      var s = SH.secs[Number(t.getAttribute('data-ls-date'))]; if(!t.value) return;
+      var p = t.value.split('-'); s.val = fmtShort(new Date(+p[0], +p[1]-1, +p[2], 12)); finish();
+    });
+    document.addEventListener('keydown', function(ev){
+      if(ev.key==='Enter' && ev.target && ev.target.classList && ev.target.classList.contains('ls-other')){ ev.preventDefault(); var b = document.querySelector('[data-ls="addoth"][data-s="'+ev.target.getAttribute('data-s')+'"]'); if(b) onLS(b); }
+    });
+
+    /* after each redraw, run the swap above */
+    var baseRender = render;
+    render = function(){ var r = baseRender.apply(this, arguments); try{ enhance(); }catch(e){ if(window.console) console.error('lists enhance', e); } return r; };
+
+    /* ------------------------------------------------------------------ names for new boxes and fields ---- */
+    var baseOpenSheet = openSheet;
+    openSheet = function(){
+      var r = baseOpenSheet.apply(this, arguments);
+      try{
+        var sh = document.querySelector('#active-sheet'); if(!sh) return r;
+        var title = (sh.querySelector('.sheet-title span') || {}).textContent || '';
+        [['bx-f-label', /^New box$/i.test(title) ? BOX_NAMES : FIELD_NAMES], ['onb-box-name', BOX_NAMES], ['ttp-name', HOUR_NAMES]].forEach(function(p){
+          var inp = sh.querySelector('#'+p[0]); if(!inp || inp.getAttribute('data-chips')) return; inp.setAttribute('data-chips', '1');
+          inp.insertAdjacentHTML('beforebegin', '<div class="ls-names">'+p[1].map(function(n){ return '<button type="button" class="pill ui-chip" data-ls-name="'+E(n)+'">'+E(n)+'</button>'; }).join('')+'</div>');
+          sh.querySelector('.ls-names').addEventListener('click', function(ev){ var c = ev.target.closest('[data-ls-name]'); if(!c) return; inp.value = c.getAttribute('data-ls-name'); inp.dispatchEvent(new Event('input', { bubbles:true })); Array.prototype.forEach.call(this.children, function(x){ x.classList.toggle('on', x===c); }); });
+        });
+      }catch(e){ if(window.console) console.error('name chips', e); }
+      return r;
+    };
+
+    window.LISTS = { specs:MS, openMF:openMF, openAdd:openAdd, addItems:addItems, listOf:listOf, books:BOOKS };
+  }catch(e){ if(window.console) console.error('lists', e); }
+})();
+</script>
+<script>
+/* =====================================================================================================
    FINISH REWARD  (Bot A, task 4)
    -----------------------------------------------------------------------------------------------------
    The moment a box turns "done" for the day, a short celebration plays over the screen:
@@ -9894,6 +10570,7 @@ if(LAYOUT_MQ){
     function nameOf(pid){
       try{ if(typeof bxBoxName==='function'){ var n = bxBoxName(pid); if(n) return n; } }catch(e){}
       try{ var c = CORE_PAGES.filter(function(p){ return p.id===pid; })[0]; if(c) return c.title || c.label || c.name || pid; }catch(e){}
+      try{ var sp = SETUP_PAGES.filter(function(p){ return p.id===pid; })[0]; if(sp && sp.name) return sp.name; }catch(e){}   /* monthly pages: use their real title, not the internal id */
       return pid;
     }
     function clear(){ if(timer){ clearTimeout(timer); timer = null; } if(layer && layer.parentNode) layer.parentNode.removeChild(layer); layer = null; }
