@@ -3294,38 +3294,27 @@ function handleImportFile(fileInput){
   reader.onload = function(e){
     try{
       const parsed = JSON.parse(e.target.result);
-      const d = parsed && parsed.days;
-      if(!d || typeof d !== 'object' || Array.isArray(d) || !Object.keys(d).length){
+      if(!parsed || typeof parsed !== 'object' || !('days' in parsed)){
         throw new Error('Not a logbook backup file');
       }
-      window.__pendingImport = parsed;
-      const n = Object.keys(d).length;
-      openSheet('<div class="sheet-title"><span>Replace everything?</span><button class="sheet-close" onclick="closeSheet()" aria-label="Close">'+icon('close',15)+'</button></div>'
-        + '<div class="confirm-body"><p>This backup has '+n+' logged day'+(n===1?'':'s')+'. Everything in the app now is replaced. This cannot be undone.</p>'
-        + '<button class="confirm-danger-btn" onclick="applyImport()">Replace with backup</button>'
-        + '<button class="confirm-cancel-btn" onclick="closeSheet()">Cancel</button></div>');
+      const keepUnlocked = DB.unlocked === true;   // the store decides entitlement, not a backup file
+      const prevDB = DB;
+      DB = normalizeDB(parsed);
+      DB.unlocked = keepUnlocked;
+      recomputeStreak();
+      if(!saveDB()){
+        DB = prevDB;
+        flashSaved('Backup is too large for this device — nothing was changed');
+        return;
+      }
+      flashSaved('Backup restored');
+      nav('home');
     }catch(err){
       flashSaved('Could not read that file');
     }
   };
   reader.readAsText(file);
   fileInput.value = '';
-}
-function applyImport(){
-  const parsed = window.__pendingImport; window.__pendingImport = null; closeSheet();
-  if(!parsed) return;
-  const keepUnlocked = DB.unlocked === true;   // the store decides entitlement, not a backup file
-  const prevDB = DB;
-  DB = normalizeDB(parsed);
-  DB.unlocked = keepUnlocked;
-  recomputeStreak();
-  if(!saveDB()){
-    DB = prevDB;
-    flashSaved('Backup is too large for this device — nothing was changed');
-    return;
-  }
-  flashSaved('Backup restored');
-  nav('home');
 }
 
 /* ============================================================
@@ -3709,7 +3698,6 @@ function nav(view, pageId, opts){
   const isSamePlace = ROUTE.view===view && ROUTE.pageId===pageId;
   if(!opts.isBack && !isSamePlace){
     NAV_HISTORY.push(ROUTE);
-    try{ history.pushState(null,''); }catch(e){}   // so the browser/swipe Back steps through the app, not out of it
   }
   ROUTE = { view, pageId, date: SELECTED_DATE };
   render();
@@ -3720,13 +3708,13 @@ function nav(view, pageId, opts){
 // stack is empty (e.g. first screen after launch), Home is a
 // reasonable fallback rather than doing nothing.
 function navBack(){
-  if(NAV_HISTORY.length) history.back();   // popstate below does the navigation
-  else nav('home', null, { isBack:true });
-}
-window.addEventListener('popstate', function(){
   const prev = NAV_HISTORY.pop();
-  if(prev) nav(prev.view, prev.pageId, { isBack:true });
-});
+  if(prev){
+    nav(prev.view, prev.pageId, { isBack:true });
+  } else {
+    nav('home', null, { isBack:true });
+  }
+}
 
 function fmtDateLong(ds){
   const d = new Date(ds+'T00:00:00');
@@ -4209,7 +4197,7 @@ function onboardShell(opts){
   app.innerHTML = `
     <div class="onboard-screen">
       <div class="onboard-top">
-        ${opts.showBack ? `<button class="onboard-back" aria-label="Back" onclick="onboardBack()">${icon('chevleft',18)}</button>` : `<span></span>`}
+        ${opts.showBack ? `<button class="onboard-back" onclick="onboardBack()">${icon('chevleft',18)}</button>` : `<span></span>`}
         ${opts.showSkip ? `<button class="onboard-skip" onclick="finishOnboarding()">Skip setup</button>` : `<span></span>`}
       </div>
       <div class="onb-progress">${segs}</div>
@@ -4236,7 +4224,7 @@ function renderOnboardWelcome(){
       <div class="onboard-body onboard-hero">
         <div class="onboard-mark">${icon(BRAND.markIcon,30)}</div>
         <h1 class="onb-title" style="text-align:center;">${(BRAND.nameLines||[BRAND.name]).map(esc).join('<br>')}</h1>
-        <p class="onb-sub" style="text-align:center;">${esc(((ONBOARD_NUMBER_WORDS[ONBOARD_GROUPS.length] || String(ONBOARD_GROUPS.length)).replace(/^./, c=>c.toUpperCase())))} quick step${ONBOARD_GROUPS.length===1?'':'s'}. ${ONBOARD_GROUPS.length===1?'Skip it — you can fill it in later.':'Plan your day first; skip the rest and fill them in later.'}</p>
+        <p class="onb-sub" style="text-align:center;">${esc(((ONBOARD_NUMBER_WORDS[ONBOARD_GROUPS.length] || String(ONBOARD_GROUPS.length)).replace(/^./, c=>c.toUpperCase())))} quick step${ONBOARD_GROUPS.length===1?'':'s'}. Skip ${ONBOARD_GROUPS.length===1?'it':'any of them'} — you can fill ${ONBOARD_GROUPS.length===1?'it':'it all'} in later.</p>
         <div class="onb-preview">
           ${ONBOARD_GROUPS.map((g,i)=>`<div class="onb-preview-row"><span class="onb-preview-num">${i+1}</span> ${esc(g)}</div>`).join('')}
         </div>
@@ -4313,7 +4301,7 @@ function renderOnboardTimetableFocus(){
         <div class="onb-tt-time">${esc(b.time)}</div>
         <div class="onb-focus-task">${esc(b.task)}</div>
       </div>
-      <select class="onb-focus-select" aria-label="Links to box" onchange="onboardSetMapping('${b.time}', this.value || null)">
+      <select class="onb-focus-select" onchange="onboardSetMapping('${b.time}', this.value || null)">
         <option value="">No linked page</option>
         ${bxFocusPages().map(f=>`<option value="${f.id}" ${f.id===mapped?'selected':''}>${esc(f.name)}</option>`).join('')}
       </select>
@@ -5497,7 +5485,7 @@ function setText(dateStr,pageId,key,val){
   saveDB();
 }
 function areaField(dateStr,pageId,key,placeholder,val,cls){
-  return `<textarea class="${cls||'freewrite'}" aria-label="${esc(placeholder||'Notes')}" placeholder="${esc(placeholder)}"
+  return `<textarea class="${cls||'freewrite'}" placeholder="${esc(placeholder)}"
     oninput="setText('${dateStr}','${pageId}','${key}',this.value)">${esc(val)}</textarea>`;
 }
 function pillGroup(dateStr,pageId,key,options,val,colorClass){
@@ -5532,12 +5520,12 @@ function toggleCheck(dateStr,pageId,key){
 function counterField(dateStr,pageId,key,val,step,suffix){
   step = step||1;
   return `<div class="counter-row">
-    <button class="counter-btn" aria-label="Decrease" onclick="bumpCounter('${dateStr}','${pageId}','${key}',-${step})">${icon('minus',16)}</button>
-    <input class="counter-val counter-input" aria-label="Value" inputmode="numeric" pattern="[0-9]*"
+    <button class="counter-btn" onclick="bumpCounter('${dateStr}','${pageId}','${key}',-${step})">${icon('minus',16)}</button>
+    <input class="counter-val counter-input" inputmode="numeric" pattern="[0-9]*"
       value="${esc(val||0)}"
       oninput="setCounterDirect('${dateStr}','${pageId}','${key}',this.value)"
       onfocus="this.select()">${suffix?`<span class="counter-suffix">${esc(suffix)}</span>`:''}
-    <button class="counter-btn" aria-label="Increase" onclick="bumpCounter('${dateStr}','${pageId}','${key}',${step})">${icon('plus',16)}</button>
+    <button class="counter-btn" onclick="bumpCounter('${dateStr}','${pageId}','${key}',${step})">${icon('plus',16)}</button>
   </div>`;
 }
 function bumpCounter(dateStr,pageId,key,delta){
@@ -6216,7 +6204,7 @@ function updateMonthlyField(pageId, mk, key, val){
   saveDB();
 }
 function monthlyAreaField(pageId, mk, key, placeholder, val, cls){
-  return `<textarea class="${cls||'freewrite'}" aria-label="${esc(placeholder||'Notes')}" placeholder="${esc(placeholder)}"
+  return `<textarea class="${cls||'freewrite'}" placeholder="${esc(placeholder)}"
     oninput="updateMonthlyField('${pageId}','${mk}','${key}',this.value)">${esc(val||'')}</textarea>`;
 }
 function monthlyTextField(pageId, mk, key, placeholder, val){
@@ -6354,7 +6342,7 @@ function renderTimetable(dateStr){
     </div>
     <div class="tt-focus-row">
       <span class="tt-focus-lbl">${icon('grid',12)} Links to</span>
-      <select aria-label="Links to box" onchange="setSlotMapping('${b.time}', this.value || null); render();">
+      <select onchange="setSlotMapping('${b.time}', this.value || null); render();">
         <option value="">Nothing — idle hour</option>
         ${bxFocusPages().map(f=>`<option value="${f.id}" ${f.id===mapped?'selected':''}>${esc(f.name)}</option>`).join('')}
       </select>
@@ -6379,7 +6367,7 @@ function renderTimetable(dateStr){
         </div>
         ${blocks.length ? rows : `<div class="empty-note">No blocks yet — add your first one below.</div>`}
         <div class="tt-add-row">
-          <input type="time" id="tt-new-time" class="tt-add-time" aria-label="New hour" value="${esc(suggested)}" step="${TIME_STEP_MIN*60}">
+          <input type="time" id="tt-new-time" class="tt-add-time" value="${esc(suggested)}" step="${TIME_STEP_MIN*60}">
           <button class="add-row-btn" style="flex:1;margin:0;" onclick="addTimetableBlockFromInput()">${icon('plus',14)} Add block</button>
         </div>
       `)}
@@ -6814,7 +6802,6 @@ function renderSettings(){
    every timetable hour.
    ============================================================ */
 function renderTestTimeSection(){
-  if(!window.APP_TEST_MODE && location.search.indexOf('testtools')<0) return '';
   const real = new Date();
   const overrideMins = getDebugTimeMinutes();
   const active = overrideMins !== null;
@@ -6839,7 +6826,7 @@ function renderTestTimeSection(){
           <div class="test-time-display">${active?'Simulated':'Live'} time</div>
           <div class="test-time-value" id="test-time-live-label">${esc(label)}</div>
         </div>
-        <input type="range" class="test-time-slider" aria-label="Simulated time" min="0" max="1439" step="5" value="${mins}"
+        <input type="range" class="test-time-slider" min="0" max="1439" step="5" value="${mins}"
           oninput="setDebugTimeMinutes(this.value); document.getElementById('test-time-live-label').textContent = minutesToClockLabel(this.value);">
         <div class="test-jump-row">${quickJumps}</div>
         <button class="add-row-btn" onclick="setDebugTimeMinutes(null); render();" ${active?'':'disabled'}>
@@ -8399,7 +8386,7 @@ function render(){
   else renderHome();
 }
 
-render();
+/* CYCLE 5: no first draw here. BOOT (the last script) draws once, after every add-on has loaded, so the old screen never flashes. */
 (function dismissSplash(){
   const splash = document.getElementById('app-splash');
   if(!splash) return;
@@ -9452,6 +9439,53 @@ if(LAYOUT_MQ){
 })();
 </script>
 <script>
+/* ============================================================
+   "OTHER" SUGGESTIONS (Cycle 5)
+   When you type something into any "+ Other" box, it comes back as a suggested chip (dashed outline) in that same place:
+     - it stays for 7 days. Picking it again starts the 7 days over.
+     - not picked within 7 days: it is deleted.
+     - at most 3 per place. A 4th pushes out the oldest, so the most recent 3 stay.
+   Saved in DB.otherSug = { "place key": [ { v:"text", last:"2026-10-18" } ] }. Old backups just do not have it.
+   Other scripts call: OTHERS.add(key, text), OTHERS.use(key, text), OTHERS.list(key, optionsAlreadyShown).
+   ============================================================ */
+(function(){
+  var MAX = 3, DAYS = 7;
+  function store(){ if(!DB.otherSug || typeof DB.otherSug !== 'object') DB.otherSug = {}; return DB.otherSug; }
+  function ms(d){ var p = String(d).split('-'); return new Date(+p[0], (+p[1]||1)-1, +p[2]||1).getTime(); }
+  function old(last){ return (ms(todayStr()) - ms(last)) / 86400000 > DAYS; }
+  /* drop the expired ones and anything past the newest 3; returns the clean array for that place */
+  function clean(key){
+    var s = store(), a = Array.isArray(s[key]) ? s[key] : [], before = JSON.stringify(a);
+    a = a.filter(function(x){ return x && x.v && x.last && !old(x.last); });
+    a.sort(function(x,y){ return ms(y.last) - ms(x.last); });
+    a = a.slice(0, MAX);
+    if(a.length) s[key] = a; else delete s[key];
+    if(JSON.stringify(a) !== before){ try{ saveDB(); }catch(e){} }
+    return a;
+  }
+  var OTHERS = window.OTHERS = {
+    MAX: MAX, DAYS: DAYS,
+    add: function(key, text){
+      text = String(text||'').trim(); if(!key || !text) return;
+      var a = clean(key).filter(function(x){ return x.v.toLowerCase() !== text.toLowerCase(); });
+      a.unshift({ v:text, last:todayStr() }); store()[key] = a.slice(0, MAX); try{ saveDB(); }catch(e){}
+    },
+    use: function(key, text){
+      var a = clean(key), hit = a.filter(function(x){ return x.v === text; })[0];
+      if(hit){ hit.last = todayStr(); try{ saveDB(); }catch(e){} }
+    },
+    /* suggestions for this place, leaving out anything already on screen as a normal option */
+    list: function(key, shown){
+      shown = shown || [];
+      return clean(key).map(function(x){ return x.v; }).filter(function(v){ return shown.indexOf(v) < 0; });
+    }
+  };
+  var st = document.createElement('style'); st.id = 'others-css';
+  st.textContent = '.ui-chip.sugg{border-style:dashed !important;background:transparent}.ui-chip.sugg.on{border-style:solid !important}.ui-chip.sugg::before{content:"\\21BB";font-size:11px;margin-right:5px;opacity:.55}';
+  document.head.appendChild(st);
+})();
+</script>
+<script>
 /* =====================================================================================================
    TAP-FIRST INPUTS  (Bot A, task 3)
    -----------------------------------------------------------------------------------------------------
@@ -9577,6 +9611,7 @@ if(LAYOUT_MQ){
       var h = '<div class="pill-row ui-chips">';
       opts.forEach(function(o){ var on = val===o; h += chipBtn(spec.fmt ? spec.fmt(o) : o, on, D('set',ds,pid,key,o), em[o], (spec.face?' ui-face':'')+justCls('c'+key+o)); });
       if(custom) h += chipBtn(custom, true, D('set',ds,pid,key,custom), null, justCls('c'+key+custom));
+      if(spec.other!==false && window.OTHERS) OTHERS.list(pid+'.'+key, opts.concat(custom?[custom]:[])).forEach(function(o){ h += chipBtn(o, false, D('set',ds,pid,key,o), null, ' sugg'); });
       if(spec.other!==false) h += chipBtn('+ Other', false, D('other',ds,pid,key), null, ' more');
       return h + '</div>' + otherRow(ds,pid,key);
     }
@@ -9597,6 +9632,7 @@ if(LAYOUT_MQ){
       var m = parseMulti(val), opts = spec.opts, extra = m.tok.filter(function(t){ return opts.indexOf(t)<0; });
       var h = '<div class="pill-row ui-chips">';
       opts.concat(extra).forEach(function(o){ var on = m.tok.indexOf(o)>=0; h += chipBtn(o, on, D('tog',ds,pid,key,o), null, justCls('c'+key+o)); });
+      if(spec.other!==false && window.OTHERS) OTHERS.list(pid+'.'+key, opts.concat(extra)).forEach(function(o){ h += chipBtn(o, false, D('tog',ds,pid,key,o), null, ' sugg'); });
       h += chipBtn('+ Other', false, D('other',ds,pid,key), null, ' more') + '</div>' + otherRow(ds,pid,key);
       if(spec.note){
         var open = !!m.note || OPEN[K(ds,pid,key)+'|n'];
@@ -9759,6 +9795,7 @@ if(LAYOUT_MQ){
         var rc = []; for(var n=1;n<=6;n++){ rc = rc.concat(recents(ds,pid,key.replace(/\d+$/,'')+n)); }
         var all = [], rot = pk.rot ? pk.rot() : [], base = pk.dyn ? pk.dyn(ds,pid,key) : pk.opts;
         rc.concat(base).forEach(function(o){ if(all.indexOf(o)<0 && rot.indexOf(o)<0) all.push(o); });
+        if(window.OTHERS) OTHERS.list(pid+'.'+key.replace(/\d+$/,''), all.concat(rot)).forEach(function(o){ all.push(o); });
         if(val && all.indexOf(val)<0 && rot.indexOf(val)<0) all.unshift(val);
         body = (rot.length ? '<div class="ui-rl" style="margin:0 0 8px;">In your rotation</div><div class="pill-row ui-chips">' + rot.map(function(o){ return chipBtn(o, o===val, D('pickset',ds,pid,key,o)); }).join('') + '</div><div class="ui-rl" style="margin:14px 0 8px;">Or pick a kind</div>' : '')
           + '<div class="pill-row ui-chips">' + all.map(function(o){ return chipBtn(o, o===val, D('pickset',ds,pid,key,o)); }).join('') + '</div>'
@@ -9798,7 +9835,6 @@ if(LAYOUT_MQ){
       return h + baseText(ds,pid,key,ph,val);
     };
     areaField = function(ds,pid,key,ph,val,cls){
-      if(pid==='workout' && key==='log' && !isHustler) return workoutChecklist(ds,val,cls,ph);
       var sp = S[pid+'.'+key];
       if(sp && sp.t==='multi') return multiChips(ds,pid,key,val,sp);
       return baseArea(ds,pid,key,ph,val,cls);
@@ -9831,68 +9867,13 @@ if(LAYOUT_MQ){
       return '<div class="check-row '+(c?'struck':'')+'"><div class="checkbox '+(c?'checked':'')+(JUST==='k'+pid+key?' just':'')+'" onclick="toggleCheck(\''+ds+'\',\''+pid+'\',\''+key+'\')">'+icon('check',14)+'</div><div class="crow-text">'+esc(label)+'</div></div>';
     };
 
-    /* =====================================================================================================
-       WORKOUT PRESETS (every logbook except Hustler's, which already has its own preset system below)
-       Tap a card: the type, a sensible duration and intensity, and a tick-off exercise list fill in.
-       The list is saved in the existing "log" text as lines:  "• Bench press 4x8"  (open)  /  "✓ ..." (done).
-       ===================================================================================================== */
-    var WK = [
-      { id:'push',  name:'Push',      em:'💪', dur:45, int:'Hard',     ex:['Bench press 4×8','Overhead press 3×10','Incline dumbbell press 3×10','Triceps pushdown 3×12'] },
-      { id:'pull',  name:'Pull',      em:'🚣', dur:45, int:'Hard',     ex:['Deadlift 4×6','Pull-ups 3×8','Barbell row 3×10','Biceps curl 3×12'] },
-      { id:'legs',  name:'Legs',      em:'🦵', dur:50, int:'Hard',     ex:['Squat 4×8','Romanian deadlift 3×10','Leg press 3×12','Calf raise 3×15'] },
-      { id:'upper', name:'Upper',     em:'🏋️', dur:45, int:'Moderate', ex:['Bench press 3×8','Row 3×10','Shoulder press 3×10','Biceps curl 2×12','Triceps dip 2×12'] },
-      { id:'lower', name:'Lower',     em:'🦿', dur:45, int:'Moderate', ex:['Squat 3×8','Lunges 3×10','Hip thrust 3×12','Calf raise 3×15'] },
-      { id:'full',  name:'Full body', em:'🔥', dur:50, int:'Moderate', ex:['Squat 3×8','Push-ups 3×12','Row 3×10','Plank 3×45s','Lunges 2×10'] },
-      { id:'cardio',name:'Cardio',    em:'❤️', dur:30, int:'Moderate', ex:['Warm-up 5 min','Steady cardio 20 min','Cool-down 5 min'] },
-      { id:'run',   name:'Run',       em:'🏃', dur:30, int:'Moderate', ex:['Warm-up jog 5 min','Run 20 min','Cool-down walk 5 min'] },
-      { id:'walk',  name:'Walk',      em:'🚶', dur:30, int:'Light',    ex:[] },
-      { id:'yoga',  name:'Yoga',      em:'🧘', dur:30, int:'Light',    ex:['Sun salutations','Warrior flow','Hip openers','Final rest'] },
-      { id:'hiit',  name:'HIIT',      em:'⚡',       dur:20, int:'Hard',     ex:['Burpees 4×30s','Jump squats 4×30s','Mountain climbers 4×30s','Rest between rounds'] },
-      { id:'rest',  name:'Rest day',  em:'😴', dur:0,  int:'Light',    ex:[] }
-    ];
-    var MOVES = ['Squat','Deadlift','Bench press','Row','Overhead press','Pull-ups','Push-ups','Lunges','Plank','Burpees','Jump rope','Stretching'];
-    function wkByName(n){ for(var i=0;i<WK.length;i++){ if(WK[i].name===n) return WK[i]; } return null; }
+    /* CYCLE 5: the old Workout presets cards and tick-list log were removed (Movement replaced them in Cycle 3). Only the two small helpers below stay, because old saved logs are still read by them. */
     function parseLog(v){
       var items = [], legacy = false;
       String(v||'').split('\n').forEach(function(l){ if(!l.trim()) return; var m = /^([•✓])\s?(.*)$/.exec(l); if(m) items.push({ d:m[1]==='✓', t:m[2] }); else legacy = true; });
       return { items:items, legacy:legacy };
     }
     function logText(items){ return items.map(function(i){ return (i.d?'✓ ':'• ')+i.t; }).join('\n'); }
-    function workoutChecklist(ds,val,cls,ph){
-      var pl = parseLog(val), h = '';
-      if(pl.legacy){   /* an older free-text log: leave it exactly as it was, and offer to turn it into a tick list */
-        return baseArea(ds,'workout','log',ph,val,cls)
-          + '<button type="button" class="ui-notebtn" '+D('wkconvert',ds,'workout','log')+'>✓ Turn this into a tick list</button>';
-      }
-      var done = pl.items.filter(function(i){ return i.d; }).length, n = pl.items.length;
-      if(n){
-        h += '<div class="ui-prog"><i style="width:'+Math.round(done/n*100)+'%"></i></div><div class="ui-proglabel">'+done+' of '+n+' done</div>';
-        pl.items.forEach(function(it,i){
-          h += '<div class="ui-crow'+(it.d?' done':'')+'"><button type="button" class="ui-ctap'+justCls('w'+i)+'" '+D('wkx',ds,'workout','log',i)+'><span class="ui-cbox">'+icon('check',16)+'</span><span class="t">'+E(it.t)+'</span></button>'
-            + '<button type="button" class="ui-cx" aria-label="Remove" '+D('wkdel',ds,'workout','log',i)+'>×</button></div>';
-        });
-      } else {
-        h += '<div class="fc-hint" style="margin:0 0 8px;">Pick a workout above, or tap moves to add them.</div>';
-      }
-      var have = pl.items.map(function(i){ return i.t.toLowerCase(); });
-      h += '<div class="pill-row ui-chips ui-quick">';
-      MOVES.filter(function(m){ return !have.some(function(t){ return t.indexOf(m.toLowerCase())===0; }); }).slice(0,8).forEach(function(m){ h += chipBtn('+ '+m, false, D('wkadd',ds,'workout','log',m)); });
-      h += chipBtn('+ Other', false, D('other',ds,'workout','log'), null, ' more') + '</div>';
-      if(OPEN[K(ds,'workout','log')+'|o']) h += '<div class="ui-otherrow"><input class="textline ui-other" data-k="'+E(K(ds,'workout','log'))+'" placeholder="Move name" '+D('wkother',ds,'workout','log')+'><button type="button" class="pill active red" '+D('wkother',ds,'workout','log')+'>Add</button></div>';
-      return h;
-    }
-    /* the "Type" field becomes preset cards (everything except Hustler, whose Session type pills are kept) */
-    var _tf = textField;
-    textField = function(ds,pid,key,ph,val){
-      if(pid==='workout' && key==='type' && !isHustler){
-        var h = '<div class="ui-cards">';
-        WK.forEach(function(w){ h += '<button type="button" class="ui-card'+(val===w.name?' on':'')+justCls('wp'+w.id)+'" aria-pressed="'+(val===w.name?'true':'false')+'" '+D('wkpreset',ds,'workout','type',w.id)+'><span class="em">'+w.em+'</span>'+E(w.name)+'</button>'; });
-        h += '</div>';
-        if(val && !wkByName(val)) h += '<div class="fc-hint" style="margin:10px 0 0;">Logged as “'+E(val)+'” — tap a card to switch.</div>';
-        return h;
-      }
-      return _tf(ds,pid,key,ph,val);
-    };
 
     /* =====================================================================================================
        HUSTLER'S workout: preset cards fill the exercise list in one tap, sets / reps / kg become steppers
@@ -9955,41 +9936,28 @@ if(LAYOUT_MQ){
       var act = b.getAttribute('data-ui'), ds = b.getAttribute('data-ds'), pid = b.getAttribute('data-pid'), key = b.getAttribute('data-key'), val = b.getAttribute('data-val');
       var pg, cur, m, sp;
       switch(act){
-        case 'set':   cur = (getPage(ds,pid)[key]||''); put(ds,pid,key, cur===val ? '' : val); return after('c'+key+val);
+        case 'set':   cur = (getPage(ds,pid)[key]||''); if(cur!==val && window.OTHERS) OTHERS.use(pid+'.'+key, val); put(ds,pid,key, cur===val ? '' : val); return after('c'+key+val);
         case 'put':   put(ds,pid,key,val); return after('q'+key+val);
-        case 'tog':   m = parseMulti(getPage(ds,pid)[key]); var ix = m.tok.indexOf(val); if(ix>=0) m.tok.splice(ix,1); else m.tok.push(val);
+        case 'tog':   m = parseMulti(getPage(ds,pid)[key]); var ix = m.tok.indexOf(val); if(ix>=0) m.tok.splice(ix,1); else { m.tok.push(val); if(window.OTHERS) OTHERS.use(pid+'.'+key, val); }
                       put(ds,pid,key, buildMulti(m.tok, m.note)); return after('c'+key+val);
         case 'other': OPEN[K(ds,pid,key)+'|o'] = !OPEN[K(ds,pid,key)+'|o']; render();
                       setTimeout(function(){ var i = document.querySelector('.ui-other'); if(i) i.focus(); }, 30); return;
         case 'addother': var inp = document.querySelector('.ui-other[data-k="'+K(ds,pid,key)+'"]'), t = inp ? inp.value.trim() : '';
                       OPEN[K(ds,pid,key)+'|o'] = false; if(!t){ render(); return; }
                       sp = S[pid+'.'+key];
+                      if(window.OTHERS) OTHERS.add(pid+'.'+key, t);
                       if(sp && sp.t==='multi'){ m = parseMulti(getPage(ds,pid)[key]); if(m.tok.indexOf(t)<0) m.tok.push(t); put(ds,pid,key,buildMulti(m.tok,m.note)); }
                       else put(ds,pid,key,t);
                       return after('c'+key+t);
         case 'opennote': OPEN[K(ds,pid,key)+'|n'] = true; render(); setTimeout(function(){ var n = document.querySelector('textarea.ui-note'); if(n) n.focus(); }, 30); return;
         case 'openpick': openPick(ds,pid,key); return;
-        case 'pickset':  cur = (getPage(ds,pid)[key]||''); put(ds,pid,key, cur===val ? '' : val); fillBrand(ds,pid,key,cur===val ? '' : val); closeSheet(); return after('pk'+key);
-        case 'pickother': var pin = document.querySelector('.ui-other[data-k="'+K(ds,pid,key)+'"]'), pt = pin ? pin.value.trim() : ''; if(!pt) return; put(ds,pid,key,pt); fillBrand(ds,pid,key,pt); closeSheet(); return after('pk'+key);
+        case 'pickset':  cur = (getPage(ds,pid)[key]||''); if(cur!==val && window.OTHERS) OTHERS.use(pid+'.'+key.replace(/\d+$/,''), val); put(ds,pid,key, cur===val ? '' : val); fillBrand(ds,pid,key,cur===val ? '' : val); closeSheet(); return after('pk'+key);
+        case 'pickother': var pin = document.querySelector('.ui-other[data-k="'+K(ds,pid,key)+'"]'), pt = pin ? pin.value.trim() : ''; if(!pt) return; if(window.OTHERS) OTHERS.add(pid+'.'+key.replace(/\d+$/,''), pt); put(ds,pid,key,pt); fillBrand(ds,pid,key,pt); closeSheet(); return after('pk'+key);
         case 'pickclear': put(ds,pid,key,''); closeSheet(); return after(null);
         case 'pickdone':  closeSheet(); return after('pk'+key);
         case 'bump':  JUST = 'b'+key+val; bumpCounter(ds,pid,key,Number(val)); return;
         case 'cset':  setCounterDirect(ds,pid,key,val); flashSaved(); return after('s'+key+val);
         /* workout presets (non-Hustler) */
-        case 'wkpreset': var w = WK.filter(function(x){ return x.id===val; })[0]; if(!w) return;
-                      pg = getPage(ds,'workout'); var cl = parseLog(pg.log);
-                      pg.type = w.name; pg.duration = w.dur ? w.dur+' min' : ''; pg.intensity = w.int;
-                      if(!cl.legacy && !cl.items.some(function(i){ return i.d; })) pg.log = logText(w.ex.map(function(t){ return {d:false,t:t}; }));
-                      markTouched(ds,'workout'); flashSaved(); return after('wp'+w.id);
-        case 'wkx':   pg = getPage(ds,'workout'); cl = parseLog(pg.log); if(cl.items[val]) cl.items[val].d = !cl.items[val].d; put(ds,'workout','log',logText(cl.items)); return after('w'+val);
-        case 'wkdel': pg = getPage(ds,'workout'); cl = parseLog(pg.log); cl.items.splice(Number(val),1); put(ds,'workout','log',logText(cl.items)); return after(null);
-        case 'wkadd': pg = getPage(ds,'workout'); cl = parseLog(pg.log); cl.items.push({d:false,t:val}); put(ds,'workout','log',logText(cl.items)); return after(null);
-        case 'wkother': var wi = document.querySelector('.ui-other[data-k="'+K(ds,'workout','log')+'"]'), wt = wi ? wi.value.trim() : '';
-                      OPEN[K(ds,'workout','log')+'|o'] = false;
-                      if(wt){ pg = getPage(ds,'workout'); cl = parseLog(pg.log); cl.items.push({d:false,t:wt}); put(ds,'workout','log',logText(cl.items)); }
-                      return after(null);
-        case 'wkconvert': pg = getPage(ds,'workout'); var its = String(pg.log||'').split('\n').filter(function(l){ return l.trim(); }).map(function(l){ return /^[•✓]/.test(l) ? l : '• '+l.trim(); });
-                      put(ds,'workout','log',its.join('\n')); return after(null);
         /* Hustler */
         case 'expreset': var pr;
                       if(val.indexOf('id:')===0) pr = DB.workoutPresets[val.slice(3)];
@@ -10054,7 +10022,7 @@ if(LAYOUT_MQ){
     document.addEventListener('pointercancel', function(){ endRep(false); });
     document.addEventListener('contextmenu', function(e){ if(e.target.closest && e.target.closest('.ui-sbtn')) e.preventDefault(); });
 
-    window.UI = { specs:S, workoutPresets:WK, parseMulti:parseMulti, buildMulti:buildMulti, parseLog:parseLog, quickAdd:QUICK_ADD, kinds:KIND, justCls:justCls, picks:PICK };
+    window.UI = { specs:S, workoutPresets:[], parseMulti:parseMulti, buildMulti:buildMulti, parseLog:parseLog, quickAdd:QUICK_ADD, kinds:KIND, justCls:justCls, picks:PICK };
   }catch(e){ if(window.console) console.error('tap-first inputs', e); }
 })();
 </script>
@@ -10292,7 +10260,9 @@ if(LAYOUT_MQ){
       }
       var opts = typeof s.opts==='function' ? s.opts(stateOf()) : s.opts;
       s._all = opts.concat(s.sel.filter(function(v){ return opts.indexOf(v)<0; }));
-      h += '<div class="pill-row ui-chips">' + s._all.map(function(o,oi){ var on = s.sel.indexOf(o)>=0; return '<button type="button" class="pill ui-chip'+(on?' on':'')+'" data-ls="chip" data-s="'+si+'" data-o="'+oi+'" aria-pressed="'+(on?'true':'false')+'">'+E(o)+'</button>'; }).join('');
+      s._sug = (s.other!==false && window.OTHERS) ? OTHERS.list(okey(si), s._all) : [];
+      s._all = s._all.concat(s._sug);
+      h += '<div class="pill-row ui-chips">' + s._all.map(function(o,oi){ var on = s.sel.indexOf(o)>=0; return '<button type="button" class="pill ui-chip'+(on?' on':'')+(s._sug.indexOf(o)>=0?' sugg':'')+'" data-ls="chip" data-s="'+si+'" data-o="'+oi+'" aria-pressed="'+(on?'true':'false')+'">'+E(o)+'</button>'; }).join('');
       if(s.other!==false) h += '<button type="button" class="pill ui-chip more" data-ls="oth" data-s="'+si+'">+ Other</button>';
       h += '</div>';
       if(s.openO) h += '<div class="ui-otherrow"><input class="textline ls-other" data-s="'+si+'" maxlength="80" placeholder="Type it here"><button type="button" class="pill active red" data-ls="addoth" data-s="'+si+'">Add</button></div>';
@@ -10313,8 +10283,11 @@ if(LAYOUT_MQ){
       openSheet('<div class="sheet-title"><span>'+E(cfg.title)+'</span><button class="sheet-close" onclick="closeSheet()" aria-label="Close">'+icon('close',15)+'</button></div><div class="ui-sheetbody"><div class="ls-body" id="ls-body">'+bodyHtml()+'</div></div>');
     }
     function finish(){ var cb = SH && SH.done, st = SH && stateOf(); closeSheet(); SH = null; if(cb) cb(st); }
+    /* the place key for "Other" suggestions: this sheet's title + this section */
+    function okey(si){ var s = SH.secs[si]; return 'sheet:'+(SH.title||'')+'|'+(s.id||si); }
     function pickChip(si, val){
       var s = SH.secs[si], ix = s.sel.indexOf(val);
+      if(ix<0 && window.OTHERS) OTHERS.use(okey(si), val);
       if(s.multi){ if(ix>=0) s.sel.splice(ix,1); else s.sel.push(val); repaint(); return; }
       if(ix>=0) s.sel = []; else s.sel = [val];
       if(SH.instant) return finish();
@@ -10324,7 +10297,7 @@ if(LAYOUT_MQ){
       var a = b.getAttribute('data-ls'), si = Number(b.getAttribute('data-s')), s;
       if(a==='chip'){ s = SH.secs[si]; return pickChip(si, s._all[Number(b.getAttribute('data-o'))]); }
       if(a==='oth'){ SH.secs[si].openO = !SH.secs[si].openO; repaint(); var i = document.querySelector('.ls-other'); if(i) setTimeout(function(){ i.focus(); }, 30); return; }
-      if(a==='addoth'){ var inp = document.querySelector('.ls-other[data-s="'+si+'"]'), t = inp ? inp.value.trim() : ''; SH.secs[si].openO = false; if(!t) return repaint(); s = SH.secs[si]; if(s.multi){ if(s.sel.indexOf(t)<0) s.sel.push(t); repaint(); } else { s.sel = [t]; if(SH.instant) return finish(); repaint(); } return; }
+      if(a==='addoth'){ var inp = document.querySelector('.ls-other[data-s="'+si+'"]'), t = inp ? inp.value.trim() : ''; SH.secs[si].openO = false; if(!t) return repaint(); s = SH.secs[si]; if(window.OTHERS) OTHERS.add(okey(si), t); if(s.multi){ if(s.sel.indexOf(t)<0) s.sel.push(t); repaint(); } else { s.sel = [t]; if(SH.instant) return finish(); repaint(); } return; }
       if(a==='nstep'){ s = SH.secs[si]; var n = s.num, v = Number(s.val||0) + Number(b.getAttribute('data-d')); v = Math.max(n.min!=null?n.min:0, Math.min(n.max!=null?n.max:1e9, Math.round(v*100)/100)); s.val = v; repaint(); return; }
       if(a==='nq'){ SH.secs[si].val = Number(b.getAttribute('data-v')); repaint(); return; }
       if(a==='dq'){ s = SH.secs[si]; s.val = s.date[Number(b.getAttribute('data-v'))][1]; return finish(); }
@@ -11030,18 +11003,26 @@ if(LAYOUT_MQ){
     /* ---------- the card ---------- */
     function star(it, k){ var on = Math.ceil((+it.rating||0)/2) >= k; return '<button type="button" class="vt-star'+(on?' on':'')+'" data-vt="star" data-id="'+it.id+'" data-v="'+k+'" aria-label="'+k+' of 5 stars">'+(on?'★':'☆')+'</button>'; }
     function row(it, act, lab, val, ph){ return '<button type="button" class="vt-row" data-vt="'+act+'" data-id="'+it.id+'"><span class="l">'+lab+'</span><span class="v'+(val?'':' empty')+'">'+(val||E(ph))+'</span></button>'; }
+    /* CYCLE 5: cards are collapsed by default. The top shows the brand, name, a few tags and the score; tap it to open the rest
+       (rating, tags, how long it lasts, thoughts, move/remove). One card open at a time keeps the list short. */
+    var OPENID = null;
     function card(it, usage){
-      var g = groupOf(it), em = EM[g] || '🧴', tags = parts(it.characteristics), used = usage[String(it.name||'').trim().toLowerCase()] || 0;
+      var g = groupOf(it), em = EM[g] || '🧴', tags = parts(it.characteristics), used = usage[String(it.name||'').trim().toLowerCase()] || 0, open = OPENID===it.id;
       var since = it.shelf==='finished' && it.finishedAt ? 'Finished '+E(fmtShort(new Date(it.finishedAt+'T12:00:00'))) : (it.added ? 'Since '+E(fmtShort(new Date(it.added+'T12:00:00'))) : '');
-      return '<div class="vt-card" data-card="'+it.id+'"><div class="vt-top"><div class="vt-tile" aria-hidden="true">'+em+'</div><div class="vt-id">'
+      var rated = (it.shelf==='finished' || it.shelf==='repurchased');
+      var head = '<button type="button" class="vt-top" data-vt="open" data-id="'+it.id+'" aria-expanded="'+open+'"><div class="vt-tile" aria-hidden="true">'+em+'</div><div class="vt-id">'
         + (it.brand ? '<div class="vt-brand">'+E(it.brand)+'</div>' : '<div class="vt-brand none">No brand</div>')
         + '<div class="vt-name">'+E(it.name||'Unnamed')+'</div>'
-        + '<div class="vt-meta">'+(it.kind && it.kind!==it.name ? '<span class="vt-kind">'+E(it.kind)+'</span>' : '')+(used ? '<span class="vt-used">Used '+used+'× in 30 days</span>' : (since ? '<span>'+since+'</span>' : ''))+'</div></div></div>'
-        + (it.shelf!=='finished' && it.shelf!=='repurchased' ? '' : '<div class="vt-rate"><div class="vt-stars" role="group" aria-label="Rating">'+[1,2,3,4,5].map(function(k){ return star(it,k); }).join('')+'</div><div class="vt-score">'+(it.rating ? (+it.rating)+'<small>/10</small>' : '<small>Rate it</small>')+'</div></div>')
+        + '<div class="vt-meta">'+(it.kind && it.kind!==it.name ? '<span class="vt-kind">'+E(it.kind)+'</span>' : '')+(used ? '<span class="vt-used">Used '+used+'× in 30 days</span>' : (since ? '<span>'+since+'</span>' : ''))+'</div></div>'
+        + (rated && it.rating ? '<span class="vt-badge">'+(+it.rating)+'<small>/10</small></span>' : '') + '<span class="vt-chev" aria-hidden="true">'+icon(open?'minus':'plus',14)+'</span></button>';
+      var peek = (!open && tags.length) ? '<div class="vt-peek">'+tags.slice(0,3).map(function(t){ return '<i>'+E(t)+'</i>'; }).join('')+(tags.length>3 ? '<i class="more">+'+(tags.length-3)+'</i>' : '')+'</div>' : '';
+      var body = !open ? '' : '<div class="vt-more">'
+        + (rated ? '<div class="vt-rate"><div class="vt-stars" role="group" aria-label="Rating">'+[1,2,3,4,5].map(function(k){ return star(it,k); }).join('')+'</div><div class="vt-score">'+(it.rating ? (+it.rating)+'<small>/10</small>' : '<small>Rate it</small>')+'</div></div>' : '')
         + row(it, 'tags', 'Feels like', tags.length ? tags.map(function(t){ return '<i>'+E(t)+'</i>'; }).join('') : '', 'Add tags')
         + row(it, 'last', g==='Fragrance' ? 'Lasts' : 'Lasts about', it.longevity ? E(it.longevity) : '', 'How long?')
         + row(it, 'note', 'Thoughts', it.note ? E(it.note) : '', 'Add a note')
         + '<div class="vt-acts"><button type="button" class="vt-act" data-vt="move" data-id="'+it.id+'">Move to…</button><button type="button" class="vt-act danger" data-vt="rm" data-id="'+it.id+'">Remove</button></div></div>';
+      return '<div class="vt-card'+(open?' open':'')+'" data-card="'+it.id+'">'+head+peek+body+'</div>';
     }
 
     /* ---------- the page ---------- */
@@ -11066,7 +11047,8 @@ if(LAYOUT_MQ){
     /* ---------- taps ---------- */
     function vt(b){
       var a = b.getAttribute('data-vt'), id = b.getAttribute('data-id'), v = b.getAttribute('data-v'), it = id ? V().items[id] : null;
-      if(a==='tab'){ TAB = v; return render(); }
+      if(a==='tab'){ TAB = v; OPENID = null; return render(); }
+      if(a==='open'){ OPENID = (OPENID===id) ? null : id; return render(); }
       if(a==='add'){ return window.WIZ.open('rot:'+TAB, currentMonthKey(), function(x){ var had = find(x.name, x.brand); add(x, TAB); if(had) flashSaved('Already in your vault. Moved it here.'); render(); }, (SHELVES.filter(function(x){ return x.id===TAB; })[0]||{}).title); }
       if(!it) return;
       if(a==='star'){ var r = Number(v)*2; it.rating = (+it.rating===r ? 0 : r); saveDB(); flashSaved(); return render(); }
@@ -11126,7 +11108,10 @@ if(LAYOUT_MQ){
       + '.vt-tab.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm);}.vt-tab:active{transform:scale(.96);}'
       + '.vt-hint{font-size:12.5px;color:var(--muted);margin:0 2px 12px;}'
       + '.vt-card{background:var(--surface);border:1px solid var(--line);border-radius:24px;padding:14px;margin:0 0 14px;box-shadow:var(--shadow-sm);}'
-      + '.vt-top{display:flex;gap:12px;align-items:center;margin-bottom:12px;}'
+      + '.vt-top{display:flex;gap:12px;align-items:center;width:100%;margin:0;padding:0;border:0;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer;touch-action:manipulation;}'
+      + '.vt-top .vt-id{flex:1;min-width:0;}.vt-badge{flex:none;font-weight:800;font-size:15px;color:var(--accent);background:var(--accent-soft);border-radius:12px;padding:5px 9px;}.vt-badge small{font-size:10px;opacity:.7}.vt-chev{flex:none;width:30px;height:30px;border-radius:50%;background:var(--surface-2);color:var(--ink-soft);display:flex;align-items:center;justify-content:center;}'
+      + '.vt-peek{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0 62px}.vt-peek i{font-style:normal;font-size:11.5px;font-weight:700;color:var(--ink-soft);background:var(--surface-2);border-radius:999px;padding:3px 9px}.vt-peek i.more{color:var(--muted)}'
+      + '.vt-more{margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}.vt-card:not(.open){padding:12px 14px}'
       + '.vt-tile{flex:none;width:58px;height:58px;border-radius:18px;background:linear-gradient(145deg,var(--accent-soft),var(--surface-2));display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:inset 0 0 0 1px var(--line);}'
       + '.vt-id{min-width:0;flex:1;}.vt-brand{font-size:10.5px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:2px;}.vt-brand.none{color:var(--muted);}'
       + '.vt-name{font-family:var(--font-display);font-weight:800;font-size:17px;line-height:1.2;letter-spacing:-.01em;overflow-wrap:anywhere;}'
@@ -11978,15 +11963,24 @@ if(LAYOUT_MQ){
       }
     }
     function fmtDist(v, u){ return u==='m' ? String(Math.max(10, Math.round(v/10)*10)) : String(Math.max(0.1, Math.round(v*10)/10)); }
-    /* distance, time, pace: fill any two, the third follows */
+    /* distance, time, pace. DISTANCE IS THE BASIS (Cycle 5): changing time or pace never changes the distance.
+       - you change distance: time follows from the pace you have (or pace follows from the time)
+       - you change time:     pace follows (distance stays)
+       - you change pace:     time follows (distance stays)
+       Only when there is no distance yet does time + pace work one out, so you can still fill any two of the three. */
     function recalc(ex, ch){
       var d = num(ex.dist), m = num(ex.mins), p = num(ex.pace), u = ex.unit||'km', per = PER[u]||1;
-      if(ch==='pace'){
-        if(p>0 && m!=null) ex.dist = fmtDist(m*60/p*per, u);
-        else if(p>0 && d!=null) ex.mins = String(Math.max(1, Math.round(d/per*p/60)));
-      } else if(d>0 && m>0){ ex.pace = String(Math.round(m*60/(d/per))); }
-      else if(p>0 && ch==='dist' && d>0){ ex.mins = String(Math.max(1, Math.round(d/per*p/60))); }
-      else if(p>0 && ch==='mins' && m>0){ ex.dist = fmtDist(m*60/p*per, u); }
+      var haveD = d>0;
+      if(ch==='dist'){
+        if(haveD && p>0) ex.mins = String(Math.max(1, Math.round(d/per*p/60)));
+        else if(haveD && m>0) ex.pace = String(Math.round(m*60/(d/per)));
+      } else if(ch==='mins'){
+        if(haveD && m>0) ex.pace = String(Math.round(m*60/(d/per)));
+        else if(!haveD && p>0 && m>0) ex.dist = fmtDist(m*60/p*per, u);
+      } else if(ch==='pace'){
+        if(haveD && p>0) ex.mins = String(Math.max(1, Math.round(d/per*p/60)));
+        else if(!haveD && p>0 && m>0) ex.dist = fmtDist(m*60/p*per, u);
+      }
     }
     function speedText(ex){
       var d = num(ex.dist), m = num(ex.mins), p = num(ex.pace), u = ex.unit||'km', per = PER[u]||1, sec = null;
@@ -13035,21 +13029,7 @@ if(LAYOUT_MQ){
       photo:   { ex:[['Meal'],['Outfit of the day'],['Progress shot']] }
     };
     BX_FIELD_TYPES.forEach(function(t){ var u = USE[t.id]; if(u) t.desc = 'For: '+u.ex.map(function(x){ return x[0].toLowerCase(); }).join(', '); });
-    window.bxFxSug = function(i){
-      var F = BX_FORM; if(!F) return; var u = USE[F.type]; if(!u || !u.ex[i]) return; var s = u.ex[i];
-      var nm = document.getElementById('bx-f-label'); if(nm){ nm.value = s[0]; try{ bxRefreshIconPreview(); }catch(e){} }
-      var unit = document.getElementById('bx-f-unit'); if(unit && F.type==='number') unit.value = s[1] || '';
-      var op = document.getElementById('bx-f-mopts') || document.getElementById('bx-f-opts'); if(op && s[1] && (F.type==='choice' || F.type==='multi')) op.value = s[1];
-      Array.prototype.forEach.call(document.querySelectorAll('.bx-sug button'), function(b, k){ b.classList.toggle('on', k===i); });
-    };
-    var _show = bxShowFieldForm;
-    bxShowFieldForm = function(f){
-      _show.apply(this, arguments);
-      try{
-        var F = BX_FORM, nm = document.getElementById('bx-f-label'), u = F && USE[F.type]; if(!nm || !u || f) return;
-        nm.insertAdjacentHTML('afterend', '<div class="bx-sug"><span>Use it for</span>'+u.ex.map(function(x, i){ return '<button type="button" onclick="bxFxSug('+i+')">'+E(x[0])+'</button>'; }).join('')+'</div>');
-      }catch(e){}
-    };
+    /* CYCLE 5: the name ideas for a new field (chips, prefilled name, units, options) now live in c5_patch.js, per lifestyle. The tile text above ("For: ...") still comes from USE. */
     css += '.bx-sug{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 2px;align-items:center;}.bx-sug span{width:100%;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);}'
       + '.bx-sug button{border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;min-height:38px;padding:0 13px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation;}.bx-sug button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);}';
     var st = document.createElement('style'); st.id = 'c3-extra'; st.textContent = css; document.head.appendChild(st);
@@ -13620,7 +13600,7 @@ if(LAYOUT_MQ){
     var pct = a/30, delta = a-b;
     var streak = 0, best = 0, cur = 0;
     all.forEach(function(r){ if(r.logged){ cur++; if(cur>best) best = cur; } else cur = 0; });
-    streak = DB.streak || 0; if(streak>best) best = streak;  /* all[] is only the half-year window; DB.streak is the full-history streak Home shows */
+    for(var i=all.length-1;i>=0;i--){ if(all[i].logged) streak++; else if(i===all.length-1) continue; else break; }
     var lvl = pct>=.85 ? 'Locked in' : pct>=.6 ? 'On a roll' : pct>=.35 ? 'Building' : 'Warming up';
     var chip = function(v,l){ return '<div class="in-chip"><b>'+v+'</b><span>'+E(l)+'</span></div>'; };
     return '<div class="in-card in-hero"><div class="in-hero-l">'+ring(pct, a+'/30', 'days logged')+'</div><div class="in-hero-r">'
@@ -14014,32 +13994,66 @@ if(LAYOUT_MQ){
       s.current = String(tot); saveDB();
       flashSaved(name+': '+money(tot)+' this month, now in Income Streams');
     }
-    /* WORKOUT TIME: the clock starts the first time you do anything on today's workout (add a move, tick a set, pick a type).
-       When you press Finish, the time since then goes into Duration by itself (only if Duration is empty, so a typed value always wins).
-       If the clock looks wrong (nothing done for 6+ hours before Finish, or the session was opened on another day) it falls back to
-       the minutes you gave the moves, and if there are none the field is left alone. */
+    /* TIME OF A BOX (Cycle 5). The clock starts the first time you do anything in today's box (add a move, tick a set, type a value).
+       When you press Finish, the box's time field is filled for you if it is empty (a typed value always wins):
+         1. the time since you started, if it is believable (5 minutes to 6 hours)
+         2. otherwise a sensible guess: the minutes of your moves / pages, or the average of your last 5 entries, or a small default
+       Works for: Movement (Duration), Reading (Time spent), the business-lane log (minutes / duration / time spent / hours),
+       and any "Minutes" field you added to your own boxes. The time is filled BEFORE the screen redraws, so you see it at once. */
     function startClock(ds, pid){
-      try{ if(pid!=='workout' || ds!==todayStr()) return; var p = getPage(ds,'workout'); if(!p._t0 && !pageDoneFlag(ds,pid)) p._t0 = Date.now(); }catch(e){}
+      try{ if(ds!==todayStr() || pid==='setup' || pid==='library') return; var p = getPage(ds,pid); if(!p._t0 && !pageDoneFlag(ds,pid)) p._t0 = Date.now(); }catch(e){}
     }
     function pageDoneFlag(ds, pid){ return !!(DB.finished && DB.finished[ds] && DB.finished[ds][pid]); }
     if(typeof markTouched==='function'){ var _mt = markTouched; markTouched = function(ds, pid){ startClock(ds, pid); return _mt.apply(this, arguments); }; }
-    function fillDuration(ds){
-      var p = getPage(ds,'workout'); if(String(p.duration||'').trim()) return;
-      var mins = 0;
-      if(p._t0){ var e = (Date.now() - p._t0)/60000; if(e>=1 && e<=360) mins = Math.round(e); }
-      if(!mins && window.MOVE){ var m = window.MOVE.minutesOf(ds); if(m>0) mins = Math.round(m); }
-      if(mins>0){
-        p.duration = mins+' min'; saveDB(); flashSaved('Workout time added: '+mins+' min');
-        /* show it in the Duration box right now without redrawing the screen (the finish animation may be playing) */
-        try{ Array.prototype.forEach.call(document.querySelectorAll('input.textline'), function(i){ if(/'workout','duration'/.test(i.getAttribute('oninput')||'')) i.value = p.duration; }); }catch(e){}
+    /* the average of the last 5 non-empty numbers saved under this key on this page */
+    function recentAvg(pid, get){
+      var days = Object.keys(DB.days||{}).sort().reverse(), v = [];
+      for(var i=0;i<days.length && v.length<5;i++){ var pg = DB.days[days[i]].pages && DB.days[days[i]].pages[pid]; var n = pg ? get(pg) : null; if(n>0) v.push(n); }
+      return v.length ? Math.round(v.reduce(function(a,b){ return a+b; },0)/v.length) : 0;
+    }
+    function elapsed(p){ if(!p._t0) return 0; var e = (Date.now()-p._t0)/60000; return (e>=5 && e<=360) ? Math.round(e) : 0; }
+    /* each filler: { empty(p), get(p) number for history, set(p, minutes), guess(ds, p) }  */
+    function fillers(pid){
+      var out = [];
+      if(pid==='workout') out.push({
+        empty:function(p){ return !String(p.duration||'').trim(); }, get:function(p){ return parseFloat(p.duration); },
+        set:function(p,m){ p.duration = m+' min'; },
+        guess:function(ds,p){ var m = window.MOVE && window.MOVE.minutesOf ? Math.round(window.MOVE.minutesOf(ds)) : 0; return m>0 ? m : 0; }, dflt:30, label:'Workout time' });
+      else if(pid==='reading') out.push({
+        empty:function(p){ return !(parseFloat(p.minutes)>0); }, get:function(p){ return parseFloat(p.minutes); },
+        set:function(p,m){ p.minutes = m; },
+        guess:function(ds,p){ var n = parseFloat(p.pagesToday); return n>0 ? Math.max(5, Math.round(n*2)) : 0; }, dflt:20, label:'Reading time' });
+      else if(pid==='lane'){
+        var lf = null; try{ lf = (typeof LANE_FIELDS!=='undefined' && DB.lane && LANE_FIELDS[DB.lane]) ? LANE_FIELDS[DB.lane].items : null; }catch(e){}
+        (lf||[]).forEach(function(it){ var k = it[1];
+          if(k==='minutes') out.push({ empty:function(p){ return !(parseFloat(p[k])>0); }, get:function(p){ return parseFloat(p[k]); }, set:function(p,m){ p[k] = m; }, guess:function(){ return 0; }, dflt:0, label:'Time' });
+          else if(k==='duration' || k==='timeSpent') out.push({ empty:function(p){ return !String(p[k]||'').trim(); }, get:function(p){ return parseFloat(p[k]); }, set:function(p,m){ p[k] = m+' min'; }, guess:function(){ return 0; }, dflt:0, label:'Time' });
+          else if(k==='hours') out.push({ empty:function(p){ return !(parseFloat(p[k])>0); }, get:function(p){ return parseFloat(p[k])*60; }, set:function(p,m){ p[k] = Math.max(0.5, Math.round(m/30)/2); }, guess:function(){ return 0; }, dflt:0, label:'Hours' });
+        });
+      } else {
+        try{ (bxCfg(pid).fields||[]).filter(function(f){ return f && f.type==='duration' && !f.deleted; }).forEach(function(f){ var k = 'cf_'+f.id;
+          out.push({ empty:function(p){ return !(parseFloat(p[k])>0); }, get:function(p){ return parseFloat(p[k]); }, set:function(p,m){ p[k] = m; }, guess:function(){ return 0; }, dflt:0, label:f.label||'Time' }); }); }catch(e){}
       }
+      return out;
+    }
+    function fillTime(ds, pid){
+      var fs = fillers(pid); if(!fs.length) return;
+      var p = getPage(ds,pid), done = [];
+      fs.forEach(function(f){
+        if(!f.empty(p)) return;
+        var m = elapsed(p) || f.guess(ds,p) || recentAvg(pid, f.get) || f.dflt;
+        if(m>0){ f.set(p, Math.round(m)); done.push(f.label+': '+Math.round(m)+' min'); }
+      });
+      if(done.length){ saveDB(); try{ flashSaved(done[0].replace(/: /,' added: ')); }catch(e){} }
     }
     window.finishBox = function(ds, pid){
+      var first = !pageDoneFlag(ds,pid);
+      try{ if(first && ds===todayStr()) fillTime(ds, pid); }catch(e){ if(window.console) console.error('time fill', e); }
       var r = base.apply(this, arguments);
-      try{ if(pid==='lane') syncLane(ds); else if(pid==='workout' && pageDoneFlag(ds,pid)) fillDuration(ds); }catch(e){ if(window.console) console.error('cross-box', e); }
+      try{ if(pid==='lane') syncLane(ds); }catch(e){ if(window.console) console.error('cross-box', e); }
       return r;
     };
-    window.XBOX = { syncLane:syncLane };
+    window.XBOX = { syncLane:syncLane, fillTime:fillTime };
   }catch(e){ if(window.console) console.error('xbox', e); }
 })();
 </script>
@@ -14145,7 +14159,7 @@ if(LAYOUT_MQ){
 (function(){
   try{
     var MODE_KEY = "cleanboy-logbook-v1" + '-mode';
-    var VISIBLE = false;
+    var VISIBLE = true;
     var isTest = !!window.APP_TEST_MODE;
     if(isTest && document.title.indexOf('TEST')!==0) document.title = 'TEST \u00b7 ' + document.title;
     function setMode(on){ try{ if(on) localStorage.setItem(MODE_KEY,'test'); else localStorage.removeItem(MODE_KEY); }catch(e){} location.reload(); }
@@ -14216,6 +14230,198 @@ if(LAYOUT_MQ){
 </script>
 <script>
 /* ============================================================
+   HAIR LOG (Cycle 5, Clean Boy and Clean Girl only): a monthly "character card" for your hair.
+   Settings > This month > Hair Log. A little portrait is drawn from your answers (pattern, length, colour, strand, density,
+   style), then stat bars (moisture, strength, shine, volume, scalp, growth), a health score with a rarity label, your
+   routine, goals and care log, and a strip of your last 6 months.
+   Saved per month in DB.monthly[month].hair. A new month starts as a copy of last month, so you only change what changed.
+   ============================================================ */
+(function(){ try{
+  if(typeof BRAND==='undefined' || !/clean/i.test(BRAND.name||'')) return;
+  if(typeof PAGE_RENDERERS==='undefined' || typeof getMonthlyPage!=='function') return;
+  var E = esc, LS = function(){ return window.LISTS; };
+
+  var TRAITS = [
+    { k:'pattern',  label:'Pattern',  opts:['Straight','Wavy','Curly','Coily'] },
+    { k:'length',   label:'Length',   opts:['Buzzed','Short','Medium','Long','Very long'] },
+    { k:'colour',   label:'Colour',   opts:['Black','Dark brown','Brown','Blonde','Red','Grey','Dyed'] },
+    { k:'strand',   label:'Strand',   opts:['Fine','Medium','Coarse'] },
+    { k:'density',  label:'Density',  opts:['Thin','Medium','Thick'] },
+    { k:'style',    label:'Style',    opts:['Natural','Fringe','Side part','Middle part','Slicked back','Tied up'] },
+    { k:'scalp',    label:'Scalp',    opts:['Dry','Balanced','Oily','Sensitive'] },
+    { k:'porosity', label:'Porosity', opts:['Low','Medium','High'] }
+  ];
+  var STATS = [ ['moisture','Moisture'], ['strength','Strength'], ['shine','Shine'], ['volume','Volume'], ['scalpHealth','Scalp'], ['growth','Growth'] ];
+  var ROUTINE = ['Shampoo','Conditioner','Hair mask','Leave-in','Hair oil','Scalp scrub','Heat protectant','Styling cream','Gel / wax','Comb / brush'];
+  var GOALS = ['Grow it out','More moisture','More volume','More shine','Less frizz','Stronger','Thicker','Curl definition','Healthier scalp','Keep it as is'];
+  var COL = { 'Black':'#1c1818','Dark brown':'#3a2a21','Brown':'#6a4a33','Blonde':'#d8b56b','Red':'#b0452a','Grey':'#b8b8bf','Dyed':'#8b5cf0' };
+  var TITLE = { 'Straight':'The Silk Blade', 'Wavy':'The Tide Rider', 'Curly':'The Spring Mage', 'Coily':'The Crown Keeper' };
+
+  /* ---- data ---- */
+  function prevMk(mk){ var p = mk.split('-'), d = new Date(+p[0], +p[1]-2, 1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+  function has(o){ return o && Object.keys(o).some(function(k){ return k.charAt(0)!=='_'; }); }
+  function data(mk){
+    var d = getMonthlyPage('hair', mk);
+    if(!has(d)){   /* new month: start from last month's card */
+      var pm = prevMk(mk), pd = DB.monthly && DB.monthly[pm] && DB.monthly[pm].hair;
+      if(has(pd)){ var c = JSON.parse(JSON.stringify(pd)); delete c.trim; delete c.note; Object.keys(c).forEach(function(k){ d[k] = c[k]; }); d.fromPrev = true; }
+    }
+    return d;
+  }
+  function score(d){ var v = STATS.map(function(s){ return +d[s[0]] || 0; }).filter(function(x){ return x>0; }); return v.length ? Math.round(v.reduce(function(a,b){ return a+b; },0)/v.length*20) : null; }
+  function rarity(sc){ return sc==null ? '' : sc>=88 ? 'Legendary' : sc>=72 ? 'Epic' : sc>=56 ? 'Rare' : sc>=40 ? 'Uncommon' : 'Common'; }
+
+  /* ---- the portrait ---- */
+  function shade(hex, amt){   /* lighter (+) or darker (-) hex colour */
+    var n = parseInt(hex.slice(1), 16), r = n>>16, g = (n>>8)&255, b = n&255;
+    var f = function(c){ return Math.max(0, Math.min(255, Math.round(c + (amt>0 ? (255-c)*amt : c*amt)))); };
+    return '#'+[f(r),f(g),f(b)].map(function(c){ return (c<16?'0':'')+c.toString(16); }).join('');
+  }
+  function portrait(d){
+    var hair = COL[d.colour] || COL['Brown'], dark = shade(hair,-.35), light = shade(hair,.35);
+    var li = Math.max(0, TRAITS[1].opts.indexOf(d.length)); if(d.length==null) li = 2;
+    var pat = d.pattern || 'Wavy', style = d.style || 'Natural', dens = Math.max(0, TRAITS[4].opts.indexOf(d.density)); if(!d.density) dens = 1;
+    var ex = dens*4 + (pat==='Curly' ? 6 : pat==='Coily' ? 12 : 0), buzz = li===0, up = style==='Tied up';
+    var yEnd = [0,128,168,206,240][li], sh = +d.shine || 3;
+    var s = '<svg viewBox="0 0 240 250" class="hr-svg" role="img" aria-label="Your hair: '+E((d.pattern||'')+' '+(d.length||'').toLowerCase())+'">';
+    s += '<defs><linearGradient id="hrg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="'+light+'" stop-opacity=".35"/><stop offset="1" stop-color="'+hair+'" stop-opacity=".18"/></linearGradient></defs>';
+    s += '<rect x="0" y="0" width="240" height="250" rx="26" fill="url(#hrg)"/>';
+    /* shoulders and neck */
+    s += '<path d="M24 250 Q34 208 120 202 Q206 208 216 250 Z" class="hr-body"/><rect x="104" y="150" width="32" height="56" rx="12" class="hr-skin2"/>';
+    /* back hair (behind the face) */
+    if(!buzz && li>=2 && !up){
+      var L = 60-ex, R = 180+ex;
+      s += '<path d="M'+L+' 96 C'+(L-8)+' 130 '+(L-10)+' '+(yEnd-24)+' '+(L-2)+' '+yEnd+' L'+(R+2)+' '+yEnd+' C'+(R+10)+' '+(yEnd-24)+' '+(R+8)+' 130 '+R+' 96 Z" fill="'+hair+'"/>';
+      if(pat==='Curly' || pat==='Coily'){ var rr = pat==='Coily' ? 6 : 9, st = pat==='Coily' ? 12 : 17;
+        for(var y = 100; y <= yEnd; y += st){ s += '<circle cx="'+(L-4+ (y>yEnd-30?3:0))+'" cy="'+y+'" r="'+rr+'" fill="'+hair+'"/><circle cx="'+(R+4-(y>yEnd-30?3:0))+'" cy="'+y+'" r="'+rr+'" fill="'+hair+'"/>'; }
+        for(var x = L+6; x <= R-6; x += st){ s += '<circle cx="'+x+'" cy="'+(yEnd-2)+'" r="'+rr+'" fill="'+hair+'"/>'; } }
+      if(pat==='Wavy'){ for(var k=0;k<5;k++){ var x0 = L+14+k*((R-L-28)/4); s += '<path d="M'+x0+' 110 q-8 '+((yEnd-110)/4)+' 0 '+((yEnd-110)/2)+' t0 '+((yEnd-110)/2)+'" stroke="'+dark+'" stroke-width="2" fill="none" opacity=".55"/>'; } }
+      if(pat==='Straight'){ for(var j=0;j<6;j++){ var x1 = L+10+j*((R-L-20)/5); s += '<line x1="'+x1+'" y1="110" x2="'+x1+'" y2="'+(yEnd-4)+'" stroke="'+dark+'" stroke-width="1.6" opacity=".4"/>'; } }
+    }
+    /* face */
+    s += '<ellipse cx="72" cy="120" rx="7" ry="11" class="hr-skin2"/><ellipse cx="168" cy="120" rx="7" ry="11" class="hr-skin2"/><ellipse cx="120" cy="116" rx="46" ry="56" class="hr-skin"/>';
+    /* hair on top */
+    var top;
+    if(buzz){ top = '<path d="M76 100 C72 56 100 42 120 42 C140 42 168 56 164 100 C158 82 142 74 120 74 C98 74 82 82 76 100 Z" fill="'+hair+'" opacity=".7"/>'; }
+    else {
+      var hl = style==='Slicked back' ? 70 : style==='Fringe' ? 104 : 86, o = ex;
+      top = '<path d="M'+(66-o)+' 118 C'+(56-o)+' 46 96 28 120 28 C144 28 '+(184+o)+' 46 '+(174+o)+' 118 C166 94 150 '+hl+' 120 '+hl+' C90 '+hl+' 74 94 '+(66-o)+' 118 Z" fill="'+hair+'"/>';
+      if(style==='Fringe') top += '<path d="M76 96 C96 84 140 84 164 96 C150 110 130 100 120 110 C108 100 92 110 76 96 Z" fill="'+hair+'"/>';
+      if(style==='Side part'){ top += '<path d="M98 34 C96 56 104 74 130 86" stroke="'+dark+'" stroke-width="2.2" fill="none" opacity=".7"/>'; }
+      if(style==='Middle part'){ top += '<path d="M120 30 L120 82" stroke="'+dark+'" stroke-width="2.2" opacity=".7"/>'; }
+      if(li===1){ top += '<rect x="'+(70-o)+'" y="100" width="10" height="30" rx="5" fill="'+hair+'"/><rect x="'+(160+o)+'" y="100" width="10" height="30" rx="5" fill="'+hair+'"/>'; }
+      if(up) top += '<circle cx="120" cy="22" r="'+(13+ex/3)+'" fill="'+hair+'"/><circle cx="120" cy="22" r="'+(7+ex/4)+'" fill="'+dark+'" opacity=".35"/>';
+      if(pat==='Curly' || pat==='Coily'){ var rr2 = pat==='Coily' ? 6 : 8, n = pat==='Coily' ? 17 : 12;
+        for(var a = 0; a <= n; a++){ var t = Math.PI * (1 + a/n), cx = 120 + Math.cos(t)*(54+ex), cy = 96 + Math.sin(t)*(66+ex*.6); top += '<circle cx="'+cx.toFixed(1)+'" cy="'+cy.toFixed(1)+'" r="'+rr2+'" fill="'+hair+'"/>'; } }
+      if(pat==='Wavy'){ for(var w=0; w<4; w++){ top += '<path d="M'+(88+w*20)+' 36 q-8 14 0 26 t0 24" stroke="'+dark+'" stroke-width="1.8" fill="none" opacity=".5"/>'; } }
+    }
+    s += top;
+    /* shine band */
+    if(!buzz) s += '<path d="M86 52 C100 40 134 40 152 54" stroke="#fff" stroke-width="7" stroke-linecap="round" fill="none" opacity="'+(.06+sh*.07).toFixed(2)+'"/>';
+    /* a friendly face */
+    s += '<circle cx="104" cy="122" r="3.2" class="hr-ink"/><circle cx="136" cy="122" r="3.2" class="hr-ink"/><path d="M108 142 Q120 152 132 142" stroke-width="2.6" stroke-linecap="round" fill="none" class="hr-ink-s"/>';
+    var sc = score(d); if(sc!=null && sc>=70) s += '<path d="M206 40 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" class="hr-star"/><path d="M28 70 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" class="hr-star"/>';
+    return s + '</svg>';
+  }
+
+  /* ---- the page ---- */
+  function history(mk){
+    var out = [], cur = mk;
+    for(var i=0;i<6;i++){ var pd = DB.monthly && DB.monthly[cur] && DB.monthly[cur].hair; out.unshift({ mk:cur, sc: has(pd) ? score(pd) : null }); cur = prevMk(cur); }
+    return out;
+  }
+  function pips(d, k){ var v = +d[k] || 0; return [1,2,3,4,5].map(function(n){ return '<button type="button" class="hr-pip'+(n<=v?' on':'')+'" data-hr="stat" data-k="'+k+'" data-v="'+n+'" aria-label="'+n+' of 5"></button>'; }).join(''); }
+  function body(mk){
+    var d = data(mk), sc = score(d), pm = prevMk(mk), pd = DB.monthly && DB.monthly[pm] && DB.monthly[pm].hair, ps = has(pd) ? score(pd) : null;
+    var delta = (sc!=null && ps!=null) ? sc-ps : null, locked = isMonthlyPageLocked('hair', mk);
+    var title = TITLE[d.pattern] || 'Your Hair', sub = [d.length, d.pattern, d.colour].filter(Boolean).join(' · ') || 'Tap the traits below to build your card';
+    var h = '';
+    if(locked) h += '<div class="locked-banner"><div class="locked-icon">'+icon('check',18)+'</div><div><div class="locked-title">Done for '+E(monthLabelShort(mk))+'</div><div class="locked-sub">Your card is saved.</div></div><button type="button" class="hr-edit" onclick="unlockMonthlyPage(\'hair\',\''+mk+'\')">Edit</button></div>';
+    h += '<div class="hr-card"><div class="hr-top"><div class="hr-pic">'+portrait(d)+'</div><div class="hr-id">'
+      + (sc!=null ? '<div class="hr-rar r-'+rarity(sc).toLowerCase()+'">'+rarity(sc)+'</div>' : '<div class="hr-rar">New card</div>')
+      + '<div class="hr-title">'+E(title)+'</div><div class="hr-sub">'+E(sub)+'</div>'
+      + '<div class="hr-score"><b>'+(sc==null ? '–' : sc)+'</b><span>hair health</span>'+(delta!=null && delta!==0 ? '<em class="'+(delta>0?'up':'dn')+'">'+(delta>0?'▲ +':'▼ ')+delta+'</em>' : '')+'</div></div></div>'
+      + (d.fromPrev ? '<div class="hr-copy">Copied from last month. Change what is different.</div>' : '') + '</div>';
+    h += '<div class="field-card hr-sec"><div class="fc-label">Stats</div><div class="fc-hint">How it feels this month. 1 is poor, 5 is great.</div>'
+      + STATS.map(function(s){ return '<div class="hr-stat"><span>'+E(s[1])+'</span><div class="hr-pips">'+pips(d, s[0])+'</div><b>'+(d[s[0]] ? d[s[0]] : '–')+'</b></div>'; }).join('') + '</div>';
+    h += '<div class="field-card hr-sec"><div class="fc-label">Traits</div><div class="hr-traits">'
+      + TRAITS.map(function(t){ return '<button type="button" class="hr-trait'+(d[t.k]?' set':'')+'" data-hr="trait" data-k="'+t.k+'"><small>'+E(t.label)+'</small><b>'+E(d[t.k] || 'Pick')+'</b></button>'; }).join('') + '</div></div>';
+    var r = Array.isArray(d.routine) ? d.routine : [], g = Array.isArray(d.goals) ? d.goals : [];
+    h += '<div class="field-card hr-sec"><div class="fc-label">Routine</div><div class="hr-chips">' + (r.length ? r.map(function(x){ return '<i>'+E(x)+'</i>'; }).join('') : '<span class="hr-none">Nothing picked yet</span>') + '</div>'
+      + '<button type="button" class="hr-edit2" data-hr="routine">'+icon('pen',13)+' Choose your routine</button>'
+      + '<div class="hr-wash"><span>Wash days a week</span><div><button type="button" data-hr="wash" data-d="-1" aria-label="Fewer">'+icon('minus',14)+'</button><b>'+(d.wash==null ? '–' : d.wash)+'</b><button type="button" data-hr="wash" data-d="1" aria-label="More">'+icon('plus',14)+'</button></div></div></div>';
+    h += '<div class="field-card hr-sec"><div class="fc-label">Goals</div><div class="hr-chips">' + (g.length ? g.map(function(x){ return '<i>'+E(x)+'</i>'; }).join('') : '<span class="hr-none">Nothing picked yet</span>') + '</div>'
+      + '<button type="button" class="hr-edit2" data-hr="goals">'+icon('pen',13)+' Choose your goals</button></div>';
+    h += '<div class="field-card hr-sec"><div class="fc-label">This month</div><div class="hr-tog">'
+      + [['trim','Got a trim'],['coloured','Coloured it'],['heat','Heat styled a lot'],['protein','Did a protein or repair treatment']].map(function(t){ return '<button type="button" class="hr-t'+(d[t[0]]?' on':'')+'" data-hr="tog" data-k="'+t[0]+'" aria-pressed="'+(!!d[t[0]])+'">'+E(t[1])+'</button>'; }).join('') + '</div>'
+      + '<textarea class="freewrite" id="hr-note" rows="3" placeholder="Notes: what helped, what did not (optional)">'+E(d.note||'')+'</textarea></div>';
+    var hs = history(mk), mx = 100;
+    h += '<div class="field-card hr-sec"><div class="fc-label">Your hair journey</div><div class="fc-hint">Health score by month</div><div class="hr-hist">'
+      + hs.map(function(x,i){ return '<div class="hr-h'+(i===hs.length-1?' now':'')+'"><div class="hr-hv">'+(x.sc==null?'':x.sc)+'</div><div class="hr-hb"><i style="height:'+(x.sc==null?0:Math.max(6,Math.round(x.sc/mx*100)))+'%"></i></div><div class="hr-hl">'+E(new Date(x.mk+'-01T12:00:00').toLocaleDateString('en-US',{month:'short'}))+'</div></div>'; }).join('') + '</div></div>';
+    if(!locked) h += '<button class="add-row-btn" onclick="lockMonthlyPageNow(\'hair\',\''+mk+'\')">'+icon('check',14)+' Mark done for '+E(monthLabelShort(mk))+'</button>';
+    return h;
+  }
+  function renderHair(){ renderMonthlyPage('Hair Log', body(currentMonthKey())); }
+  PAGE_RENDERERS.hair = renderHair;
+
+  /* ---- taps ---- */
+  function sheet(title, opts, sel, multi, done){
+    if(!LS()) return;
+    LS().openLS({ title:title, instant:!multi, secs:[{ id:'v', opts:opts, sel:sel, multi:multi, other:multi }], cta:function(){ return 'Done'; }, done:function(st){ done(st.v); } });
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target && e.target.closest ? e.target.closest('[data-hr]') : null; if(!b || ROUTE.view!=='page' || ROUTE.pageId!=='hair') return;
+    var a = b.getAttribute('data-hr'), k = b.getAttribute('data-k'), mk = currentMonthKey(), d = data(mk);
+    function save(){ delete d.fromPrev; saveDB(); render(); }
+    if(a==='stat'){ var v = +b.getAttribute('data-v'); d[k] = (+d[k]===v) ? 0 : v; return save(); }
+    if(a==='tog'){ d[k] = !d[k]; return save(); }
+    if(a==='wash'){ d.wash = Math.max(0, Math.min(7, (d.wash==null ? 2 : +d.wash) + Number(b.getAttribute('data-d')))); return save(); }
+    if(a==='trait'){ var t = TRAITS.filter(function(x){ return x.k===k; })[0]; return sheet(t.label, t.opts, d[k] ? [d[k]] : [], false, function(v){ d[k] = v[0] || ''; save(); }); }
+    if(a==='routine') return sheet('Your routine', ROUTINE, (d.routine||[]).slice(), true, function(v){ d.routine = v; save(); });
+    if(a==='goals') return sheet('Your goals', GOALS, (d.goals||[]).slice(), true, function(v){ d.goals = v; save(); });
+  });
+  document.addEventListener('input', function(e){
+    var t = e.target; if(!t || t.id!=='hr-note') return; data(currentMonthKey()).note = t.value; saveDB();
+  });
+
+  /* ---- a row in Settings > This month ---- */
+  var baseR = render;
+  render = function(){
+    var out = baseR.apply(this, arguments);
+    try{
+      if(ROUTE.view==='settings' && !document.querySelector('[data-hair-row]')){
+        var rows = document.querySelectorAll('#app .settings-row .sr-name'), at = null;
+        Array.prototype.forEach.call(rows, function(n){ if(/Products & Perfume Vault|Vision Board/i.test(n.textContent)) at = n.closest('.settings-row'); });
+        var mk = currentMonthKey(), done = isMonthlyPageLocked('hair', mk), sc = score(data(mk));
+        var row = '<button class="settings-row" data-hair-row="1" onclick="nav(\'page\',\'hair\')"><div><div class="sr-name">Hair Log</div><div class="sr-desc">'+(done ? 'Done for '+E(monthLabelShort(mk))+(sc!=null ? ', health '+sc : '') : 'A character card for your hair. Not set up for '+E(monthLabelShort(mk)))+'</div></div><div class="sr-ico">'+icon(done?'check':'sparkle',16)+'</div></button>';
+        if(at) at.insertAdjacentHTML('afterend', row); else { var sec = document.querySelector('#app .settings-section'); if(sec) sec.insertAdjacentHTML('beforeend', row); }
+      }
+    }catch(e){ if(window.console) console.error('hair row', e); }
+    return out;
+  };
+  window.HAIR = { score:score, portrait:portrait, data:data };
+
+  var css = '.hr-card{border-radius:26px;padding:14px;margin:0 0 14px;background:linear-gradient(160deg,var(--accent-soft),var(--surface));border:1px solid var(--line);box-shadow:var(--shadow-sm)}'
+    + '.hr-top{display:flex;gap:14px;align-items:center}.hr-pic{flex:0 0 46%;max-width:190px}.hr-svg{width:100%;height:auto;display:block;border-radius:22px}.hr-svg .hr-skin{fill:#e8c8ab}.hr-svg .hr-skin2{fill:#dcb899}.hr-svg .hr-body{fill:color-mix(in srgb,var(--ink) 16%,var(--surface))}.hr-svg .hr-ink{fill:#3a2d28}.hr-svg .hr-ink-s{stroke:#3a2d28}.hr-svg .hr-star{fill:#f4c95d}'
+    + '.hr-id{flex:1;min-width:0}.hr-rar{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;border-radius:999px;padding:3px 10px;background:var(--surface-2);color:var(--ink-soft)}'
+    + '.hr-rar.r-uncommon{background:#d9f0dc;color:#1f6b33}.hr-rar.r-rare{background:#d6e7fb;color:#1b5aa3}.hr-rar.r-epic{background:#e8dcfb;color:#6130b8}.hr-rar.r-legendary{background:linear-gradient(90deg,#f8dd8a,#f2b84a);color:#6b4300}'
+    + '.hr-title{font-family:var(--font-display);font-weight:800;font-size:20px;line-height:1.1;margin:8px 0 3px;color:var(--ink)}.hr-sub{font-size:12.5px;color:var(--ink-soft);line-height:1.35}'
+    + '.hr-score{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;margin-top:12px}.hr-score b{font-family:var(--font-display);font-size:34px;line-height:1;color:var(--ink)}.hr-score span{font-size:11.5px;color:var(--muted)}.hr-score em{font-style:normal;font-size:12px;font-weight:800}.hr-score em.up{color:var(--green)}.hr-score em.dn{color:var(--red)}'
+    + '.hr-copy{margin-top:10px;font-size:12px;color:var(--muted)}'
+    + '.hr-stat{display:flex;align-items:center;gap:10px;padding:7px 0}.hr-stat span{width:74px;font-size:13px;font-weight:700;color:var(--ink)}.hr-stat b{width:16px;text-align:right;font-size:13px;color:var(--ink-soft)}.hr-pips{flex:1;display:flex;gap:6px}'
+    + '.hr-pip{flex:1;height:30px;border:0;border-radius:9px;background:var(--surface-2);cursor:pointer;touch-action:manipulation;transition:background .15s}.hr-pip.on{background:var(--accent)}'
+    + '.hr-traits{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:8px}.hr-trait{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:14px;padding:9px 12px;min-height:56px;font:inherit;cursor:pointer;touch-action:manipulation}.hr-trait small{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}.hr-trait b{font-size:14px;color:var(--muted);font-weight:700}.hr-trait.set{background:var(--accent-soft);border-color:color-mix(in srgb,var(--accent) 40%,transparent)}.hr-trait.set b{color:var(--ink)}'
+    + '.hr-chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}.hr-chips i{font-style:normal;font-size:12.5px;font-weight:700;background:var(--surface-2);color:var(--ink);border-radius:999px;padding:5px 11px}.hr-none{font-size:12.5px;color:var(--muted)}'
+    + '.hr-edit2{display:flex;align-items:center;gap:7px;border:1.5px dashed var(--line);background:transparent;color:var(--ink-soft);border-radius:14px;min-height:42px;padding:0 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation}'
+    + '.hr-wash{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:13.5px;font-weight:700;color:var(--ink)}.hr-wash div{display:flex;align-items:center;gap:12px}.hr-wash button{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer}.hr-wash b{min-width:18px;text-align:center;font-size:17px}'
+    + '.hr-tog{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}.hr-t{border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;min-height:40px;padding:0 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation}.hr-t.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}'
+    + '.hr-hist{display:flex;gap:8px;align-items:flex-end;height:120px;margin-top:10px}.hr-h{flex:1;display:flex;flex-direction:column;align-items:center;height:100%}.hr-hb{flex:1;width:100%;display:flex;align-items:flex-end;background:var(--surface-2);border-radius:9px;overflow:hidden}.hr-hb i{display:block;width:100%;background:var(--accent);opacity:.5;border-radius:9px}.hr-h.now .hr-hb i{opacity:1}.hr-hv{font-size:10.5px;color:var(--muted);height:14px}.hr-hl{font-size:10.5px;color:var(--muted);margin-top:4px}'
+    + '.hr-edit{margin-left:auto;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 14px;font:inherit;font-weight:700;color:var(--ink);cursor:pointer}';
+  var st = document.createElement('style'); st.id = 'hair-css'; st.textContent = css; document.head.appendChild(st);
+}catch(e){ if(window.console) console.error('hair patch', e); } })();
+</script>
+<script>
+/* ============================================================
    CYCLE 4 small things (all apps)
    1. Settings regrouped into sectors and groups (rows are moved, not rewritten, so every row still works).
    2. Sober: "Win of the day" and "Reflection" fields are gone (anything already saved stays in your data).
@@ -14242,7 +14448,7 @@ if(LAYOUT_MQ){
     { sector:'My setup', groups:[
       { name:'Your day', re:/^(Timetable|Boxes & fields|Daily Hobbies|Business lane|Lifestyle & look)$/i },
       { name:'Libraries', re:/^(Book vault|Library|Workout presets|Products & Perfume Vault|Vision Board|Milestone Vault)$/i },
-      { name:'This month', re:/^(Bucket List|Income Streams|3 Objectives|Wins & Reflections)$/i } ] },
+      { name:'This month', re:/^(Bucket List|Income Streams|3 Objectives|Wins & Reflections|Hair Log)$/i } ] },
     { sector:'Look & feel', groups:[ { name:'', re:/^(Appearance|Assist Mode)$/i } ] },
     { sector:'Your data', groups:[
       { name:'Backup', re:/^(Download backup|Restore from backup)$/i },
@@ -14322,12 +14528,205 @@ if(LAYOUT_MQ){
   var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
 }catch(e){ if(window.console) console.error('c4 patch', e); } })();
 </script>
-<style id="qa-fixes">
-@media (min-width:1100px){ .side-rail{ display:flex; } }
-.onboard-back,.theme-toggle,.counter-btn,.jump-date-btn,.focus-tt-link{ min-width:44px; }
-.pill.ui-chip,.scale-dot,.ttp-undo,.ui-pick{ min-height:44px; }
-.tt-remove-btn,.bx-x{ min-width:44px; }
-[data-theme="dark"] .locked-sub{ color:#C9BEA5; }
-</style>
+<script>
+/* ============================================================
+   CYCLE 5 (all apps)
+   A. SUGGESTED FIELD NAMES, per lifestyle. When you pick a field kind in "Add a field", the name box is filled with a name that
+      fits that kind and your lifestyle (Clean, Reading, Sober, Hustle, or Canvas = the lifestyles you turned on).
+      Pick List and it says "Groceries". Tap another idea and it swaps. Clear it and type your own whenever you like.
+   B. LINK A BOX. At the bottom of every daily box: "Link to another box". Choose the box, today or tomorrow, and what to carry.
+      It shows as a tickable card at the top of that box (and on Home when that box is in focus). Remove it from either end.
+      Saved as DB.links = [ { id, from, to, ds, text, done } ]  (ds = the day it shows on). Old backups just have no links.
+   ============================================================ */
+(function(){ try{
+  var E = function(s){ return (typeof esc==='function') ? esc(s) : String(s); };
+
+  /* ---------------- A. suggested names ---------------- */
+  function families(){
+    var n = (typeof BRAND!=='undefined' && BRAND.name) || '';
+    if(/clean/i.test(n)) return ['clean'];
+    if(/reading/i.test(n)) return ['reading'];
+    if(/sober/i.test(n)) return ['sober'];
+    if(/hustler/i.test(n)) return ['hustler'];
+    if(/canvas/i.test(n)){
+      var p = (DB.life && Array.isArray(DB.life.packs)) ? DB.life.packs : [], m = { clean:'clean', reading:'reading', sober:'sober', hustle:'hustler' };
+      var f = p.map(function(x){ return m[x]; }).filter(Boolean); return f.length ? f : ['gen'];
+    }
+    return ['gen'];
+  }
+  /* kind -> ideas. A name can carry its options after a "|" (choice / pick several, one per "/") or a unit after a "~" (number). */
+  var SUG = {
+    gen:     { number:['Glasses of water~glasses','Pages read~pages','Coffees~cups'], duration:['Deep work','Meditation','Time outside'], money:['Money spent today','Tips earned','Added to savings'], percent:['Plan completed','Focus level','Battery left'], time:['Bedtime','Wake-up time','First meal'], scale:['Energy','Stress','Focus'], mood:['How the day felt','Mood after training','Mood at night'], toggle:['Took vitamins','Made the bed','No sugar today'], choice:['Sleep quality|Poor/Okay/Great','Weather|Sunny/Cloudy/Rainy','Energy|Low/Medium/High'], multi:['What I ate|Rice/Eggs/Fruit/Salad','Where I went|Home/Work/Gym/Cafe','Who I saw|Family/Friends/Colleagues'], todo:['Errands','Tomorrow prep','Things to reply to'], list:['Groceries','People to call','Packing list','Things to buy'], short:['Song of the day','One word for today','Best meal'], long:['What I learned','Gratitude','Ideas'], photo:['Meal','Outfit of the day','Progress shot'] },
+    clean:   { number:['Glasses of water~glasses','Protein shakes~shakes','Cups of coffee~cups','Fruit servings~servings'], duration:['Stretching','Warm-up','Meditation','Cold plunge / sauna'], money:['Grocery spend','Supplements','Skincare spend','Gym / classes'], percent:['Skin clarity','Energy level','Meal-prep done','Hydration goal'], time:['Bedtime','Wake-up time','First meal','Last meal'], scale:['Energy','Soreness','Skin today','Cravings'], mood:['Mood after training','Morning mood','Mood after a meal'], toggle:['Took vitamins','Skincare done','No sugar today','Cold shower','Made the bed'], choice:['Skin today|Clear/Oily/Dry/Breakout','Hair day|Great/Okay/Bad','Sleep quality|Poor/Okay/Great'], multi:['What I ate|Rice/Eggs/Fruit/Salad/Chicken','Skincare used|Cleanser/Serum/Moisturiser/SPF','Supplements|Protein/Creatine/Vitamin D/Omega 3'], todo:['Prep tomorrow\'s meals','Laundry','Pack gym bag'], list:['Groceries','Meal prep','Skincare to rebuy','Gym bag'], short:['Meal of the day','Fit of the day','Song for the workout'], long:['Skin notes','What worked today','Body notes'], photo:['Meal','Fit check','Progress shot'] },
+    reading: { number:['Pages read~pages','Chapters finished~chapters','Words looked up~words','Books on hold~books'], duration:['Reading time','Audiobook time','Note-taking','Reading aloud'], money:['Book spend','Library fines','Added to book fund'], percent:['Book progress','Focus level','Goal for the month'], time:['Reading start','Bedtime','Last page'], scale:['Focus','Enjoyment','Understanding'], mood:['How the book made me feel','Mood after reading'], toggle:['Read before bed','Phone in another room','Took notes','Finished a chapter'], choice:['Where I read|Home/Cafe/Commute/Library','Format|Paper/E-book/Audio','Pace|Slow/Steady/Fast'], multi:['Genres today|Fiction/Self-help/History/Science','Format today|Paper/E-book/Audio','Where I read|Bed/Sofa/Cafe/Commute'], todo:['Books to buy','Quotes to save','Library returns'], list:['To-read list','Quotes to remember','Library holds','Words to look up'], short:['Favourite line','One word for the book','Book of the day'], long:['Thoughts on the chapter','Quotes and notes','What I learned'], photo:['Page I loved','Reading nook','Book haul'] },
+    sober:   { number:['Cravings today~cravings','Glasses of water~glasses','Meetings attended~meetings','Calls to support~calls'], duration:['Time outside','Meditation','Exercise','Time with people'], money:['Money saved today','Money not spent','Added to savings'], percent:['Confidence','Urge strength','Day went to plan'], time:['Bedtime','Craving hit at','Wake-up time'], scale:['Craving strength','Stress','Energy'], mood:['How I feel','Mood tonight','Mood this morning'], toggle:['Stayed clean today','Called my support','Went to a meeting','Slept 7h or more'], choice:['Craving level|None/Mild/Strong','Biggest trigger|Stress/Boredom/People/Place','HALT check|Hungry/Angry/Lonely/Tired'], multi:['Triggers today|Stress/Boredom/People/Place','Coping I used|Walk/Call/Gym/Breathe','Who I talked to|Family/Friend/Sponsor/Group'], todo:['People to call','Meetings to attend','Things to avoid'], list:['Reasons I stay clean','People to call','Triggers to avoid','Replacement activities'], short:['One word for today','Song for today','Thing I did instead'], long:['What triggered me','Gratitude','Note to future me'], photo:['Sunset','Milestone','Something I made'] },
+    hustler: { number:['Outreach sent~messages','Leads~leads','Deals closed~deals','Calls made~calls'], duration:['Deep work','Calls','Learning','Admin'], money:['Revenue','Ad spend','Expenses','Invested'], percent:['Goal progress','Pipeline filled','Day went to plan'], time:['Work start','Last email','Shutdown'], scale:['Focus','Confidence','Stress'], mood:['Mood at close','Mood after a call'], toggle:['Hit my 3 priorities','Posted content','Followed up','Reviewed numbers'], choice:['Day quality|Slow/Steady/Strong','Main channel|Email/DMs/Calls/Ads','Cash flow|Down/Flat/Up'], multi:['What I worked on|Sales/Content/Ops/Learning','Tools used|Sheets/CRM/Email/Notes','Who I met|Clients/Partners/Mentors'], todo:['Follow-ups','Invoices to send','Tomorrow prep'], list:['Leads to contact','Business ideas','Expenses to log','Clients'], short:['Biggest lesson','Best idea','Quote I used'], long:['What I learned','Post-mortem','Plan for tomorrow'], photo:['Receipt','Whiteboard','Product'] }
+  };
+  var CUR = [];
+  function ideas(type){
+    var fs = families(), out = [], seen = {};
+    fs.forEach(function(f){ ((SUG[f]||{})[type]||[]).slice(0, fs.length>1 ? 2 : 4).forEach(function(s){ if(!seen[s]){ seen[s] = 1; out.push(s); } }); });
+    if(out.length < 3) ((SUG.gen||{})[type]||[]).forEach(function(s){ if(out.length<4 && !seen[s]){ seen[s] = 1; out.push(s); } });
+    return out.map(function(s){ var o = { name:s, opts:'', unit:'' }, i; if((i = s.indexOf('|'))>=0){ o.name = s.slice(0,i); o.opts = s.slice(i+1).split('/').join('\n'); } if((i = o.name.indexOf('~'))>=0){ o.unit = o.name.slice(i+1); o.name = o.name.slice(0,i); } return o; });
+  }
+  function applyIdea(i){
+    var F = (typeof BX_FORM!=='undefined') ? BX_FORM : null, s = CUR[i]; if(!F || !s) return;
+    var nm = document.getElementById('bx-f-label');
+    if(nm){
+      nm.value = s.name; try{ bxRefreshIconPreview(); }catch(e){}
+      /* the name is only a suggestion: when you tap into the box, the whole suggestion is selected, so typing replaces it */
+      nm.setAttribute('data-auto', s.name);
+      if(!nm.__autoSel){ nm.__autoSel = 1; nm.addEventListener('focus', function(){ var el = this; setTimeout(function(){ if(el.value === el.getAttribute('data-auto')) { try{ el.select(); }catch(e){} } }, 0); }); }
+    }
+    var unit = document.getElementById('bx-f-unit'); if(unit && F.type==='number') unit.value = s.unit || '';
+    var op = document.getElementById('bx-f-mopts') || document.getElementById('bx-f-opts');
+    if(op && s.opts && (F.type==='choice' || F.type==='multi')){
+      op.value = s.opts; op.setAttribute('data-auto', s.opts);
+      if(!op.__autoSel){ op.__autoSel = 1; op.addEventListener('focus', function(){ var el = this; setTimeout(function(){ if(el.value === el.getAttribute('data-auto')) { try{ el.select(); }catch(e){} } }, 0); }); }
+    }
+    Array.prototype.forEach.call(document.querySelectorAll('.bx-sug button'), function(b, k){ b.classList.toggle('on', k===i); });
+  }
+  window.bxFxSug = applyIdea;
+  if(typeof bxShowFieldForm === 'function'){
+    var baseForm = bxShowFieldForm;
+    bxShowFieldForm = function(f){
+      baseForm.apply(this, arguments);
+      try{
+        var F = (typeof BX_FORM!=='undefined') ? BX_FORM : null, nm = document.getElementById('bx-f-label'); if(!F || !nm || f) return;
+        CUR = ideas(F.type); if(!CUR.length) return;
+        var box = document.querySelector('.bx-sug');
+        var html = '<div class="bx-sug"><span>Ideas for you</span>' + CUR.map(function(x,i){ return '<button type="button" onclick="bxFxSug('+i+')">'+E(x.name)+'</button>'; }).join('') + '</div>';
+        if(box) box.outerHTML = html; else nm.insertAdjacentHTML('afterend', html);
+        if(!nm.value){ applyIdea(0); try{ nm.select(); }catch(e){} }
+      }catch(e){ if(window.console) console.error('c5 name ideas', e); }
+    };
+  }
+
+  /* ---------------- B. link a box ---------------- */
+  function links(){ if(!Array.isArray(DB.links)) DB.links = []; return DB.links; }
+  function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function shift(ds, n){ var d = new Date(ds+'T00:00:00'); d.setDate(d.getDate()+n); return ymd(d); }
+  function boxName(id){ try{ return bxBoxName(id); }catch(e){ return id; } }
+  function boxesNow(){ try{ return ACTIVE_BOXES(todayStr()).filter(function(b){ return b.id!=='setup' && b.id!=='library'; }); }catch(e){ return []; } }
+  function dayWord(ds){ var t = todayStr(); return ds===t ? 'today' : ds===shift(t,1) ? 'tomorrow' : ds===shift(t,-1) ? 'yesterday' : ds; }
+  function purge(){
+    var L = links(), keep = shift(todayStr(), -3), n = L.length;
+    DB.links = L.filter(function(x){ return x && x.ds >= keep; });
+    if(DB.links.length !== n){ try{ saveDB(); }catch(e){} }
+  }
+  /* the card at the top of the target box */
+  function cardHtml(ds, id){
+    var mine = links().filter(function(x){ return x.to===id && x.ds===ds; });
+    if(!mine.length) return '';
+    return '<div class="lk-card"><div class="lk-h">'+icon('link',14)+' Linked in</div>' + mine.map(function(x){
+      return '<div class="lk-row'+(x.done?' done':'')+'"><button type="button" class="lk-tick" data-lk="tick" data-id="'+E(x.id)+'" aria-label="'+(x.done?'Untick':'Tick')+'">'+icon('check',15)+'</button>'
+        + '<div class="lk-t"><b>'+E(x.text)+'</b><small>from '+E(boxName(x.from))+(x.srcDs && x.srcDs!==ds ? ', '+E(dayWord(x.srcDs)) : '')+'</small></div>'
+        + '<button type="button" class="lk-x" data-lk="rm" data-id="'+E(x.id)+'" aria-label="Remove link">'+icon('close',13)+'</button></div>';
+    }).join('') + '</div>';
+  }
+  /* the little list at the bottom of the source box, plus the button */
+  function footHtml(ds, id){
+    var out = links().filter(function(x){ return x.from===id && x.srcDs===ds; });
+    return '<div class="lk-foot">' + out.map(function(x){
+      return '<div class="lk-out"><span>'+icon('link',12)+' '+E(x.text)+' <i>to '+E(boxName(x.to))+', '+E(dayWord(x.ds))+'</i></span><button type="button" data-lk="rm" data-id="'+E(x.id)+'" aria-label="Remove link">'+icon('close',12)+'</button></div>';
+    }).join('') + '<button type="button" class="lk-add" data-lk="add" data-ds="'+E(ds)+'" data-box="'+E(id)+'">'+icon('link',15)+' Link to another box</button></div>';
+  }
+  function openSheet_(ds, id){
+    if(!window.LISTS || !LISTS.openLS) return;
+    var others = boxesNow().filter(function(b){ return b.id!==id; });
+    if(!others.length){ try{ flashSaved('Add another box first'); }catch(e){} return; }
+    /* ideas for what to carry: the name of this box, plus any short text already typed in it today */
+    var pg = getPage(ds, id), sug = [];
+    Object.keys(pg).forEach(function(k){ var v = pg[k]; if(k.charAt(0)!=='_' && typeof v==='string' && v.trim() && v.length<=40 && v.indexOf('\n')<0 && sug.length<3 && sug.indexOf(v.trim())<0) sug.push(v.trim()); });
+    ['Remember this','Follow up on this','Check how it went'].forEach(function(s){ if(sug.length<5) sug.push(s); });
+    var byName = {}; others.forEach(function(b){ byName[b.name] = b.id; });
+    LISTS.openLS({ title:'Link '+boxName(id), needs:true,
+      secs:[ { id:'to', label:'Link it to', opts:others.map(function(b){ return b.name; }), sel:[], other:false },
+             { id:'day', label:'Show it', opts:['Today','Tomorrow'], sel:['Tomorrow'], other:false },
+             { id:'txt', label:'What to carry over', opts:sug, sel:[], other:true } ],
+      count:function(st){ return (st.to.length && st.txt.length) ? 1 : 0; }, cta:function(st,n){ return n ? 'Link it' : 'Pick a box and what to carry'; },
+      done:function(st){
+        var to = byName[st.to[0]]; if(!to || !st.txt.length) return;
+        var tds = st.day[0]==='Today' ? ds : shift(ds, 1);
+        links().push({ id:'lk'+Date.now().toString(36)+Math.floor(Math.random()*1e3), from:id, to:to, ds:tds, srcDs:ds, text:String(st.txt[0]).slice(0,80), done:false });
+        saveDB(); try{ flashSaved('Linked to '+boxName(to)+' ('+(st.day[0]||'tomorrow').toLowerCase()+')'); }catch(e){} render();
+      } });
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target && e.target.closest ? e.target.closest('[data-lk]') : null; if(!b) return;
+    var a = b.getAttribute('data-lk'), id = b.getAttribute('data-id');
+    if(a==='add'){ e.preventDefault(); return openSheet_(b.getAttribute('data-ds'), b.getAttribute('data-box')); }
+    var x = links().filter(function(y){ return y.id===id; })[0]; if(!x) return;
+    if(a==='tick'){ x.done = !x.done; saveDB(); render(); }
+    if(a==='rm'){ DB.links = links().filter(function(y){ return y.id!==id; }); saveDB(); render(); }
+  });
+  /* draw it: on each daily box page (card on top, button above Finish) and under the box shown on Home */
+  var baseR = render;
+  render = function(){
+    var out = baseR.apply(this, arguments);
+    try{
+      if(typeof ROUTE!=='undefined' && DB.onboarded && ROUTE.view==='page'){
+        var id = ROUTE.pageId, ds = ROUTE.date || todayStr(), isDaily = boxesNow().some(function(b){ return b.id===id; });
+        var pb = document.querySelector('#app .page-body');
+        if(pb && isDaily && !pb.querySelector('.lk-card,.lk-foot')){
+          purge();
+          var top = cardHtml(ds, id); if(top) pb.insertAdjacentHTML('afterbegin', top);
+          var fin = pb.querySelector('.fin-bar'), foot = footHtml(ds, id);
+          if(fin) fin.insertAdjacentHTML('beforebegin', foot); else pb.insertAdjacentHTML('beforeend', foot);
+        }
+      }
+    }catch(e){ if(window.console) console.error('c5 links', e); }
+    return out;
+  };
+  if(typeof bxFocusBody === 'function'){
+    var baseFocus = bxFocusBody;
+    bxFocusBody = function(id, ds){ var h = baseFocus.apply(this, arguments); try{ return cardHtml(ds, id) + h; }catch(e){ return h; } };
+  }
+  window.BOXLINKS = { list:links, cardHtml:cardHtml };
+
+  var css = '.lk-card{background:var(--accent-soft);border:1.5px solid color-mix(in srgb,var(--accent) 35%,transparent);border-radius:18px;padding:12px 14px;margin:0 0 14px}'
+    + '.lk-h{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}'
+    + '.lk-row{display:flex;align-items:center;gap:10px;padding:9px 0 3px}.lk-row+.lk-row{border-top:1px solid color-mix(in srgb,var(--accent) 18%,transparent);margin-top:6px}'
+    + '.lk-tick{flex:none;width:34px;height:34px;border-radius:50%;border:2.5px solid color-mix(in srgb,var(--ink) 30%,transparent);background:var(--surface);color:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation}'
+    + '.lk-row.done .lk-tick{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.lk-row.done .lk-t b{text-decoration:line-through;opacity:.55}'
+    + '.lk-t{flex:1;min-width:0}.lk-t b{display:block;font-size:14.5px;color:var(--ink);overflow-wrap:anywhere}.lk-t small{font-size:11.5px;color:var(--muted)}'
+    + '.lk-x{flex:none;width:30px;height:30px;border:0;border-radius:50%;background:transparent;color:var(--muted);display:flex;align-items:center;justify-content:center;cursor:pointer}'
+    + '.lk-foot{margin:16px 0 4px}.lk-out{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--ink-soft);background:var(--surface-2);border-radius:12px;padding:6px 8px 6px 12px;margin-bottom:6px}.lk-out i{color:var(--muted);font-style:normal}.lk-out button{border:0;background:transparent;color:var(--muted);width:28px;height:28px;border-radius:50%;cursor:pointer;display:flex;align-items:center;justify-content:center}'
+    + '.lk-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;border:1.5px dashed var(--line);border-radius:16px;background:transparent;color:var(--ink-soft);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;touch-action:manipulation}';
+  var st = document.createElement('style'); st.id = 'c5-css'; st.textContent = css; document.head.appendChild(st);
+}catch(e){ if(window.console) console.error('c5 patch', e); } })();
+</script>
+<script>
+/* ============================================================
+   BOOT (Cycle 5). This script is always the LAST one.
+   Why: the original app drew the first screen before any of the add-on scripts had loaded, so the first screen you saw was the
+   OLD version (old icons, old boxes) until your first tap forced a redraw. Now the first draw is skipped in the base code
+   (build.py removes it) and done here, once, with everything loaded. It also redraws when the app comes back from the
+   background, from the back-forward cache, or after midnight, so a stale screen cannot be left sitting there.
+   ============================================================ */
+(function(){
+  var typing = function(){ var a = document.activeElement; return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)); };
+  var drawnDay = null;
+  function today(){ try{ return todayStr(); }catch(e){ return ''; } }
+  function draw(){
+    try{ render(); }catch(e){ if(window.console) console.error('boot render', e); }
+    try{ if(typeof LAYOUT_MQ !== 'undefined' && LAYOUT_MQ && typeof applyLayoutMode === 'function') applyLayoutMode(LAYOUT_MQ.matches); }catch(e){}
+    drawnDay = today();
+  }
+  draw();
+  window.__booted = true;
+  /* coming back: redraw if the day changed, or if it has been a while; never while you are typing */
+  var hiddenAt = 0;
+  function back(force){
+    if(typing()) return;
+    if(force || today() !== drawnDay || (hiddenAt && Date.now() - hiddenAt > 60000)){
+      try{ if(typeof SELECTED_DATE !== 'undefined' && drawnDay && today() !== drawnDay && SELECTED_DATE === drawnDay){ SELECTED_DATE = today(); } }catch(e){}
+      draw();
+    }
+  }
+  document.addEventListener('visibilitychange', function(){ if(document.hidden){ hiddenAt = Date.now(); } else { back(false); hiddenAt = 0; } });
+  window.addEventListener('pageshow', function(e){ if(e && e.persisted) back(true); });
+})();
+</script>
 </body>
 </html>
