@@ -10079,6 +10079,7 @@ if(LAYOUT_MQ){
     + '.ls-names{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;}'
     + '.ls-goalbtn{flex:1;min-width:0;}'
     + '.ls-empty{padding:14px 4px;color:var(--muted);font-size:13px;}';
+    css += '.ls-intro{font-size:13.5px;line-height:1.45;color:var(--ink-soft);background:var(--surface-2);border-radius:14px;padding:11px 13px;margin:0 0 14px}.ls-intro b{color:var(--ink)}.ls-intro i{font-style:normal;color:var(--accent);font-weight:700}';
     var st = document.createElement('style'); st.id = 'lists-extra'; st.textContent = css; document.head.appendChild(st);
 
     /* ------------------------------------------------------------------ small helpers ------------------ */
@@ -10270,6 +10271,7 @@ if(LAYOUT_MQ){
     }
     function bodyHtml(){
       var h = SH.secs.map(secHtml).join('');
+      if(SH.intro){ var st0 = stateOf(); h = '<div class="ls-intro">'+(typeof SH.intro==='function' ? SH.intro(st0) : SH.intro)+'</div>' + h; }
       if(!SH.instant){
         var st = stateOf(), n = SH.count ? SH.count(st) : 1, lab = SH.cta ? SH.cta(st, n) : 'Done';
         h += '<button type="button" class="ls-go" data-ls="done"'+(SH.needs && n<1 ? ' disabled' : '')+'>'+E(lab)+'</button>';
@@ -10291,6 +10293,7 @@ if(LAYOUT_MQ){
       if(s.multi){ if(ix>=0) s.sel.splice(ix,1); else s.sel.push(val); repaint(); return; }
       if(ix>=0) s.sel = []; else s.sel = [val];
       if(SH.instant) return finish();
+      if(SH.onChange){ try{ SH.onChange(stateOf(), SH.secs); }catch(e){} }   /* a sheet can tidy its other sections after a tap */
       repaint();
     }
     function onLS(b){
@@ -14230,11 +14233,16 @@ if(LAYOUT_MQ){
 </script>
 <script>
 /* ============================================================
-   HAIR LOG (Cycle 5, Clean Boy and Clean Girl only): a monthly "character card" for your hair.
-   Settings > This month > Hair Log. A little portrait is drawn from your answers (pattern, length, colour, strand, density,
-   style), then stat bars (moisture, strength, shine, volume, scalp, growth), a health score with a rarity label, your
-   routine, goals and care log, and a strip of your last 6 months.
-   Saved per month in DB.monthly[month].hair. A new month starts as a copy of last month, so you only change what changed.
+   HAIR LOG v2 (Cycle 6, Clean Boy and Clean Girl only). A MONTHLY BOX on Home (and in Settings > This month).
+   Tabs inside it:
+     Card     the character card for your hair: portrait (or your own photo), rarity, level, stats, traits, goals, next-care tip, badges
+     Photos   take or pick pictures (front / side / back / top / scalp), see them as a gallery, before and after
+     Routine  a calendar of your hair days; they fill themselves from "Hair today" in Shower & Hygiene (and you can tap a day too)
+     History  a timeline of hair days and photos, and the monthly health score journey
+   LINKED TO HYGIENE: Shower & Hygiene gets a "Hair today" field. Pick Washed / Conditioned / Mask...: that day is added to the Routine tab
+   by itself. Shower & Hygiene also gets a history card (last 14 days, products you use most) and its own progress photos.
+   Saved per month: DB.monthly[month].hair = { traits, stats, routine, goals, photos:[...], days:{date:1} }, and
+   DB.monthly[month].hygiene = { photos:[...] }. All optional, so older backups still import. A new month starts as a copy of last month's card.
    ============================================================ */
 (function(){ try{
   if(typeof BRAND==='undefined' || !/clean/i.test(BRAND.name||'')) return;
@@ -14254,23 +14262,108 @@ if(LAYOUT_MQ){
   var STATS = [ ['moisture','Moisture'], ['strength','Strength'], ['shine','Shine'], ['volume','Volume'], ['scalpHealth','Scalp'], ['growth','Growth'] ];
   var ROUTINE = ['Shampoo','Conditioner','Hair mask','Leave-in','Hair oil','Scalp scrub','Heat protectant','Styling cream','Gel / wax','Comb / brush'];
   var GOALS = ['Grow it out','More moisture','More volume','More shine','Less frizz','Stronger','Thicker','Curl definition','Healthier scalp','Keep it as is'];
+  var DAILY = ['Washed','Conditioned','Hair mask','Oil / scalp care','Styled','Brushed','Trimmed','Coloured'];
+  var ANGLES = ['Front','Side','Back','Top','Scalp','Close-up'];
   var COL = { 'Black':'#1c1818','Dark brown':'#3a2a21','Brown':'#6a4a33','Blonde':'#d8b56b','Red':'#b0452a','Grey':'#b8b8bf','Dyed':'#8b5cf0' };
   var TITLE = { 'Straight':'The Silk Blade', 'Wavy':'The Tide Rider', 'Curly':'The Spring Mage', 'Coily':'The Crown Keeper' };
+  var TAB = 'card', ANGLE = 'Front', DEL = '';
 
-  /* ---- data ---- */
+  /* the daily "Hair today" chips in Shower & Hygiene use the normal tap-chip engine */
+  try{ if(window.UI && UI.specs) UI.specs['shower.hair'] = { t:'multi', opts:DAILY, other:false }; }catch(e){}
+
+  /* ---- small helpers ---- */
   function prevMk(mk){ var p = mk.split('-'), d = new Date(+p[0], +p[1]-2, 1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+  function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+  function addD(ds, n){ var d = new Date(ds+'T12:00:00'); d.setDate(d.getDate()+n); return ymd(d); }
+  function daysBetween(a, b){ return Math.round((new Date(b+'T12:00:00') - new Date(a+'T12:00:00'))/86400000); }
+  function nice(ds){ try{ return new Date(ds+'T12:00:00').toLocaleDateString('en-GB', { day:'numeric', month:'short' }); }catch(e){ return ds; } }
   function has(o){ return o && Object.keys(o).some(function(k){ return k.charAt(0)!=='_'; }); }
+  function raw(mk){ return DB.monthly && DB.monthly[mk] && DB.monthly[mk].hair; }
+  function uniq(a){ var s = {}; return a.filter(function(x){ if(s[x]) return false; s[x] = 1; return true; }); }
+
+  /* ---- the card data ---- */
   function data(mk){
     var d = getMonthlyPage('hair', mk);
-    if(!has(d)){   /* new month: start from last month's card */
-      var pm = prevMk(mk), pd = DB.monthly && DB.monthly[pm] && DB.monthly[pm].hair;
-      if(has(pd)){ var c = JSON.parse(JSON.stringify(pd)); delete c.trim; delete c.note; Object.keys(c).forEach(function(k){ d[k] = c[k]; }); d.fromPrev = true; }
+    if(!has(d)){   /* new month: start from last month's card (photos and days stay with their own month) */
+      var pd = raw(prevMk(mk));
+      if(has(pd)){ var c = JSON.parse(JSON.stringify(pd)); ['trim','note','photos','days','coloured','heat','protein','avatar'].forEach(function(k){ delete c[k]; }); Object.keys(c).forEach(function(k){ d[k] = c[k]; }); d.fromPrev = true; }
     }
     return d;
   }
   function score(d){ var v = STATS.map(function(s){ return +d[s[0]] || 0; }).filter(function(x){ return x>0; }); return v.length ? Math.round(v.reduce(function(a,b){ return a+b; },0)/v.length*20) : null; }
   function rarity(sc){ return sc==null ? '' : sc>=88 ? 'Legendary' : sc>=72 ? 'Epic' : sc>=56 ? 'Rare' : sc>=40 ? 'Uncommon' : 'Common'; }
 
+  /* ---- hair days: filled from Shower & Hygiene ("Hair today", "Hair care" note, hair products) plus the days you tap yourself ---- */
+  function autoKinds(ds){
+    var day = DB.days && DB.days[ds], p = day && day.pages && day.pages.shower; if(!p || !p._touched) return [];
+    var out = [];
+    try{ UI.parseMulti(p.hair).tok.forEach(function(t){ out.push(t); }); }catch(e){}
+    if(/hair care/i.test(String(p.note||''))) out.push('Hair care');
+    for(var i=0;i<9;i++){ var t = String(p['product'+i]||''); if(!t) continue;
+      if(/shampoo/i.test(t)) out.push('Washed'); else if(/conditioner/i.test(t)) out.push('Conditioned'); else if(/hair|scalp/i.test(t)) out.push('Hair care'); }
+    return uniq(out);
+  }
+  function daysOf(mk){
+    var map = {}, h = raw(mk), man = (h && h.days) || {};
+    var ds = (typeof datesInMonth==='function') ? datesInMonth(mk) : [];
+    ds.forEach(function(d){ var k = autoKinds(d), m = !!man[d]; if(k.length || m) map[d] = { kinds:k, auto:k.length>0, manual:m }; });
+    return map;
+  }
+  function isDay(ds){ var m = daysOf(ds.slice(0,7)); return !!m[ds]; }
+  function kindsOn(ds){ var m = daysOf(ds.slice(0,7))[ds]; return m ? m.kinds : []; }
+  function streak(){   /* consecutive hair days up to today (today may still be open) */
+    var t = todayStr(), n = 0, d = isDay(t) ? t : addD(t,-1);
+    while(n<400 && isDay(d)){ n++; d = addD(d,-1); }
+    return n;
+  }
+  function totalDays(){ var n = 0, seen = {}; Object.keys(DB.days||{}).forEach(function(d){ var k = d.slice(0,7); if(!seen[k]){ seen[k] = daysOf(k); } if(seen[k][d]) n++; });
+    Object.keys(DB.monthly||{}).forEach(function(k){ if(!seen[k]){ seen[k] = daysOf(k); Object.keys(seen[k]).forEach(function(d){ if(!DB.days[d]) n++; }); } }); return n; }
+  function lastWith(re){ var t = todayStr(); for(var i=0;i<120;i++){ var d = addD(t,-i), k = kindsOn(d); if(k.some(function(x){ return re.test(x); })) return d; } return ''; }
+  function weekStart(){ var t = todayStr(), d = new Date(t+'T12:00:00'), wd = (d.getDay()+6)%7; return addD(t,-wd); }
+  function washesThisWeek(){ var s = weekStart(), n = 0; for(var i=0;i<7;i++){ var d = addD(s,i); if(d>todayStr()) break; if(kindsOn(d).some(function(x){ return /wash|shampoo/i.test(x); })) n++; } return n; }
+  function level(){ var n = totalDays(), lv = 1 + Math.floor(Math.sqrt(n)), lo = Math.pow(lv-1,2), hi = Math.pow(lv,2); return { n:n, lv:lv, pct:Math.round((n-lo)/Math.max(1,hi-lo)*100), toNext:hi-n }; }
+
+  /* ---- photos (hair: DB.monthly[m].hair.photos, hygiene: DB.monthly[m].hygiene.photos) ---- */
+  function store(kind, mk, make){ var m = DB.monthly && DB.monthly[mk], o = m && m[kind]; if(!o && make) o = getMonthlyPage(kind, mk); if(o && make && !Array.isArray(o.photos)) o.photos = []; return o && Array.isArray(o.photos) ? o.photos : []; }
+  function photosOf(kind){
+    var out = []; Object.keys(DB.monthly||{}).sort().forEach(function(mk){ store(kind, mk).forEach(function(p){ out.push({ id:p.id, ds:p.ds, tag:p.tag, img:p.img, mk:mk, kind:kind }); }); });
+    return out.sort(function(a,b){ return a.ds===b.ds ? (a.id<b.id?-1:1) : (a.ds<b.ds?-1:1); });
+  }
+  function findPhoto(id){ var all = photosOf('hair').concat(photosOf('hygiene')); return all.filter(function(p){ return p.id===id; })[0] || null; }
+  function compress(file, cb){
+    var url = URL.createObjectURL(file), img = new Image();
+    img.onload = function(){
+      try{
+        var SZ = [640, 520, 420], Q = [.62, .52, .42], out = null;
+        for(var i=0;i<SZ.length;i++){
+          var sc = Math.min(1, SZ[i]/Math.max(img.naturalWidth, img.naturalHeight)), w = Math.max(1, Math.round(img.naturalWidth*sc)), h = Math.max(1, Math.round(img.naturalHeight*sc));
+          var cv = document.createElement('canvas'); cv.width = w; cv.height = h; var cx = cv.getContext('2d'); cx.fillStyle = '#fff'; cx.fillRect(0,0,w,h); cx.drawImage(img,0,0,w,h);
+          out = cv.toDataURL('image/jpeg', Q[i]); if(out.length <= 70000) break;
+        }
+        URL.revokeObjectURL(url); cb(out);
+      }catch(e){ URL.revokeObjectURL(url); cb(null); }
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); cb(null); };
+    img.src = url;
+  }
+  function addPhoto(kind, file){
+    if(!file) return;
+    try{ flashSaved('Compressing photo…'); }catch(e){}
+    compress(file, function(uri){
+      if(!uri){ try{ flashSaved('Could not read that photo'); }catch(e){} return; }
+      var mk = currentMonthKey(); if(kind==='hair') data(mk);
+      var arr = store(kind, mk, true), item = { id:'ph'+Date.now().toString(36)+Math.floor(Math.random()*1e3), ds:todayStr(), tag:(kind==='hair' ? ANGLE : 'Progress'), img:uri };
+      arr.push(item);
+      var ok = (typeof bxTrySave==='function') ? bxTrySave() : (saveDB(), true);
+      if(!ok){ arr.pop(); try{ flashSaved('Storage is full: photo not saved. Delete an old photo first.'); }catch(e){} return; }
+      try{ flashSaved('Photo saved'); }catch(e){} render();
+    });
+  }
+  function removePhoto(id){
+    Object.keys(DB.monthly||{}).forEach(function(mk){ ['hair','hygiene'].forEach(function(k){ var o = DB.monthly[mk][k]; if(o && Array.isArray(o.photos)){ o.photos = o.photos.filter(function(p){ return p.id!==id; }); if(k==='hair' && o.avatar===id) delete o.avatar; } }); });
+    saveDB();
+  }
+  function kb(n){ return Math.round(n/1024)+' KB'; }
   /* ---- the portrait ---- */
   function shade(hex, amt){   /* lighter (+) or darker (-) hex colour */
     var n = parseInt(hex.slice(1), 16), r = n>>16, g = (n>>8)&255, b = n&255;
@@ -14324,41 +14417,125 @@ if(LAYOUT_MQ){
     return s + '</svg>';
   }
 
+
   /* ---- the page ---- */
   function history(mk){
     var out = [], cur = mk;
-    for(var i=0;i<6;i++){ var pd = DB.monthly && DB.monthly[cur] && DB.monthly[cur].hair; out.unshift({ mk:cur, sc: has(pd) ? score(pd) : null }); cur = prevMk(cur); }
+    for(var i=0;i<6;i++){ var pd = raw(cur); out.unshift({ mk:cur, sc: has(pd) ? score(pd) : null }); cur = prevMk(cur); }
     return out;
   }
   function pips(d, k){ var v = +d[k] || 0; return [1,2,3,4,5].map(function(n){ return '<button type="button" class="hr-pip'+(n<=v?' on':'')+'" data-hr="stat" data-k="'+k+'" data-v="'+n+'" aria-label="'+n+' of 5"></button>'; }).join(''); }
-  function body(mk){
-    var d = data(mk), sc = score(d), pm = prevMk(mk), pd = DB.monthly && DB.monthly[pm] && DB.monthly[pm].hair, ps = has(pd) ? score(pd) : null;
-    var delta = (sc!=null && ps!=null) ? sc-ps : null, locked = isMonthlyPageLocked('hair', mk);
+  function thumb(p, extra){ return '<button type="button" class="hr-th'+(extra||'')+'" data-hr="pview" data-id="'+E(p.id)+'" aria-label="Open photo"><img src="'+p.img+'" alt="'+E((p.tag||'')+' '+nice(p.ds))+'" loading="lazy"><span>'+E(p.tag||'')+'</span></button>'; }
+
+  /* next-care tip, from your routine */
+  function nextCare(d){
+    var goal = d.wash==null ? 2 : +d.wash, w = washesThisWeek(), lw = lastWith(/wash|shampoo/i), since = lw ? daysBetween(lw, todayStr()) : null, mask = lastWith(/mask/i);
+    if(w < goal && (since==null || since>=2)) return { t:'Wash day is due', s: w+' of '+goal+' washes this week'+(since!=null ? ' · last wash '+(since===0?'today':since+' day'+(since===1?'':'s')+' ago') : ''), tone:'due' };
+    if(!mask || daysBetween(mask, todayStr())>=14) return { t:'Time for a treatment', s: mask ? 'Last mask was '+daysBetween(mask, todayStr())+' days ago' : 'No hair mask logged yet', tone:'due' };
+    return { t:'On track', s: w+' of '+goal+' washes this week · streak '+streak()+' day'+(streak()===1?'':'s'), tone:'ok' };
+  }
+  function badges(){
+    var ph = photosOf('hair').length, bestRun = (function(){ var best = 0, run = 0, t = todayStr(); for(var i=119;i>=0;i--){ if(isDay(addD(t,-i))){ run++; if(run>best) best = run; } else run = 0; } return best; })(), L = level().n, masks = 0;
+    for(var i=0;i<120;i++){ if(kindsOn(addD(todayStr(),-i)).some(function(x){ return /mask/i.test(x); })) masks++; }
+    var trim = Object.keys(DB.monthly||{}).some(function(k){ var h = raw(k); return h && h.trim; });
+    return [ ['📸','First photo',ph>=1], ['🗂️','Photo diary (5)',ph>=5], ['🔥','3-day streak',bestRun>=3], ['⚡','7-day streak',bestRun>=7], ['🧴','Mask master (3)',masks>=3], ['✂️','Trim logged',trim], ['🌟','30 hair days',L>=30], ['👑','Level 5',level().lv>=5] ];
+  }
+
+  function tabBar(){
+    return '<div class="hr-tabs" role="tablist">'+[['card','Card'],['photos','Photos'],['routine','Routine'],['history','History']].map(function(t){ return '<button type="button" role="tab" class="hr-tab'+(TAB===t[0]?' on':'')+'" aria-selected="'+(TAB===t[0]?'true':'false')+'" data-hr="tab" data-v="'+t[0]+'">'+t[1]+'</button>'; }).join('')+'</div>';
+  }
+  function heroPic(d, mk){
+    var av = d.avatar ? findPhoto(d.avatar) : null;
+    return av ? '<div class="hr-photo"><img src="'+av.img+'" alt="Your hair"></div>' : portrait(d);
+  }
+  function cardTab(mk, d){
+    var sc = score(d), pm = prevMk(mk), pd = raw(pm), ps = has(pd) ? score(pd) : null, delta = (sc!=null && ps!=null) ? sc-ps : null;
     var title = TITLE[d.pattern] || 'Your Hair', sub = [d.length, d.pattern, d.colour].filter(Boolean).join(' · ') || 'Tap the traits below to build your card';
-    var h = '';
-    if(locked) h += '<div class="locked-banner"><div class="locked-icon">'+icon('check',18)+'</div><div><div class="locked-title">Done for '+E(monthLabelShort(mk))+'</div><div class="locked-sub">Your card is saved.</div></div><button type="button" class="hr-edit" onclick="unlockMonthlyPage(\'hair\',\''+mk+'\')">Edit</button></div>';
-    h += '<div class="hr-card"><div class="hr-top"><div class="hr-pic">'+portrait(d)+'</div><div class="hr-id">'
+    var lv = level(), care = nextCare(d), st = streak(), nb = badges();
+    var h = '<div class="hr-card"><div class="hr-top"><div class="hr-pic">'+heroPic(d, mk)+(d.avatar ? '<button type="button" class="hr-art" data-hr="art">Use art</button>' : '')+'</div><div class="hr-id">'
       + (sc!=null ? '<div class="hr-rar r-'+rarity(sc).toLowerCase()+'">'+rarity(sc)+'</div>' : '<div class="hr-rar">New card</div>')
       + '<div class="hr-title">'+E(title)+'</div><div class="hr-sub">'+E(sub)+'</div>'
       + '<div class="hr-score"><b>'+(sc==null ? '–' : sc)+'</b><span>hair health</span>'+(delta!=null && delta!==0 ? '<em class="'+(delta>0?'up':'dn')+'">'+(delta>0?'▲ +':'▼ ')+delta+'</em>' : '')+'</div></div></div>'
+      + '<div class="hr-lv"><div class="hr-lvh"><b>Level '+lv.lv+'</b><span>'+lv.n+' hair days · '+lv.toNext+' to level '+(lv.lv+1)+'</span></div><div class="hr-lvbar"><i style="width:'+lv.pct+'%"></i></div></div>'
+      + '<div class="hr-mini"><div><b>'+st+'</b><span>day streak</span></div><div><b>'+washesThisWeek()+'</b><span>washes this week</span></div><div><b>'+photosOf('hair').length+'</b><span>photos</span></div></div>'
       + (d.fromPrev ? '<div class="hr-copy">Copied from last month. Change what is different.</div>' : '') + '</div>';
+    h += '<div class="hr-care '+care.tone+'"><b>'+E(care.t)+'</b><span>'+E(care.s)+'</span><button type="button" data-hr="tab" data-v="routine">Open routine</button></div>';
     h += '<div class="field-card hr-sec"><div class="fc-label">Stats</div><div class="fc-hint">How it feels this month. 1 is poor, 5 is great.</div>'
       + STATS.map(function(s){ return '<div class="hr-stat"><span>'+E(s[1])+'</span><div class="hr-pips">'+pips(d, s[0])+'</div><b>'+(d[s[0]] ? d[s[0]] : '–')+'</b></div>'; }).join('') + '</div>';
     h += '<div class="field-card hr-sec"><div class="fc-label">Traits</div><div class="hr-traits">'
       + TRAITS.map(function(t){ return '<button type="button" class="hr-trait'+(d[t.k]?' set':'')+'" data-hr="trait" data-k="'+t.k+'"><small>'+E(t.label)+'</small><b>'+E(d[t.k] || 'Pick')+'</b></button>'; }).join('') + '</div></div>';
-    var r = Array.isArray(d.routine) ? d.routine : [], g = Array.isArray(d.goals) ? d.goals : [];
-    h += '<div class="field-card hr-sec"><div class="fc-label">Routine</div><div class="hr-chips">' + (r.length ? r.map(function(x){ return '<i>'+E(x)+'</i>'; }).join('') : '<span class="hr-none">Nothing picked yet</span>') + '</div>'
-      + '<button type="button" class="hr-edit2" data-hr="routine">'+icon('pen',13)+' Choose your routine</button>'
-      + '<div class="hr-wash"><span>Wash days a week</span><div><button type="button" data-hr="wash" data-d="-1" aria-label="Fewer">'+icon('minus',14)+'</button><b>'+(d.wash==null ? '–' : d.wash)+'</b><button type="button" data-hr="wash" data-d="1" aria-label="More">'+icon('plus',14)+'</button></div></div></div>';
+    var g = Array.isArray(d.goals) ? d.goals : [];
     h += '<div class="field-card hr-sec"><div class="fc-label">Goals</div><div class="hr-chips">' + (g.length ? g.map(function(x){ return '<i>'+E(x)+'</i>'; }).join('') : '<span class="hr-none">Nothing picked yet</span>') + '</div>'
       + '<button type="button" class="hr-edit2" data-hr="goals">'+icon('pen',13)+' Choose your goals</button></div>';
+    h += '<div class="field-card hr-sec"><div class="fc-label">Badges</div><div class="hr-badges">'+nb.map(function(b){ return '<div class="hr-b'+(b[2]?' got':'')+'"><span>'+b[0]+'</span><small>'+E(b[1])+'</small></div>'; }).join('')+'</div></div>';
     h += '<div class="field-card hr-sec"><div class="fc-label">This month</div><div class="hr-tog">'
-      + [['trim','Got a trim'],['coloured','Coloured it'],['heat','Heat styled a lot'],['protein','Did a protein or repair treatment']].map(function(t){ return '<button type="button" class="hr-t'+(d[t[0]]?' on':'')+'" data-hr="tog" data-k="'+t[0]+'" aria-pressed="'+(!!d[t[0]])+'">'+E(t[1])+'</button>'; }).join('') + '</div>'
+      + [['trim','Got a trim'],['coloured','Coloured it'],['heat','Heat styled a lot'],['protein','Did a protein or repair treatment']].map(function(t){ return '<button type="button" class="hr-t'+(d[t[0]]?' on':'')+'" data-hr="tog" data-k="'+t[0]+'" aria-pressed="'+(d[t[0]]?'true':'false')+'">'+E(t[1])+'</button>'; }).join('') + '</div>'
       + '<textarea class="freewrite" id="hr-note" rows="3" placeholder="Notes: what helped, what did not (optional)">'+E(d.note||'')+'</textarea></div>';
-    var hs = history(mk), mx = 100;
+    return h;
+  }
+  function photosTab(mk, d){
+    var all = photosOf('hair'), h = '';
+    h += '<div class="field-card hr-sec"><div class="fc-label">Add a photo</div><div class="fc-hint">Pictures stay on this phone. They are shrunk so lots of them fit.</div>'
+      + '<div class="hr-angles">'+ANGLES.map(function(a){ return '<button type="button" class="hr-ang'+(ANGLE===a?' on':'')+'" data-hr="angle" data-v="'+a+'" aria-pressed="'+(ANGLE===a?'true':'false')+'">'+a+'</button>'; }).join('')+'</div>'
+      + '<button type="button" class="hr-add" data-hr="addphoto">'+icon('camera',16)+' Take or choose a '+E(ANGLE.toLowerCase())+' photo</button>'
+      + '<input type="file" accept="image/*" id="hr-file" data-store="hair" hidden></div>';
+    if(!all.length){ h += '<div class="hr-empty"><b>No photos yet</b><span>Add one now and a month from now you can compare. Same light and same angle works best.</span></div>'; return h; }
+    var last = all[all.length-1], first = all.filter(function(p){ return p.tag===last.tag; })[0] || all[0];
+    if(first.id!==last.id){
+      var gap = daysBetween(first.ds, last.ds);
+      h += '<div class="field-card hr-sec"><div class="fc-label">Before and after</div><div class="fc-hint">'+E(last.tag)+' · '+gap+' day'+(gap===1?'':'s')+' apart</div><div class="hr-ba">'
+        + '<div>'+thumb(first,' big')+'<small>'+E(nice(first.ds))+'</small></div><div>'+thumb(last,' big')+'<small>'+E(nice(last.ds))+'</small></div></div></div>';
+    }
+    var groups = {}, order = [];
+    all.slice().reverse().forEach(function(p){ if(!groups[p.mk]){ groups[p.mk] = []; order.push(p.mk); } groups[p.mk].push(p); });
+    order.forEach(function(k){ h += '<div class="field-card hr-sec"><div class="fc-label">'+E(monthLabel(k))+'</div><div class="hr-grid">'+groups[k].map(function(p){ return thumb(p); }).join('')+'</div></div>'; });
+    var bytes = all.reduce(function(a,p){ return a + (p.img||'').length; }, 0);
+    h += '<div class="hr-foot">'+all.length+' photo'+(all.length===1?'':'s')+' · about '+kb(bytes*0.75)+' on this phone</div>';
+    return h;
+  }
+  function routineTab(mk, d){
+    var map = daysOf(mk), ds = datesInMonth(mk), t = todayStr(), cnt = Object.keys(map).length, h = '';
+    var first = new Date(ds[0]+'T12:00:00'), lead = (first.getDay()+6)%7, cells = '';
+    for(var i=0;i<lead;i++) cells += '<i class="hr-cell none"></i>';
+    ds.forEach(function(x){ var m = map[x], cls = 'hr-cell' + (x>t ? ' fut' : '') + (m ? (m.auto ? ' auto' : ' man') : '') + (x===t ? ' today' : '');
+      cells += '<button type="button" class="'+cls+'" data-hr="day" data-ds="'+x+'" aria-label="'+E(nice(x)+(m?' hair day':''))+'"'+(x>t?' disabled':'')+'>'+(+x.slice(8))+'</button>'; });
+    var kinds = {}; Object.keys(map).forEach(function(k){ map[k].kinds.forEach(function(n){ kinds[n] = (kinds[n]||0)+1; }); });
+    var ks = Object.keys(kinds).sort(function(a,b){ return kinds[b]-kinds[a]; });
+    h += '<div class="field-card hr-sec"><div class="fc-label">'+E(monthLabel(mk))+'</div><div class="fc-hint">Filled in by itself when you pick “Hair today” in Shower &amp; Hygiene. Tap a day to add or remove it yourself.</div>'
+      + '<div class="hr-dow"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div><div class="hr-cal">'+cells+'</div>'
+      + '<div class="hr-key"><span><i class="auto"></i>From Shower &amp; Hygiene</span><span><i class="man"></i>Added by you</span></div></div>';
+    var lw = lastWith(/wash|shampoo/i);
+    h += '<div class="hr-mini hr-mini2"><div><b>'+cnt+'</b><span>hair days this month</span></div><div><b>'+streak()+'</b><span>day streak</span></div><div><b>'+(lw ? daysBetween(lw, t) : '–')+'</b><span>days since a wash</span></div></div>';
+    if(ks.length) h += '<div class="field-card hr-sec"><div class="fc-label">What you did</div><div class="hr-chips">'+ks.map(function(k){ return '<i>'+E(k)+' · '+kinds[k]+'</i>'; }).join('')+'</div></div>';
+    var r = Array.isArray(d.routine) ? d.routine : [];
+    h += '<div class="field-card hr-sec"><div class="fc-label">Your routine</div><div class="hr-chips">' + (r.length ? r.map(function(x){ return '<i>'+E(x)+'</i>'; }).join('') : '<span class="hr-none">Nothing picked yet</span>') + '</div>'
+      + '<button type="button" class="hr-edit2" data-hr="routine">'+icon('pen',13)+' Choose your routine</button>'
+      + '<div class="hr-wash"><span>Wash days a week (your goal)</span><div><button type="button" data-hr="wash" data-d="-1" aria-label="Fewer">'+icon('minus',14)+'</button><b>'+(d.wash==null ? '–' : d.wash)+'</b><button type="button" data-hr="wash" data-d="1" aria-label="More">'+icon('plus',14)+'</button></div></div></div>';
+    h += '<button type="button" class="hr-add" data-hr="gohyg">'+icon('drop',16)+' Log hair care in Shower &amp; Hygiene</button>';
+    return h;
+  }
+  function historyTab(mk, d){
+    var t = todayStr(), rows = [], ph = {};
+    photosOf('hair').forEach(function(p){ (ph[p.ds] = ph[p.ds] || []).push(p); });
+    for(var i=0;i<90;i++){ var x = addD(t,-i), m = daysOf(x.slice(0,7))[x], pp = ph[x]; if(m || pp) rows.push({ ds:x, m:m, pp:pp||[] }); }
+    var h = '<div class="field-card hr-sec"><div class="fc-label">Hair history</div><div class="fc-hint">The last 90 days: every hair day and every photo.</div>';
+    h += rows.length ? '<div class="hr-tl">'+rows.map(function(r){
+      var kinds = r.m ? (r.m.kinds.length ? r.m.kinds : ['Hair day']) : [];
+      return '<div class="hr-tr"><div class="hr-td"><b>'+E(nice(r.ds))+'</b><small>'+(r.ds===t?'today':daysBetween(r.ds,t)+'d ago')+'</small></div><div class="hr-tb">'
+        + (kinds.length ? '<div class="hr-chips">'+kinds.map(function(k){ return '<i>'+E(k)+'</i>'; }).join('')+(r.m && r.m.auto ? '<em>from Shower &amp; Hygiene</em>' : '')+'</div>' : '')
+        + (r.pp.length ? '<div class="hr-row">'+r.pp.map(function(p){ return thumb(p); }).join('')+'</div>' : '')+'</div></div>'; }).join('')+'</div>'
+      : '<div class="hr-none" style="padding:6px 0">Nothing yet. Pick “Hair today” in Shower &amp; Hygiene or add a photo.</div>';
+    h += '</div>';
+    var hs = history(mk);
     h += '<div class="field-card hr-sec"><div class="fc-label">Your hair journey</div><div class="fc-hint">Health score by month</div><div class="hr-hist">'
-      + hs.map(function(x,i){ return '<div class="hr-h'+(i===hs.length-1?' now':'')+'"><div class="hr-hv">'+(x.sc==null?'':x.sc)+'</div><div class="hr-hb"><i style="height:'+(x.sc==null?0:Math.max(6,Math.round(x.sc/mx*100)))+'%"></i></div><div class="hr-hl">'+E(new Date(x.mk+'-01T12:00:00').toLocaleDateString('en-US',{month:'short'}))+'</div></div>'; }).join('') + '</div></div>';
-    if(!locked) h += '<button class="add-row-btn" onclick="lockMonthlyPageNow(\'hair\',\''+mk+'\')">'+icon('check',14)+' Mark done for '+E(monthLabelShort(mk))+'</button>';
+      + hs.map(function(x,i){ return '<div class="hr-h'+(i===hs.length-1?' now':'')+'"><div class="hr-hv">'+(x.sc==null?'':x.sc)+'</div><div class="hr-hb"><i style="height:'+(x.sc==null?0:Math.max(6,Math.round(x.sc)))+'%"></i></div><div class="hr-hl">'+E(monthLabelShort(x.mk).slice(0,3))+'</div></div>'; }).join('')+'</div></div>';
+    return h;
+  }
+  function body(mk){
+    var d = data(mk), locked = isMonthlyPageLocked('hair', mk), h = '';
+    if(locked) h += '<div class="locked-banner"><div class="locked-icon">'+icon('check',18)+'</div><div><div class="locked-title">Done for '+E(monthLabelShort(mk))+'</div><div class="locked-sub">Your card is saved. You can still add photos and days.</div></div><button type="button" class="hr-edit" onclick="unlockMonthlyPage(\'hair\',\''+mk+'\')">Edit</button></div>';
+    h += tabBar() + (TAB==='photos' ? photosTab(mk,d) : TAB==='routine' ? routineTab(mk,d) : TAB==='history' ? historyTab(mk,d) : cardTab(mk,d));
+    if(TAB==='card' && !locked) h += '<button class="add-row-btn" onclick="lockMonthlyPageNow(\'hair\',\''+mk+'\')">'+icon('check',14)+' Mark done for '+E(monthLabelShort(mk))+'</button>';
     return h;
   }
   function renderHair(){ renderMonthlyPage('Hair Log', body(currentMonthKey())); }
@@ -14369,14 +14546,43 @@ if(LAYOUT_MQ){
     if(!LS()) return;
     LS().openLS({ title:title, instant:!multi, secs:[{ id:'v', opts:opts, sel:sel, multi:multi, other:multi }], cta:function(){ return 'Done'; }, done:function(st){ done(st.v); } });
   }
+  function viewer(p){
+    var mine = p.kind==='hair';
+    openSheet('<div class="sheet-title"><span>'+E((p.tag||'Photo')+' · '+nice(p.ds))+'</span><button class="sheet-close" onclick="closeSheet()" aria-label="Close">'+icon('close',15)+'</button></div>'
+      + '<div class="ui-sheetbody"><img class="hr-big" src="'+p.img+'" alt="">'
+      + (mine ? '<button type="button" class="hr-add" data-hr="avatar" data-id="'+E(p.id)+'">'+icon('sparkle',15)+' Use on my hair card</button>' : '')
+      + '<button type="button" class="hr-del" data-hr="pdel" data-id="'+E(p.id)+'">Delete this photo</button></div>');
+    DEL = '';
+  }
+  document.addEventListener('change', function(e){
+    var t = e.target; if(!t || !t.matches || !t.matches('input[type=file][data-store]')) return;
+    var f = t.files && t.files[0]; t.value = ''; addPhoto(t.getAttribute('data-store')==='hygiene' ? 'hygiene' : 'hair', f);
+  });
   document.addEventListener('click', function(e){
-    var b = e.target && e.target.closest ? e.target.closest('[data-hr]') : null; if(!b || ROUTE.view!=='page' || ROUTE.pageId!=='hair') return;
-    var a = b.getAttribute('data-hr'), k = b.getAttribute('data-k'), mk = currentMonthKey(), d = data(mk);
+    var b = e.target && e.target.closest ? e.target.closest('[data-hr]') : null; if(!b) return;
+    var a = b.getAttribute('data-hr'), k = b.getAttribute('data-k'), mk = currentMonthKey();
+    if(a==='addphoto'){ var inp = b.nextElementSibling; if(inp && inp.tagName==='INPUT') inp.click(); return; }
+    if(a==='pview'){ var ph = findPhoto(b.getAttribute('data-id')); if(ph) viewer(ph); return; }
+    if(a==='pdel'){ var id = b.getAttribute('data-id'); if(DEL!==id){ DEL = id; b.textContent = 'Tap again to delete for good'; b.classList.add('sure'); return; } removePhoto(id); DEL = ''; closeSheet(); render(); try{ flashSaved('Photo deleted'); }catch(x){} return; }
+    if(a==='avatar'){ data(mk).avatar = b.getAttribute('data-id'); saveDB(); closeSheet(); render(); try{ flashSaved('Now on your card'); }catch(x){} return; }
+    if(a==='gohair'){ TAB = 'routine'; nav('page','hair'); return; }
+    if(a==='gohyg'){ nav('page','shower'); return; }
+    if(a==='tab'){ TAB = b.getAttribute('data-v'); render(); try{ window.scrollTo(0,0); }catch(x){} return; }
+    if(a==='angle'){ ANGLE = b.getAttribute('data-v'); render(); return; }
+    if(ROUTE.view!=='page' || ROUTE.pageId!=='hair') return;
+    var d = data(mk);
     function save(){ delete d.fromPrev; saveDB(); render(); }
+    if(a==='art'){ delete d.avatar; return save(); }
+    if(a==='day'){
+      var x = b.getAttribute('data-ds'), hm = data(x.slice(0,7)), m = daysOf(x.slice(0,7))[x];
+      if(m && m.auto && !m.manual){ try{ flashSaved('This day came from Shower & Hygiene'); }catch(y){} return; }
+      if(!hm.days) hm.days = {}; if(hm.days[x]) delete hm.days[x]; else hm.days[x] = 1;
+      if(x.slice(0,7)===mk) delete d.fromPrev; saveDB(); render(); return;
+    }
     if(a==='stat'){ var v = +b.getAttribute('data-v'); d[k] = (+d[k]===v) ? 0 : v; return save(); }
     if(a==='tog'){ d[k] = !d[k]; return save(); }
     if(a==='wash'){ d.wash = Math.max(0, Math.min(7, (d.wash==null ? 2 : +d.wash) + Number(b.getAttribute('data-d')))); return save(); }
-    if(a==='trait'){ var t = TRAITS.filter(function(x){ return x.k===k; })[0]; return sheet(t.label, t.opts, d[k] ? [d[k]] : [], false, function(v){ d[k] = v[0] || ''; save(); }); }
+    if(a==='trait'){ var t = TRAITS.filter(function(z){ return z.k===k; })[0]; return sheet(t.label, t.opts, d[k] ? [d[k]] : [], false, function(v){ d[k] = v[0] || ''; save(); }); }
     if(a==='routine') return sheet('Your routine', ROUTINE, (d.routine||[]).slice(), true, function(v){ d.routine = v; save(); });
     if(a==='goals') return sheet('Your goals', GOALS, (d.goals||[]).slice(), true, function(v){ d.goals = v; save(); });
   });
@@ -14384,7 +14590,43 @@ if(LAYOUT_MQ){
     var t = e.target; if(!t || t.id!=='hr-note') return; data(currentMonthKey()).note = t.value; saveDB();
   });
 
-  /* ---- a row in Settings > This month ---- */
+  /* ---- Shower & Hygiene: "Hair today" field, and a history card with its own photos ---- */
+  function hygCard(ds){
+    var t = todayStr(), mk = currentMonthKey(), dots = '', n14 = 0, prods = {};
+    for(var i=13;i>=0;i--){ var d = addD(t,-i), p = DB.days[d] && DB.days[d].pages && DB.days[d].pages.shower, on = !!(p && p._touched); if(on) n14++; dots += '<i class="'+(on?'on':'')+(d===ds?' sel':'')+'" title="'+E(nice(d))+'"></i>'; }
+    for(var j=0;j<30;j++){ var q = DB.days[addD(t,-j)], sp = q && q.pages && q.pages.shower; if(sp) for(var z=0;z<9;z++){ var nm = String(sp['product'+z]||'').trim(); if(nm) prods[nm] = (prods[nm]||0)+1; } }
+    var top = Object.keys(prods).sort(function(a,b){ return prods[b]-prods[a]; }).slice(0,3), hairN = Object.keys(daysOf(mk)).length, ph = photosOf('hygiene').slice(-6).reverse();
+    return '<div class="field-card hg-card"><div class="fc-label">Hygiene history</div><div class="fc-hint">The last 14 days of Shower &amp; Hygiene</div><div class="hg-dots">'+dots+'</div>'
+      + '<div class="hr-mini hr-mini2"><div><b>'+n14+'/14</b><span>days logged</span></div><div><b>'+Object.keys(prods).length+'</b><span>products (30 days)</span></div><div><b>'+hairN+'</b><span>hair days this month</span></div></div>'
+      + (top.length ? '<div class="hr-chips">'+top.map(function(p){ return '<i>'+E(p)+' · '+prods[p]+'x</i>'; }).join('')+'</div>' : '')
+      + '<button type="button" class="hr-edit2" data-hr="gohair">'+icon('sparkle',13)+' Open your Hair Log (routine, photos, history)</button>'
+      + '<div class="fc-label" style="margin-top:16px">Progress photos</div>'
+      + (ph.length ? '<div class="hr-grid">'+ph.map(function(p){ return thumb(p); }).join('')+'</div>' : '<div class="hr-none">Skin, body or anything you want to track. Add one to start your history.</div>')
+      + '<button type="button" class="hr-add" data-hr="addphoto" style="margin-top:10px">'+icon('camera',16)+' Add a progress photo</button><input type="file" accept="image/*" data-store="hygiene" hidden></div>';
+  }
+  if(typeof showerBody==='function'){
+    var baseSB = showerBody;
+    showerBody = function(ds){
+      var h = baseSB.apply(this, arguments);
+      try{
+        var p = getPage(ds, 'shower');
+        var field = '<div class="field-card"><div class="fc-label">Hair today</div><div class="fc-hint">Pick what you did. That day is added to your Hair Log routine by itself.</div>'
+          + textField(ds, 'shower', 'hair', '', p.hair) + (isDay(ds) ? '<div class="hr-linked">'+icon('check',13)+' Counted in your Hair Log routine</div>' : '') + '</div>';
+        var mark = '<div class="field-card"><div class="fc-label">Frequency check</div>', at = h.indexOf(mark);
+        h = at>=0 ? h.slice(0,at) + field + h.slice(at) : h + field;
+        h += hygCard(ds);
+      }catch(e){ if(window.console) console.error('hair: shower', e); }
+      return h;
+    };
+  }
+
+  /* ---- Home tile (monthly box) and a row in Settings > This month ---- */
+  try{
+    if(typeof SETUP_PAGES!=='undefined' && !SETUP_PAGES.some(function(p){ return p.id==='hair'; })){
+      var at2 = -1; SETUP_PAGES.forEach(function(p,i){ if(p.id==='income') at2 = i; });
+      SETUP_PAGES.splice(at2>=0 ? at2+1 : SETUP_PAGES.length, 0, { id:'hair', name:'Hair Log', icon:'sparkle', cadence:'monthly', status:function(){ var L = level(); return 'Level '+L.lv+' · photos & routine'; } });
+    }
+  }catch(e){}
   var baseR = render;
   render = function(){
     var out = baseR.apply(this, arguments);
@@ -14393,13 +14635,13 @@ if(LAYOUT_MQ){
         var rows = document.querySelectorAll('#app .settings-row .sr-name'), at = null;
         Array.prototype.forEach.call(rows, function(n){ if(/Products & Perfume Vault|Vision Board/i.test(n.textContent)) at = n.closest('.settings-row'); });
         var mk = currentMonthKey(), done = isMonthlyPageLocked('hair', mk), sc = score(data(mk));
-        var row = '<button class="settings-row" data-hair-row="1" onclick="nav(\'page\',\'hair\')"><div><div class="sr-name">Hair Log</div><div class="sr-desc">'+(done ? 'Done for '+E(monthLabelShort(mk))+(sc!=null ? ', health '+sc : '') : 'A character card for your hair. Not set up for '+E(monthLabelShort(mk)))+'</div></div><div class="sr-ico">'+icon(done?'check':'sparkle',16)+'</div></button>';
+        var row = '<button class="settings-row" data-hair-row="1" onclick="nav(\'page\',\'hair\')"><div><div class="sr-name">Hair Log</div><div class="sr-desc">'+(done ? 'Done for '+E(monthLabelShort(mk))+(sc!=null ? ', health '+sc : '') : 'Your hair as a character card, with photos, routine and history')+'</div></div><div class="sr-ico">'+icon(done?'check':'sparkle',16)+'</div></button>';
         if(at) at.insertAdjacentHTML('afterend', row); else { var sec = document.querySelector('#app .settings-section'); if(sec) sec.insertAdjacentHTML('beforeend', row); }
       }
     }catch(e){ if(window.console) console.error('hair row', e); }
     return out;
   };
-  window.HAIR = { score:score, portrait:portrait, data:data };
+  window.HAIR = { score:score, portrait:portrait, data:data, daysOf:daysOf, streak:streak, photos:photosOf, level:level, autoKinds:autoKinds };
 
   var css = '.hr-card{border-radius:26px;padding:14px;margin:0 0 14px;background:linear-gradient(160deg,var(--accent-soft),var(--surface));border:1px solid var(--line);box-shadow:var(--shadow-sm)}'
     + '.hr-top{display:flex;gap:14px;align-items:center}.hr-pic{flex:0 0 46%;max-width:190px}.hr-svg{width:100%;height:auto;display:block;border-radius:22px}.hr-svg .hr-skin{fill:#e8c8ab}.hr-svg .hr-skin2{fill:#dcb899}.hr-svg .hr-body{fill:color-mix(in srgb,var(--ink) 16%,var(--surface))}.hr-svg .hr-ink{fill:#3a2d28}.hr-svg .hr-ink-s{stroke:#3a2d28}.hr-svg .hr-star{fill:#f4c95d}'
@@ -14416,7 +14658,26 @@ if(LAYOUT_MQ){
     + '.hr-wash{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:13.5px;font-weight:700;color:var(--ink)}.hr-wash div{display:flex;align-items:center;gap:12px}.hr-wash button{width:40px;height:40px;border-radius:50%;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer}.hr-wash b{min-width:18px;text-align:center;font-size:17px}'
     + '.hr-tog{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 12px}.hr-t{border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;min-height:40px;padding:0 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation}.hr-t.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}'
     + '.hr-hist{display:flex;gap:8px;align-items:flex-end;height:120px;margin-top:10px}.hr-h{flex:1;display:flex;flex-direction:column;align-items:center;height:100%}.hr-hb{flex:1;width:100%;display:flex;align-items:flex-end;background:var(--surface-2);border-radius:9px;overflow:hidden}.hr-hb i{display:block;width:100%;background:var(--accent);opacity:.5;border-radius:9px}.hr-h.now .hr-hb i{opacity:1}.hr-hv{font-size:10.5px;color:var(--muted);height:14px}.hr-hl{font-size:10.5px;color:var(--muted);margin-top:4px}'
-    + '.hr-edit{margin-left:auto;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 14px;font:inherit;font-weight:700;color:var(--ink);cursor:pointer}';
+    + '.hr-edit{margin-left:auto;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:8px 14px;font:inherit;font-weight:700;color:var(--ink);cursor:pointer}'
+
+    + '.hr-tabs{display:flex;gap:4px;background:var(--surface-2);border-radius:16px;padding:4px;margin:0 0 14px}.hr-tab{flex:1;min-height:40px;border:0;border-radius:12px;background:transparent;color:var(--ink-soft);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;touch-action:manipulation}.hr-tab.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}'
+    + '.hr-photo{width:100%;aspect-ratio:240/250;border-radius:22px;overflow:hidden;background:var(--surface-2)}.hr-photo img{width:100%;height:100%;object-fit:cover;display:block}.hr-pic{position:relative}.hr-art{position:absolute;left:8px;bottom:8px;border:0;border-radius:999px;background:rgba(0,0,0,.55);color:#fff;font:inherit;font-size:11px;font-weight:700;padding:5px 10px;cursor:pointer}'
+    + '.hr-lv{margin-top:14px}.hr-lvh{display:flex;align-items:baseline;justify-content:space-between;gap:8px}.hr-lvh b{font-family:var(--font-display);font-size:16px;color:var(--ink)}.hr-lvh span{font-size:11.5px;color:var(--muted)}.hr-lvbar{height:10px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin-top:6px}.hr-lvbar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),color-mix(in srgb,var(--accent) 55%,#f2b84a))}'
+    + '.hr-mini{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.hr-mini>div{background:var(--surface);border-radius:14px;padding:9px 6px;text-align:center;min-width:0}.hr-mini b{display:block;font-family:var(--font-display);font-size:20px;color:var(--ink)}.hr-mini span{font-size:10.5px;color:var(--muted);line-height:1.2;display:block}.hr-mini2{margin:0 0 14px}'
+    + '.hr-care{display:flex;flex-direction:column;gap:2px;border-radius:18px;padding:12px 14px;margin:0 0 14px;background:var(--surface-2);border:1.5px solid var(--line)}.hr-care.due{background:color-mix(in srgb,#f2b84a 18%,var(--surface));border-color:color-mix(in srgb,#f2b84a 55%,transparent)}.hr-care b{font-size:14.5px;color:var(--ink)}.hr-care span{font-size:12.5px;color:var(--ink-soft)}.hr-care button{align-self:flex-start;margin-top:6px;border:0;background:transparent;color:var(--accent);font:inherit;font-size:12.5px;font-weight:800;padding:4px 0;cursor:pointer}'
+    + '.hr-badges{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}.hr-b{display:flex;flex-direction:column;align-items:center;gap:4px;text-align:center;opacity:.38;filter:grayscale(1)}.hr-b.got{opacity:1;filter:none}.hr-b span{width:44px;height:44px;border-radius:50%;background:var(--surface-2);display:flex;align-items:center;justify-content:center;font-size:21px}.hr-b.got span{background:linear-gradient(135deg,#fbe6a6,#f2b84a)}.hr-b small{font-size:10px;line-height:1.15;color:var(--ink-soft)}'
+    + '.hr-angles{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}.hr-ang{border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:999px;min-height:38px;padding:0 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation}.hr-ang.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}'
+    + '.hr-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:48px;border:0;border-radius:16px;background:var(--accent);color:var(--accent-ink);font:inherit;font-size:14px;font-weight:800;cursor:pointer;touch-action:manipulation;margin:0 0 14px}'
+    + '.hr-empty{display:flex;flex-direction:column;gap:4px;text-align:center;padding:22px 14px;border:1.5px dashed var(--line);border-radius:18px;color:var(--ink-soft);margin:0 0 14px}.hr-empty b{color:var(--ink)}.hr-empty span{font-size:12.5px}'
+    + '.hr-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}.hr-th{position:relative;display:block;padding:0;border:0;border-radius:14px;overflow:hidden;aspect-ratio:1;background:var(--surface-2);cursor:pointer;touch-action:manipulation}.hr-th img{width:100%;height:100%;object-fit:cover;display:block}.hr-th span{position:absolute;left:6px;bottom:6px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;font-weight:700;border-radius:999px;padding:2px 8px}.hr-th.big{aspect-ratio:3/4}'
+    + '.hr-ba{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}.hr-ba small{display:block;text-align:center;margin-top:5px;font-size:12px;color:var(--muted)}.hr-foot{text-align:center;font-size:11.5px;color:var(--muted);margin:2px 0 14px}'
+    + '.hr-dow,.hr-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px}.hr-cell{min-width:0}.hr-dow{margin-top:12px}.hr-dow span{text-align:center;font-size:10.5px;font-weight:700;color:var(--muted)}.hr-cal{margin-top:5px}'
+    + '.hr-cell{aspect-ratio:1;border:1.5px solid var(--line);border-radius:12px;background:transparent;color:var(--ink);font:inherit;font-size:13px;font-weight:700;cursor:pointer;padding:0;touch-action:manipulation}.hr-cell.none{border:0}.hr-cell.fut{opacity:.35}.hr-cell.auto{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}.hr-cell.man{background:color-mix(in srgb,var(--accent) 22%,var(--surface));border-color:var(--accent)}.hr-cell.today{outline:2px solid var(--ink);outline-offset:1px}'
+    + '.hr-key{display:flex;flex-wrap:wrap;gap:14px;margin-top:10px;font-size:11.5px;color:var(--muted)}.hr-key i{display:inline-block;width:11px;height:11px;border-radius:4px;margin-right:6px;vertical-align:-1px;border:1.5px solid var(--accent)}.hr-key i.auto{background:var(--accent)}.hr-key i.man{background:color-mix(in srgb,var(--accent) 22%,var(--surface))}'
+    + '.hr-tl{display:flex;flex-direction:column;margin-top:10px}.hr-tr{display:flex;gap:12px;padding:11px 0;border-top:1px solid var(--line)}.hr-tr:first-child{border-top:0}.hr-td{flex:0 0 58px}.hr-td b{display:block;font-size:13.5px;color:var(--ink)}.hr-td small{font-size:11px;color:var(--muted)}.hr-tb{flex:1;min-width:0}.hr-tb .hr-chips{margin:0}.hr-tb em{font-style:normal;font-size:11px;color:var(--muted);align-self:center}.hr-row{display:flex;gap:8px;margin-top:8px}.hr-row .hr-th{width:76px;aspect-ratio:1;flex:none}'
+    + '.hr-linked{display:flex;align-items:center;gap:6px;margin-top:10px;font-size:12.5px;font-weight:700;color:var(--accent)}'
+    + '.hg-dots{display:flex;gap:4px;margin:10px 0 12px}.hg-dots i{flex:1;height:26px;border-radius:7px;background:var(--surface-2)}.hg-dots i.on{background:var(--accent)}.hg-dots i.sel{outline:2px solid var(--ink);outline-offset:1px}'
+    + '.hr-big{width:100%;max-height:60vh;object-fit:contain;border-radius:16px;background:var(--surface-2);margin:0 0 12px;display:block}.hr-del{display:block;width:100%;min-height:44px;border:1.5px solid var(--line);border-radius:14px;background:transparent;color:var(--muted);font:inherit;font-size:13px;font-weight:700;cursor:pointer}.hr-del.sure{background:#c0463c;border-color:#c0463c;color:#fff}';
   var st = document.createElement('style'); st.id = 'hair-css'; st.textContent = css; document.head.appendChild(st);
 }catch(e){ if(window.console) console.error('hair patch', e); } })();
 </script>
@@ -14569,21 +14830,13 @@ if(LAYOUT_MQ){
     if(out.length < 3) ((SUG.gen||{})[type]||[]).forEach(function(s){ if(out.length<4 && !seen[s]){ seen[s] = 1; out.push(s); } });
     return out.map(function(s){ var o = { name:s, opts:'', unit:'' }, i; if((i = s.indexOf('|'))>=0){ o.name = s.slice(0,i); o.opts = s.slice(i+1).split('/').join('\n'); } if((i = o.name.indexOf('~'))>=0){ o.unit = o.name.slice(i+1); o.name = o.name.slice(0,i); } return o; });
   }
+  /* tapping an idea fills the name (and the options / unit that go with it). Nothing is filled until you tap one. */
   function applyIdea(i){
     var F = (typeof BX_FORM!=='undefined') ? BX_FORM : null, s = CUR[i]; if(!F || !s) return;
-    var nm = document.getElementById('bx-f-label');
-    if(nm){
-      nm.value = s.name; try{ bxRefreshIconPreview(); }catch(e){}
-      /* the name is only a suggestion: when you tap into the box, the whole suggestion is selected, so typing replaces it */
-      nm.setAttribute('data-auto', s.name);
-      if(!nm.__autoSel){ nm.__autoSel = 1; nm.addEventListener('focus', function(){ var el = this; setTimeout(function(){ if(el.value === el.getAttribute('data-auto')) { try{ el.select(); }catch(e){} } }, 0); }); }
-    }
+    var nm = document.getElementById('bx-f-label'); if(nm){ nm.value = s.name; try{ bxRefreshIconPreview(); }catch(e){} }
     var unit = document.getElementById('bx-f-unit'); if(unit && F.type==='number') unit.value = s.unit || '';
     var op = document.getElementById('bx-f-mopts') || document.getElementById('bx-f-opts');
-    if(op && s.opts && (F.type==='choice' || F.type==='multi')){
-      op.value = s.opts; op.setAttribute('data-auto', s.opts);
-      if(!op.__autoSel){ op.__autoSel = 1; op.addEventListener('focus', function(){ var el = this; setTimeout(function(){ if(el.value === el.getAttribute('data-auto')) { try{ el.select(); }catch(e){} } }, 0); }); }
-    }
+    if(op && s.opts && (F.type==='choice' || F.type==='multi')) op.value = s.opts;
     Array.prototype.forEach.call(document.querySelectorAll('.bx-sug button'), function(b, k){ b.classList.toggle('on', k===i); });
   }
   window.bxFxSug = applyIdea;
@@ -14597,7 +14850,8 @@ if(LAYOUT_MQ){
         var box = document.querySelector('.bx-sug');
         var html = '<div class="bx-sug"><span>Ideas for you</span>' + CUR.map(function(x,i){ return '<button type="button" onclick="bxFxSug('+i+')">'+E(x.name)+'</button>'; }).join('') + '</div>';
         if(box) box.outerHTML = html; else nm.insertAdjacentHTML('afterend', html);
-        if(!nm.value){ applyIdea(0); try{ nm.select(); }catch(e){} }
+        /* only a hint in the empty box: no text is put in it, and the keyboard is NOT opened */
+        if(!nm.value && CUR[0]) nm.setAttribute('placeholder', 'e.g. ' + CUR[0].name);
       }catch(e){ if(window.console) console.error('c5 name ideas', e); }
     };
   }
@@ -14629,27 +14883,42 @@ if(LAYOUT_MQ){
     var out = links().filter(function(x){ return x.from===id && x.srcDs===ds; });
     return '<div class="lk-foot">' + out.map(function(x){
       return '<div class="lk-out"><span>'+icon('link',12)+' '+E(x.text)+' <i>to '+E(boxName(x.to))+', '+E(dayWord(x.ds))+'</i></span><button type="button" data-lk="rm" data-id="'+E(x.id)+'" aria-label="Remove link">'+icon('close',12)+'</button></div>';
-    }).join('') + '<button type="button" class="lk-add" data-lk="add" data-ds="'+E(ds)+'" data-box="'+E(id)+'">'+icon('link',15)+' Link to another box</button></div>';
+    }).join('') + '<button type="button" class="lk-add" data-lk="add" data-ds="'+E(ds)+'" data-box="'+E(id)+'">'+icon('link',15)+' Link a reminder to another box</button><div class="lk-help">Pins a short note from this box onto another box for today or tomorrow. You will see it at the top there, and can tick it off.</div></div>';
+  }
+  /* THE LINK SHEET, in plain words:
+     A link pins a short note from THIS box onto another box (or onto this same box tomorrow). When you open that box on that day, the note
+     is waiting at the top with a tick circle. Three questions, in the order you think about them:
+       1. When should it show up?  Today or Tomorrow
+       2. Which box?               a box that exists on that day (today: any other box; tomorrow: any box, including this one again)
+       3. What should it say?      one tap from what you typed here, or a ready phrase, or your own words
+     The big button at the bottom reads back the whole sentence, so you see exactly what you are about to make. */
+  function optsFor(ds, id, day){
+    var tds = day==='Today' ? ds : shift(ds, 1), list = [];
+    try{ list = ACTIVE_BOXES(tds).filter(function(b){ return b.id!=='setup' && b.id!=='library'; }); }catch(e){ list = boxesNow(); }
+    if(day==='Today') list = list.filter(function(b){ return b.id!==id; });
+    return list.map(function(b){ return { id:b.id, label: b.id===id ? boxName(b.id)+' (this box again)' : boxName(b.id) }; });
   }
   function openSheet_(ds, id){
     if(!window.LISTS || !LISTS.openLS) return;
-    var others = boxesNow().filter(function(b){ return b.id!==id; });
-    if(!others.length){ try{ flashSaved('Add another box first'); }catch(e){} return; }
-    /* ideas for what to carry: the name of this box, plus any short text already typed in it today */
+    if(!optsFor(ds, id, 'Today').length && !optsFor(ds, id, 'Tomorrow').length){ try{ flashSaved('Add another box first'); }catch(e){} return; }
+    /* ideas for what to write: short things already typed in this box today, then ready phrases */
     var pg = getPage(ds, id), sug = [];
     Object.keys(pg).forEach(function(k){ var v = pg[k]; if(k.charAt(0)!=='_' && typeof v==='string' && v.trim() && v.length<=40 && v.indexOf('\n')<0 && sug.length<3 && sug.indexOf(v.trim())<0) sug.push(v.trim()); });
-    ['Remember this','Follow up on this','Check how it went'].forEach(function(s){ if(sug.length<5) sug.push(s); });
-    var byName = {}; others.forEach(function(b){ byName[b.name] = b.id; });
-    LISTS.openLS({ title:'Link '+boxName(id), needs:true,
-      secs:[ { id:'to', label:'Link it to', opts:others.map(function(b){ return b.name; }), sel:[], other:false },
-             { id:'day', label:'Show it', opts:['Today','Tomorrow'], sel:['Tomorrow'], other:false },
-             { id:'txt', label:'What to carry over', opts:sug, sel:[], other:true } ],
-      count:function(st){ return (st.to.length && st.txt.length) ? 1 : 0; }, cta:function(st,n){ return n ? 'Link it' : 'Pick a box and what to carry'; },
+    ['Do this again','Follow up on this','Check how it went','Remember this'].forEach(function(t){ if(sug.length<6 && sug.indexOf(t)<0) sug.push(t); });
+    var me = boxName(id), exo = optsFor(ds, id, 'Tomorrow').filter(function(o){ return o.id!==id; })[0], exBox = exo ? exo.label : me;
+    LISTS.openLS({ title:'Link a reminder', needs:true,
+      intro:function(){ return 'A link <b>pins a short note from '+E(me)+'</b> onto another box. Open that box on that day and the note is waiting at the top with a tick circle. Example: from <b>'+E(me)+'</b>, pin <i>Do this again</i> onto <b>'+E(exBox)+'</b> tomorrow.'; },
+      secs:[ { id:'day', label:'1. When should it show up?', opts:['Today','Tomorrow'], sel:['Tomorrow'], other:false },
+             { id:'to', label:'2. Which box should show it?', opts:function(st){ return optsFor(ds, id, st.day[0] || 'Tomorrow').map(function(o){ return o.label; }); }, sel:[], other:false },
+             { id:'txt', label:'3. What should the note say?', opts:sug, sel:[], other:true } ],
+      onChange:function(st, secs){ var ok = optsFor(ds, id, st.day[0] || 'Tomorrow').map(function(o){ return o.label; }); secs[1].sel = secs[1].sel.filter(function(v){ return ok.indexOf(v)>=0; }); },
+      count:function(st){ var ok = st.to.length && optsFor(ds, id, st.day[0] || 'Tomorrow').some(function(o){ return o.label===st.to[0]; }); return (ok && st.txt.length) ? 1 : 0; },
+      cta:function(st,n){ return n ? 'Pin “'+String(st.txt[0]).slice(0,28)+'” on '+st.to[0].replace(' (this box again)','')+' · '+(st.day[0]||'Tomorrow').toLowerCase() : 'Pick a box and what the note says'; },
       done:function(st){
-        var to = byName[st.to[0]]; if(!to || !st.txt.length) return;
-        var tds = st.day[0]==='Today' ? ds : shift(ds, 1);
-        links().push({ id:'lk'+Date.now().toString(36)+Math.floor(Math.random()*1e3), from:id, to:to, ds:tds, srcDs:ds, text:String(st.txt[0]).slice(0,80), done:false });
-        saveDB(); try{ flashSaved('Linked to '+boxName(to)+' ('+(st.day[0]||'tomorrow').toLowerCase()+')'); }catch(e){} render();
+        var day = st.day[0] || 'Tomorrow', hit = optsFor(ds, id, day).filter(function(o){ return o.label===st.to[0]; })[0]; if(!hit || !st.txt.length) return;
+        var tds = day==='Today' ? ds : shift(ds, 1);
+        links().push({ id:'lk'+Date.now().toString(36)+Math.floor(Math.random()*1e3), from:id, to:hit.id, ds:tds, srcDs:ds, text:String(st.txt[0]).slice(0,80), done:false });
+        saveDB(); try{ flashSaved('Pinned on '+boxName(hit.id)+' ('+day.toLowerCase()+')'); }catch(e){} render();
       } });
   }
   document.addEventListener('click', function(e){
@@ -14684,7 +14953,7 @@ if(LAYOUT_MQ){
   }
   window.BOXLINKS = { list:links, cardHtml:cardHtml };
 
-  var css = '.lk-card{background:var(--accent-soft);border:1.5px solid color-mix(in srgb,var(--accent) 35%,transparent);border-radius:18px;padding:12px 14px;margin:0 0 14px}'
+  var css = '.lk-help{margin:7px 4px 0;font-size:12px;line-height:1.4;color:var(--muted);text-align:center}.lk-card{background:var(--accent-soft);border:1.5px solid color-mix(in srgb,var(--accent) 35%,transparent);border-radius:18px;padding:12px 14px;margin:0 0 14px}'
     + '.lk-h{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}'
     + '.lk-row{display:flex;align-items:center;gap:10px;padding:9px 0 3px}.lk-row+.lk-row{border-top:1px solid color-mix(in srgb,var(--accent) 18%,transparent);margin-top:6px}'
     + '.lk-tick{flex:none;width:34px;height:34px;border-radius:50%;border:2.5px solid color-mix(in srgb,var(--ink) 30%,transparent);background:var(--surface);color:transparent;display:flex;align-items:center;justify-content:center;cursor:pointer;touch-action:manipulation}'
@@ -14695,6 +14964,194 @@ if(LAYOUT_MQ){
     + '.lk-add{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:46px;border:1.5px dashed var(--line);border-radius:16px;background:transparent;color:var(--ink-soft);font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;touch-action:manipulation}';
   var st = document.createElement('style'); st.id = 'c5-css'; st.textContent = css; document.head.appendChild(st);
 }catch(e){ if(window.console) console.error('c5 patch', e); } })();
+</script>
+<script>
+/* =====================================================================================================
+   CYCLE 6 (all apps)
+   1. The Workout Presets and Book Library tiles are gone from Home (Hustler's and Canvas had them as "setup boxes").
+      They live in Settings only. The pages themselves still open from Settings.
+   2. Hustler's and Canvas: Income Streams is now LIVE-linked to the Business lane.
+      Every time you save the lane log, the month's money is added up and written into an "auto" income stream. A card at the top of
+      Income Streams shows this month's total, progress to your target, the best day, the average, a projection for the month end and a bar per day.
+      The Business lane page shows the same total and opens Income Streams in one tap.
+   3. Every app: a "From your days" strip at the top of the monthly pages (Vision Board, Vault, Objectives). It is worked out from the daily
+      logs, nothing to type (days logged, pages read, workouts, clean streak, products used, hair days, money...).
+   4. Habit Tracker: a habit whose name matches a daily box (Movement, Reading, Journal, Meditate, Skincare / Hair care, Plan tomorrow...)
+      is ticked for you on the days that box was done. You can still untick it, and it stays unticked.
+   Nothing here changes how data is saved: new keys are optional and old backups import as before.
+   ===================================================================================================== */
+(function(){ try{
+  var E = function(s){ return (typeof esc==='function') ? esc(s) : String(s); };
+  var NAME = (typeof BRAND!=='undefined' && BRAND.name) || '';
+  var HUST = /hustler|canvas/i.test(NAME), CLEAN = /clean/i.test(NAME), READ = /read/i.test(NAME), SOB = /sober/i.test(NAME);
+  function money(n){ n = Math.round((+n||0)*100)/100; return (n<0?'-$':'$') + Math.abs(n).toLocaleString('en-US'); }
+  function todayS(){ return (typeof todayStr==='function') ? todayStr() : ''; }
+
+  /* ---- 1. libraries are Settings-only ---- */
+  try{ if(typeof SETUP_PAGES!=='undefined'){ for(var i = SETUP_PAGES.length-1; i>=0; i--){ if(SETUP_PAGES[i].id==='workoutPresets' || SETUP_PAGES[i].id==='library') SETUP_PAGES.splice(i,1); } } }catch(e){}
+
+  /* ---- shared month numbers, all worked out from the daily logs ---- */
+  function monthNumbers(mk){
+    var ds = (typeof datesInMonth==='function') ? datesInMonth(mk) : [], t = todayS(), r = { days:0, upto:0, wo:0, woMin:0, pages:0, readDays:0, readMin:0, rating:0, ratingN:0, money:0, moneyDays:0, best:0, hair:0, shower:0, products:{} };
+    ds.forEach(function(d){
+      if(d<=t) r.upto++;
+      var day = DB.days[d]; if(!day || !day.pages) return; var pg = day.pages, any = false;
+      for(var k in pg){ if(pg[k] && pg[k]._touched){ any = true; break; } }
+      if(any) r.days++;
+      if(pg.workout && pg.workout._touched){ r.wo++; r.woMin += parseFloat(pg.workout.duration)||0; }
+      if(pg.reading && pg.reading._touched){ var n = parseFloat(pg.reading.pagesToday)||0; if(n>0){ r.pages += n; r.readDays++; } r.readMin += parseFloat(pg.reading.minutes)||0; }
+      if(pg.dashboard && +pg.dashboard.rating){ r.rating += +pg.dashboard.rating; r.ratingN++; }
+      if(pg.shower && pg.shower._touched){ r.shower++; for(var i2=0;i2<8;i2++){ var p = String(pg.shower['product'+i2]||'').trim(); if(p) r.products[p] = (r.products[p]||0)+1; } }
+      try{ if(window.HAIR && HAIR.daysOf){ if(HAIR.daysOf(mk)[d]) r.hair++; } }catch(e){}
+      try{ if(typeof laneValueForDay==='function'){ var v = laneValueForDay(d)||0; if(pg.lane && pg.lane._touched){ r.money += v; if(v!==0) r.moneyDays++; if(v>r.best) r.best = v; } } }catch(e){}
+    });
+    return r;
+  }
+  function chips(list){ return '<div class="c6-chips">'+list.filter(Boolean).map(function(c){ return '<div class="c6-chip"><b>'+E(c[0])+'</b><span>'+E(c[1])+'</span></div>'; }).join('')+'</div>'; }
+  function strip(pid, mk){
+    var r = monthNumbers(mk), list = [], sub = 'Worked out from your daily logs. Nothing to type.';
+    list.push([r.days+'/'+r.upto, 'days logged']);
+    if(pid==='income' && CLEAN){
+      var top = Object.keys(r.products).sort(function(a,b){ return r.products[b]-r.products[a]; }).slice(0,3);
+      list.push([r.shower, 'hygiene days']); if(r.hair) list.push([r.hair, 'hair days']); list.push([Object.keys(r.products).length, 'products used']);
+      return '<div class="c6-strip"><div class="c6-h">From your days</div><div class="c6-s">What you actually used this month, taken from Shower & Hygiene.</div>'+chips(list)
+        + (top.length ? '<div class="c6-note">Most used: '+E(top.map(function(p){ return p+' ('+r.products[p]+'x)'; }).join(' · '))+'</div>' : '')+'</div>';
+    }
+    if(SOB){ try{ if(window.SOBER && SOBER.streak){ var s = SOBER.streak(), n = (typeof s==='object' && s) ? (s.days!==undefined ? s.days : s.current) : s; if(n!=null) list.push([n, 'day streak now']); if(SOBER.best){ var b = SOBER.best(); if(typeof b==='number') list.push([b,'best streak']); } } }catch(e){} }
+    if(r.wo) list.push([r.wo,'workouts'], [Math.round(r.woMin),'min moved']);
+    if(r.pages) list.push([Math.round(r.pages).toLocaleString(),'pages read'], [r.readDays,'reading days']);
+    if(r.moneyDays || r.money) list.push([money(r.money),'money moved']);
+    if(r.ratingN) list.push([(Math.round(r.rating/r.ratingN*10)/10),'avg rating']);
+    if(CLEAN && r.hair) list.push([r.hair,'hair days']);
+    return '<div class="c6-strip"><div class="c6-h">From your days</div><div class="c6-s">'+sub+'</div>'+chips(list)+'</div>';
+  }
+
+  /* ---- 2. Hustler's / Canvas: Income Streams <-> Business lane ---- */
+  function laneName(){ try{ var l = (typeof LANES!=='undefined' ? LANES : []).filter(function(x){ return x.id===DB.lane; })[0]; return l ? l.name : ''; }catch(e){ return ''; } }
+  function laneMonth(mk){
+    var ds = datesInMonth(mk), t = todayS(), rows = [], tot = 0, best = 0, bestDs = '', logged = 0;
+    ds.forEach(function(d){
+      var day = DB.days[d], ln = day && day.pages && day.pages.lane, v = 0;
+      if(ln && ln._touched){ v = laneValueForDay(d)||0; logged++; }
+      if(d<=t) tot += v;
+      rows.push({ ds:d, v:v, future: d>t });
+      if(v>best){ best = v; bestDs = d; }
+    });
+    tot = Math.round(tot*100)/100;
+    var elapsed = ds.filter(function(d){ return d<=t; }).length, proj = null;
+    if(mk===t.slice(0,7) && logged>=3 && elapsed>0) proj = Math.round(tot/elapsed*ds.length);
+    return { total:tot, rows:rows, logged:logged, best:best, bestDs:bestDs, avg: logged ? Math.round(tot/logged*100)/100 : 0, proj:proj, elapsed:elapsed, days:ds.length };
+  }
+  function autoStream(mk, create){
+    var pg = getMonthlyPage('income', mk); if(!Array.isArray(pg.streams)) pg.streams = [];
+    var name = laneName(); if(!name) return null;
+    var s = pg.streams.filter(function(x){ return String(x.name||'').trim().toLowerCase()===name.toLowerCase(); })[0];
+    if(!s && create){ s = { name:name, current:'', target:'', next:'', status:'Active', auto:1 }; pg.streams.push(s); }
+    return s || null;
+  }
+  /* write the month's lane total into the auto stream (quiet: no toast) */
+  function syncIncome(mk){
+    try{
+      if(!HUST || typeof laneValueForDay!=='function' || !DB.lane) return;
+      var m = laneMonth(mk), s = autoStream(mk, m.total!==0 || m.logged>0); if(!s) return;
+      var cur = String(m.total); if(s.current!==cur){ s.current = cur; s.auto = 1; saveDB(); }
+    }catch(e){ if(window.console) console.error('c6 income sync', e); }
+  }
+  if(HUST && typeof markTouched==='function'){
+    var _mt = markTouched;
+    markTouched = function(ds, pid){ var out = _mt.apply(this, arguments); try{ if(pid==='lane') syncIncome(String(ds).slice(0,7)); }catch(e){} return out; };
+  }
+  function incomeCard(mk){
+    var name = laneName(), href = "nav('page','lane')";
+    if(!name || !DB.lane) return '<div class="c6-inc"><div class="c6-h">Live from your Business lane</div><div class="c6-s">You have not picked a Business lane yet. Pick one and log money in it: this page fills itself.</div></div>';
+    var m = laneMonth(mk), s = autoStream(mk, false), target = s ? (+s.target||0) : 0, all = (getMonthlyPage('income', mk).streams||[]).reduce(function(a,x){ return a + (+x.target||0); }, 0);
+    var pct = target ? Math.max(0, Math.min(100, Math.round(m.total/target*100))) : 0, max = Math.max.apply(null, m.rows.map(function(r){ return Math.abs(r.v); }).concat([1]));
+    var h = '<div class="c6-inc"><div class="c6-h">Live from your Business lane <small>'+E(name)+'</small></div>'
+      + '<div class="c6-big">'+E(money(m.total))+'<span>this month</span></div>';
+    if(target) h += '<div class="c6-bar"><i style="width:'+pct+'%"></i></div><div class="c6-s">'+pct+'% of your '+E(money(target))+' target'+(m.proj!=null ? ' · on pace for about '+E(money(m.proj)) : '')+'</div>';
+    else h += '<div class="c6-s">Set a target for this lane and see how far you are:</div><div class="c6-q">'+[500,1000,2500,5000,10000].map(function(v){ return '<button type="button" data-c6="target" data-v="'+v+'">'+E(money(v))+'</button>'; }).join('')+'</div>'
+      + (m.proj!=null ? '<div class="c6-s" style="margin-top:6px">On pace for about '+E(money(m.proj))+' this month.</div>' : '');
+    h += chips([[m.logged+'/'+m.elapsed,'days logged'], [m.best>0 ? money(m.best) : '–','best day'], [m.logged ? money(m.avg) : '–','avg per day logged'], [m.proj!=null ? money(m.proj) : '–','month-end pace']]);
+    h += '<div class="c6-days" aria-label="Money per day">'+m.rows.map(function(r){ var hgt = r.v ? Math.max(8, Math.round(Math.abs(r.v)/max*100)) : 4; return '<i class="'+(r.future?'f':r.v<0?'n':r.v>0?'p':'')+'" style="height:'+hgt+'%" title="'+E(r.ds.slice(8)+': '+money(r.v))+'"></i>'; }).join('')+'</div>'
+      + '<button type="button" class="c6-link" onclick="'+href+'">Open your Business lane</button></div>';
+    return h;
+  }
+  document.addEventListener('click', function(e){
+    var b = e.target && e.target.closest ? e.target.closest('[data-c6]') : null; if(!b) return;
+    if(b.getAttribute('data-c6')==='target'){ var mk = currentMonthKey(), s = autoStream(mk, true); if(s){ s.target = String(b.getAttribute('data-v')); saveDB(); render(); } }
+  });
+  if(HUST && typeof incomeBody==='function'){
+    var baseIB = incomeBody;
+    incomeBody = function(monthKey){ var mk = monthKey || currentMonthKey(); syncIncome(mk); var h = baseIB.apply(this, arguments); try{ return incomeCard(mk) + h; }catch(e){ return h; } };
+  }
+
+  /* ---- 4. Habit Tracker: tick the habits whose daily box was done ---- */
+  var HAB = [ [/workout|exercise|movement|cardio|gym|stretch|walk/i,'workout'], [/read/i,'reading'], [/journal|gratitude/i,'journal'], [/meditat|breath|mind|focus/i,'mindfocus'],
+              [/skin|shower|hair|floss|sunscreen|hygiene|cleanse/i,'shower'], [/sleep|bed|lights|wind|plan tomorrow/i,'night'], [/deep work|outreach|ship|finance/i,'lane'] ];
+  function habPid(name){ for(var i=0;i<HAB.length;i++){ if(HAB[i][0].test(name)) return HAB[i][1]; } return ''; }
+  function autoHabits(mk){
+    try{
+      if(typeof habitsPage!=='function') return 0;
+      var pg = habitsPage(mk), t = todayS(), changed = 0; if(!pg.auto) pg.auto = {};
+      var onPids = {}; try{ CORE_PAGES.forEach(function(c){ onPids[c.id] = 1; }); }catch(e){}
+      datesInMonth(mk).forEach(function(d){
+        if(d>t) return; var day = DB.days[d]; if(!day || !day.pages) return;
+        (pg.names||[]).forEach(function(nm, i){
+          var pid = habPid(String(nm||'')); if(!pid) return; var key = d+'|'+i; if(pg.auto[key]) return;
+          var p = day.pages[pid], fin = DB.finished && DB.finished[d] && DB.finished[d][pid];
+          var hairOk = (pid==='shower' && /hair/i.test(nm)) ? !!(window.HAIR && HAIR.daysOf && HAIR.daysOf(mk)[d]) : true;
+          if(((p && p._touched) || fin) && hairOk){ if(!pg.marks) pg.marks = {}; if(!pg.marks[d]) pg.marks[d] = {}; if(!pg.marks[d][i]) { pg.marks[d][i] = true; changed++; } pg.auto[key] = 1; }
+        });
+      });
+      if(changed) saveDB();
+      return changed;
+    }catch(e){ if(window.console) console.error('c6 habits', e); return 0; }
+  }
+  if(typeof habitsBody==='function'){
+    var baseHB = habitsBody;
+    habitsBody = function(monthKey){ var mk = monthKey || currentMonthKey(); autoHabits(mk); return baseHB.apply(this, arguments); };
+  }
+  function habitStrip(mk){
+    if(typeof habitsPage!=='function') return '';
+    var names = (habitsPage(mk).names||[]), links = names.map(function(n){ var p = habPid(String(n||'')); return p ? n : ''; }).filter(Boolean);
+    return '<div class="c6-strip"><div class="c6-h">Ticks that fill themselves</div><div class="c6-s">'+(links.length ? 'These habits tick on their own on days you did the matching daily box: <b>'+E(links.slice(0,6).join(', '))+'</b>. Untick one and it stays unticked.' : 'Name a habit like Movement, Reading, Journal, Meditate or Skincare and it will tick itself on the days you did that box.')+'</div></div>';
+  }
+
+  /* ---- draw the strips: monthly pages and the Business lane page ---- */
+  var baseR = render;
+  render = function(){
+    var out = baseR.apply(this, arguments);
+    try{
+      if(typeof ROUTE!=='undefined' && ROUTE.view==='page' && DB.onboarded){
+        var pb = document.querySelector('#app .page-body'), id = ROUTE.pageId, mk = currentMonthKey();
+        if(id==='lane' && HUST && DB.lane && !document.querySelector('#app .c6-laneline')){
+          /* the Business lane page has no .page-body: the lane picker comes first, so the strip goes right above it */
+          var anchor = pb || document.querySelector('#app .lane-picker'), m0 = laneMonth(mk); syncIncome(mk);
+          if(anchor) anchor.insertAdjacentHTML(pb ? 'afterbegin' : 'beforebegin', '<button type="button" class="c6-laneline" onclick="nav(\'page\',\'income\')"><span><b>'+E(money(m0.total))+'</b> this month</span><i>Goes into Income Streams · open</i></button>');
+        }
+        if(pb && !pb.querySelector('.c6-strip,.c6-laneline')){
+          if(id==='habits') pb.insertAdjacentHTML('afterbegin', habitStrip(mk));
+          else if(id==='income' && !HUST) pb.insertAdjacentHTML('afterbegin', strip('income', mk));
+          else if(id==='objectives' || id==='bucket') pb.insertAdjacentHTML('afterbegin', strip(id, mk));
+        }
+      }
+    }catch(e){ if(window.console) console.error('c6 strips', e); }
+    return out;
+  };
+  window.C6 = { monthNumbers:monthNumbers, laneMonth:laneMonth, syncIncome:syncIncome, autoHabits:autoHabits, habPid:habPid };
+
+  var css = '.c6-strip,.c6-inc{background:var(--accent-soft);border:1.5px solid color-mix(in srgb,var(--accent) 28%,transparent);border-radius:20px;padding:14px;margin:0 0 14px}'
+    + '.c6-h{font-family:var(--font-display);font-weight:800;font-size:16px;color:var(--ink)}.c6-h small{font-family:var(--font-body);font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-left:6px}'
+    + '.c6-s{font-size:12.5px;line-height:1.4;color:var(--ink-soft);margin-top:3px}.c6-s b{color:var(--ink)}.c6-note{font-size:12.5px;color:var(--ink-soft);margin-top:10px}'
+    + '.c6-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(86px,1fr));gap:8px;margin-top:11px}.c6-chip{background:var(--surface);border-radius:14px;padding:9px 10px;display:flex;flex-direction:column;gap:1px;min-width:0}.c6-chip b{font-family:var(--font-display);font-size:18px;color:var(--ink);overflow-wrap:anywhere}.c6-chip span{font-size:11px;color:var(--muted)}'
+    + '.c6-big{font-family:var(--font-display);font-weight:800;font-size:38px;line-height:1.05;color:var(--ink);margin:8px 0 8px}.c6-big span{font-family:var(--font-body);font-size:13px;font-weight:600;color:var(--muted);margin-left:8px}'
+    + '.c6-bar{height:12px;border-radius:99px;background:var(--surface);overflow:hidden}.c6-bar i{display:block;height:100%;border-radius:99px;background:var(--accent)}'
+    + '.c6-q{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.c6-q button{border:1.5px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;min-height:38px;padding:0 14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation}'
+    + '.c6-days{display:flex;align-items:flex-end;gap:2px;height:64px;margin-top:12px}.c6-days i{flex:1;min-width:0;border-radius:3px 3px 0 0;background:var(--accent)}.c6-days i.f{background:var(--line);opacity:.5}.c6-days i.n{background:#c0463c}.c6-days i:not(.p):not(.n):not(.f){background:var(--line)}'
+    + '.c6-link{display:flex;align-items:center;justify-content:center;width:100%;min-height:42px;margin-top:12px;border:1.5px dashed var(--line);background:transparent;color:var(--ink-soft);border-radius:14px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;touch-action:manipulation}'
+    + '.c6-laneline{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:var(--accent-soft);border:1.5px solid color-mix(in srgb,var(--accent) 28%,transparent);border-radius:16px;padding:11px 14px;margin:0 0 14px;font:inherit;cursor:pointer;color:var(--ink);touch-action:manipulation}.c6-laneline b{font-family:var(--font-display);font-size:18px}.c6-laneline i{font-style:normal;font-size:12px;color:var(--accent);font-weight:700}';
+  var st = document.createElement('style'); st.id = 'c6-css'; st.textContent = css; document.head.appendChild(st);
+}catch(e){ if(window.console) console.error('c6 patch', e); } })();
 </script>
 <script>
 /* ============================================================
