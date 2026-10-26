@@ -19,6 +19,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; manifest-src 'self'; connect-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#F7F2E7">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -7412,7 +7413,7 @@ function bxInput(ds, box, f, v){
       const has = bxNorm('photo', v) !== null;
       const idc = `bxph-${box}-${f.id}-c`, idl = `bxph-${box}-${f.id}-l`;
       return `<div class="bx-photo-wrap">
-        ${has ? `<img class="bx-photo" src="${v}" alt="${L}">` : ''}
+        ${has ? `<\u0069mg class="bx-photo" src="${safePic(v)}" alt="${L}">` : ''}
         <div class="bx-photo-btns">
           <button type="button" onclick="document.getElementById('${idc}').click()">${icon('camera',14)} ${has?'Retake':'Take photo'}</button>
           <button type="button" onclick="document.getElementById('${idl}').click()">${icon('upload',14)} ${has?'Choose another':'Choose from library'}</button>
@@ -7993,7 +7994,7 @@ function bxMetricCard(m, list, c){
       const recent = list.slice().sort((a,b)=>b.date.localeCompare(a.date)).slice(0, c.period==='year'?8:12);
       o.unit = 'photos';
       o.stats = [ { v:n, l:'Photos' } ];
-      o.body = `<div class="bx-gallery">${recent.map(p=>`<button aria-label="Open ${fmtDateShort(p.date)}" onclick="selectDate('${p.date}');nav('page','${m.box}')"><img src="${p.v}" alt=""><span>${esc(fmtDateShort(p.date))}</span></button>`).join('')}</div>` +
+      o.body = `<div class="bx-gallery">${recent.map(p=>`<button aria-label="Open ${fmtDateShort(p.date)}" onclick="selectDate('${p.date}');nav('page','${m.box}')"><\u0069mg src="${safePic(p.v)}" alt=""><span>${esc(fmtDateShort(p.date))}</span></button>`).join('')}</div>` +
         `<div style="height:10px"></div>` + heat(asPts(()=>1), ()=>'Photo', m.label, 'No photos yet.');
       o.note = `Newest first. Tap a photo to open that day.` + pctNote;
       break; }
@@ -9080,8 +9081,28 @@ if(LAYOUT_MQ){
     var at = ONBOARD_STEPS.findIndex(function(s){ return s.id==='objectives'; }); /* Hustler ends on its own objectives step */
     if(at < 0) at = ONBOARD_STEPS.length;
     ONBOARD_STEPS.splice.apply(ONBOARD_STEPS, [at, 0].concat(fresh));
+    /* ---- the BOOK VAULT step: right after the day is painted. Reading apps always get it; any other app gets it when you painted the Reading box.
+       No skip links on it: the Reading box picks its book from this shelf, so the shelf must have a book. ---- */
+    var LIB_GROUP = 'Set up your Book vault', READ_APP = /reading/i.test(BRAND.name);
+    var th = ONBOARD_STEPS.findIndex(function(s){ return s.id==='timetable-hours'; });
+    if(th>=0) ONBOARD_STEPS.splice(th+1, 0, { id:'setup-library', group:LIB_GROUP });
     ONSTEPS_ORDER.length = 0; ONBOARD_GROUPS.length = 0;
     ONBOARD_STEPS.forEach(function(s){ ONSTEPS_ORDER.push(s.id); if(ONBOARD_GROUPS.indexOf(s.group)<0) ONBOARD_GROUPS.push(s.group); });
+
+    var readingPainted = function(){ var m = (typeof ONDRAFT!=='undefined' && ONDRAFT && ONDRAFT.mapping) || {}; return Object.keys(m).some(function(t){ return m[t]==='reading'; }); };
+    var libNeeded = function(){ return READ_APP || readingPainted(); };
+    var bookCount = function(){ try{ return window.RD_COUNT ? window.RD_COUNT() : 0; }catch(e){ return 0; } };
+    /* the step counts as a "Step n of N" group only while it applies */
+    var syncLib = function(){ var need = libNeeded(), at = ONBOARD_GROUPS.indexOf(LIB_GROUP);
+      if(need && at<0){ ONBOARD_GROUPS.splice(ONBOARD_GROUPS.indexOf(TT_GROUP)+1, 0, LIB_GROUP); }
+      if(!need && at>=0){ ONBOARD_GROUPS.splice(at, 1); } };
+    syncLib();
+    var baseGoto = onboardGoto;
+    onboardGoto = function(step){
+      syncLib();
+      if(step==='setup-library' && !libNeeded()){ var cur = ONSTEPS_ORDER.indexOf(ONSTEP), at = ONSTEPS_ORDER.indexOf(step); step = ONSTEPS_ORDER[at + (cur < at ? 1 : -1)] || 'welcome'; }
+      return baseGoto.call(this, step);
+    };
 
     /* ---- consistent "Step n of N" + progress bar, counted in groups ---- */
     var PARTS = { 'timetable-intro':'How it works', 'timetable-hours':'Paint your day' };
@@ -9116,6 +9137,7 @@ if(LAYOUT_MQ){
     var baseNext = onboardNext;
     onboardNext = function(){
       if(ONSTEP==='timetable-hours' && !ttDone()){ flashSaved('Plan every hour first — Free counts'); return; }
+      if(ONSTEP==='setup-library' && !bookCount()){ flashSaved('Add at least one book first'); return; }
       return baseNext.apply(this, arguments);
     };
     var baseRender = renderOnboarding;
@@ -9125,6 +9147,7 @@ if(LAYOUT_MQ){
         return r; }
             if(ONSTEP==='timetable-intro') return renderOnboardTimetableIntro();
       if(ONSTEP==='timetable-hours') return renderOnboardTimetableHours();
+      if(ONSTEP==='setup-library') return renderOnboardLibrary();
       if(String(ONSTEP).indexOf('setup-')===0) return renderOnboardSetupPage(ONSTEP.slice(6));
       return baseRender();
     };
@@ -9163,6 +9186,7 @@ if(LAYOUT_MQ){
     };
     var syncCTA = function(n){
       var cta = document.querySelector('#app .onboard-cta'); if(!cta) return;
+      var cnt = document.getElementById('ttp-count'); if(cnt) cnt.textContent = n+' of 24 hours planned'+(n<24 ? '. Scroll the grid for the rest.' : '.');
       cta.disabled = n<24; cta.innerHTML = (n===24 ? 'Continue' : 'Plan all 24 hours to continue') + ' ' + icon('chevright',16);
       var sk = document.querySelector('#app .onboard-skip'); if(n===24 && !sk){ /* skip links come back on the next screen */ }
     };
@@ -9171,7 +9195,7 @@ if(LAYOUT_MQ){
       var filled = TT.filledCount(ONDRAFT.blocks);
       onboardShell({
         title: 'Paint your day.',
-        sub: 'Give every hour a box, Sleep or Free. Free is fine.',
+        sub: 'Give every hour a box, Sleep or Free. Free is fine. <b id="ttp-count">'+filled+' of 24 hours planned'+(filled<24 ? '. Scroll the grid for the rest.' : '.')+'</b>',
         body: '<div id="ttp-host"></div>',
         ctaLabel: filled===24 ? 'Continue' : 'Plan all 24 hours to continue', ctaEnabled: filled===24, showSkip: false, showBack: true
       });
@@ -9222,6 +9246,16 @@ if(LAYOUT_MQ){
         ctaEnabled: true, showSkip: true, showBack: true
       });
     };
+    /* ---- the Book vault screen (the same shelf as Settings > Book vault; reading_patch.js hands it over as RD_SHELF) ---- */
+    window.renderOnboardLibrary = function(){
+      var n = bookCount();
+      onboardShell({
+        title: 'Set up your Book vault.',
+        sub: 'Add the books you are reading, want to read or have finished. The Reading box picks its book from this shelf.',
+        body: window.RD_SHELF ? window.RD_SHELF() : '',
+        ctaLabel: n ? 'Continue' : 'Add a book to continue', ctaEnabled: n>0, showSkip: false, showBack: true
+      });
+    };
     window.onboardSetupDone = function(pageId){ touchMonthlyPage(pageId, currentMonthKey()); onboardNext(); };
 
     /* ---- 5) picture-first Vision Board (the page itself, so setup, the page and the monthly tab all agree) ---- */
@@ -9232,7 +9266,7 @@ if(LAYOUT_MQ){
       var vbPics = function(mk){ var p = getMonthlyPage('bucket', mk); if(!Array.isArray(p.pics)) p.pics = []; return p.pics; };
       var vbGrid = function(mk, editable){
         var pics = vbPics(mk); if(!pics.length && !editable) return '';
-        var tiles = pics.map(function(src,i){ return '<div class="vb-tile"><img src="'+src+'" alt="Vision picture '+(i+1)+'">'
+        var tiles = pics.map(function(src,i){ return '<div class="vb-tile"><\u0069mg src="'+safePic(src)+'" alt="Vision picture '+(i+1)+'">'
           + (editable ? '<button class="vb-x" aria-label="Remove picture '+(i+1)+'" onclick="vbRemove(\''+mk+'\','+i+')">'+icon('close',13)+'</button>' : '')+'</div>'; }).join('');
         var add = editable && pics.length<VB_MAX ? '<label class="vb-tile vb-add"><input type="file" accept="image/*" aria-label="Add a picture" onchange="vbPicked(this,\''+mk+'\')">'+icon('plus',22)+'<span>Add picture</span></label>' : '';
         return '<div class="vb-grid">'+tiles+add+'</div>' + (editable ? '<div class="vb-count">'+pics.length+' of '+VB_MAX+' \u00b7 tap + to pick from your photos</div>' : '');
@@ -9635,7 +9669,7 @@ if(LAYOUT_MQ){
     }
     function openPick(ds,pid,key){
       var pk = pickSpec(pid,key); if(!pk) return;
-      var val = getPage(ds,pid)[key]; val = val==null ? '' : String(val), body = '';
+      var val = getPage(ds,pid)[key], body = ''; val = val==null ? '' : String(val);
       if(pk.step){
         body = stepSpec(ds,pid,key,val,pk.step) + '<button type="button" class="pill active red ui-sheetdone" '+D('pickdone',ds,pid,key)+'>Done</button>';
       } else {
@@ -11171,6 +11205,7 @@ if(LAYOUT_MQ){
       app.innerHTML = renderTopbar('Book vault', true) + '<div class="page-body">'+shelfBody()+'</div><div class="gap-block"></div>';
     }
     PAGE_RENDERERS.library = shelfPage; renderLibrary = shelfPage;
+    window.RD_SHELF = shelfBody; window.RD_COUNT = function(){ importVault(); return Object.keys(L().books).length; };   /* first-run setup shows this same shelf */
     if(VAULT && typeof incomeBody==='function') incomeBody = shelfBody;   /* an old link to the Reading Vault shows the same shelf */
 
     /* =================================================================================================
@@ -12845,9 +12880,10 @@ if(LAYOUT_MQ){
           var box = document.createElement('div'); box.className = 'tidy';
           box.innerHTML = '<button type="button" class="tidy-bar" aria-expanded="false">'+icon('check',14)+' Done · '+done.length+'<span class="tidy-sp"></span>'+icon('chevright',14)+'</button><div class="tidy-list" hidden></div>';
           var list = box.querySelector('.tidy-list'), last = g.rows[g.rows.length-1];
+          /* put the strip in place FIRST (right after the group's last row), then move the done rows into it. Moving them first broke when
+             every row was done: the "last row" was itself moved into the strip, so the strip was asked to go inside itself. */
+          g.par.insertBefore(box, last.nextSibling);
           done.forEach(function(row){ list.appendChild(row); });
-          last.parentNode.insertBefore(box, last.nextSibling && last.nextSibling.parentNode===g.par ? last.nextSibling : null);
-          if(!g.par.contains(box)) g.par.appendChild(box);
         });
       }catch(e){ if(window.console) console.error('tidy', e); }
       return r;
@@ -14096,7 +14132,7 @@ if(LAYOUT_MQ){
     return out;
   }
   function pips(d, k){ var v = +d[k] || 0; return [1,2,3,4,5].map(function(n){ return '<button type="button" class="hr-pip'+(n<=v?' on':'')+'" data-hr="stat" data-k="'+k+'" data-v="'+n+'" aria-label="'+n+' of 5"></button>'; }).join(''); }
-  function thumb(p, extra){ return '<button type="button" class="hr-th'+(extra||'')+'" data-hr="pview" data-id="'+E(p.id)+'" aria-label="Open photo"><img src="'+p.img+'" alt="'+E((p.tag||'')+' '+nice(p.ds))+'" loading="lazy"><span>'+E(p.tag||'')+'</span></button>'; }
+  function thumb(p, extra){ return '<button type="button" class="hr-th'+(extra||'')+'" data-hr="pview" data-id="'+E(p.id)+'" aria-label="Open photo"><\u0069mg src="'+safePic(p.img)+'" alt="'+E((p.tag||'')+' '+nice(p.ds))+'" loading="lazy"><span>'+E(p.tag||'')+'</span></button>'; }
 
   /* next-care tip, from your routine */
   function nextCare(d){
@@ -14117,7 +14153,7 @@ if(LAYOUT_MQ){
   }
   function heroPic(d, mk){
     var av = d.avatar ? findPhoto(d.avatar) : null;
-    return av ? '<div class="hr-photo"><img src="'+av.img+'" alt="Your hair"></div>' : portrait(d);
+    return av ? '<div class="hr-photo"><\u0069mg src="'+safePic(av.img)+'" alt="Your hair"></div>' : portrait(d);
   }
   function cardTab(mk, d){
     var sc = score(d), pm = prevMk(mk), pd = raw(pm), ps = has(pd) ? score(pd) : null, delta = (sc!=null && ps!=null) ? sc-ps : null;
@@ -14220,7 +14256,7 @@ if(LAYOUT_MQ){
   function viewer(p){
     var mine = p.kind==='hair';
     openSheet('<div class="sheet-title"><span>'+E((p.tag||'Photo')+' · '+nice(p.ds))+'</span><button class="sheet-close" onclick="closeSheet()" aria-label="Close">'+icon('close',15)+'</button></div>'
-      + '<div class="ui-sheetbody"><img class="hr-big" src="'+p.img+'" alt="">'
+      + '<div class="ui-sheetbody"><\u0069mg class="hr-big" src="'+safePic(p.img)+'" alt="">'
       + (mine ? '<button type="button" class="hr-add" data-hr="avatar" data-id="'+E(p.id)+'">'+icon('sparkle',15)+' Use on my hair card</button>' : '')
       + '<button type="button" class="hr-del" data-hr="pdel" data-id="'+E(p.id)+'">Delete this photo</button></div>');
     DEL = '';
@@ -15171,13 +15207,13 @@ if(LAYOUT_MQ){
    - You FINISH it (how did it go, what you learned). It moves to the Finished collection.
    - The dashboard shows what is in progress, the finished collection (open any one to see every step again),
      and "Try something new" ideas. From a finished project, "Start another like this" begins a new one with the same hobby and name.
-   Where: Settings > My setup > Libraries > Project collection, and a card at the bottom of each hobby log.
+   Where: it REPLACES Daily Hobbies: the home tile, Settings > Your day > Projects, and the timetable slot all open it.
 
    HOW IT IS SAVED (old backups keep working): DB.projects = [{ id, name, hobby, goal, started, finished, status:'active'|'done', rating, learned[],
      entries:[{ id, ds, ts, img (small photo, saved inside the data), tags[], note }] }]
    Photos are shrunk to about 100 KB and live in the phone's browser storage (about 5 MB shared with everything else): roughly 30 to 40 photos.
    When storage is full it says so and saves nothing (it never half-saves).
-   shortcut: adding progress does not mark the day's hobby log as done; they are separate. Link them if you want one tap to do both.
+   Adding progress ticks today's Projects tile (the old Daily Hobbies slot) so it counts toward the day and the Insights.
    ===================================================================================================== */
 (function(){ try{
   if(typeof BRAND==='undefined' || !/sober/i.test(BRAND.name||'') || typeof PAGE_RENDERERS==='undefined' || !window.LISTS || !LISTS.openLS) return;
@@ -15221,7 +15257,9 @@ if(LAYOUT_MQ){
   function trySave(undo){ var ok = (typeof bxTrySave==='function') ? bxTrySave() : (saveDB(), true); if(!ok){ undo(); try{ flashSaved('Storage is full: nothing was saved. Delete an old photo first.'); }catch(e){} } return ok; }
 
   /* ---------- the page ---------- */
-  function thumb(p, big){ var c = cover(p); return c ? '<img class="pj-th'+(big?' big':'')+'" src="'+c+'" alt="">' : '<div class="pj-th'+(big?' big':'')+' none">'+icon('camera',big?28:20)+'</div>'; }
+  /* a photo is only ever a small data: picture the app made itself; anything else (from a doctored backup) shows as no photo */
+  function pic(u){ return /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(String(u == null ? '' : u)) ? u : ''; }
+  function thumb(p, big){ var c = cover(p); return c ? '<\u0069mg class="pj-th'+(big?' big':'')+'" src="'+pic(c)+'" alt="">' : '<div class="pj-th'+(big?' big':'')+' none">'+icon('camera',big?28:20)+'</div>'; }
   function dashboard(){
     var L = list(), act = L.filter(function(p){ return p.status!=='done'; }), fin = L.filter(function(p){ return p.status==='done'; });
     var mk = todayStr().slice(0,7), days = {}; L.forEach(function(p){ p.entries.forEach(function(e){ if(String(e.ds).slice(0,7)===mk) days[e.ds] = 1; }); });
@@ -15230,11 +15268,11 @@ if(LAYOUT_MQ){
       + '<button type="button" class="pj-new" data-pj="new">'+icon('plus',16)+' Start a new project</button>';
     h += '<div class="pj-h">In progress</div>';
     h += act.length ? act.map(function(p){
-      return '<div class="pj-card" data-pj="open" data-id="'+p.id+'" role="button" tabindex="0">'+thumb(p)+'<div class="pj-mid"><b>'+E(p.name)+'</b><small>'+E(p.hobby)+' · started '+E(dFmt(p.started))+'</small><small>'+p.entries.length+' update'+(p.entries.length===1?'':'s')+' · last '+E(dFmt(lastDs(p)))+'</small></div>'
-        + '<button type="button" class="pj-add" data-pj="add" data-id="'+p.id+'" aria-label="Add progress to '+E(p.name)+'">'+icon('camera',16)+' Add</button></div>'; }).join('')
+      return '<div class="pj-card" data-pj="open" data-id="'+E(p.id)+'" role="button" tabindex="0">'+thumb(p)+'<div class="pj-mid"><b>'+E(p.name)+'</b><small>'+E(p.hobby)+' · started '+E(dFmt(p.started))+'</small><small>'+p.entries.length+' update'+(p.entries.length===1?'':'s')+' · last '+E(dFmt(lastDs(p)))+'</small></div>'
+        + '<button type="button" class="pj-add" data-pj="add" data-id="'+E(p.id)+'" aria-label="Add progress to '+E(p.name)+'">'+icon('camera',16)+' Add</button></div>'; }).join('')
       : '<div class="pj-empty">Nothing in progress. Start one: a DIY shelf, a sourdough, a song you are learning.</div>';
     h += '<div class="pj-h">Finished collection</div>';
-    h += fin.length ? '<div class="pj-grid">'+fin.map(function(p){ var d = daysBetween(p.started,p.finished); return '<button type="button" class="pj-fin" data-pj="open" data-id="'+p.id+'">'+thumb(p,true)+'<b>'+E(p.name)+'</b><small>'+E(p.hobby)+' · '+d+' day'+(d===1?'':'s')+(p.rating ? ' · '+'★'.repeat(p.rating) : '')+'</small></button>'; }).join('')+'</div>'
+    h += fin.length ? '<div class="pj-grid">'+fin.map(function(p){ var d = daysBetween(p.started,p.finished); return '<button type="button" class="pj-fin" data-pj="open" data-id="'+E(p.id)+'">'+thumb(p,true)+'<b>'+E(p.name)+'</b><small>'+E(p.hobby)+' · '+d+' day'+(d===1?'':'s')+(p.rating ? ' · '+'★'.repeat(p.rating) : '')+'</small></button>'; }).join('')+'</div>'
       : '<div class="pj-empty">Finished projects collect here, with every step you photographed.</div>';
     /* try something new: ideas you have not started yet, one per hobby, rotating by day */
     var used = {}; L.forEach(function(p){ used[p.name.toLowerCase()] = 1; });
@@ -15249,22 +15287,22 @@ if(LAYOUT_MQ){
     h += '<div class="pj-hero"><div class="pj-name">'+E(p.name)+'</div><div class="pj-meta">'+E(p.hobby)+' · '+(done ? 'finished '+E(dFmt(p.finished))+' · took '+daysBetween(p.started,p.finished)+' day'+(daysBetween(p.started,p.finished)===1?'':'s') : 'started '+E(dFmt(p.started))+' · day '+daysBetween(p.started,todayStr()))+'</div>'
       + (p.goal ? '<div class="pj-goal">'+icon('target',13)+' '+E(p.goal)+'</div>' : '')
       + (done && p.rating ? '<div class="pj-goal">'+'★'.repeat(p.rating)+' '+E(['','Not great','Okay','Good','Great','Proud of it'][p.rating])+(p.learned && p.learned.length ? ' · learned: '+E(p.learned.join(', ')) : '')+'</div>' : '')+'</div>';
-    if(first && last && first!==last) h += '<div class="pj-ba"><figure><img src="'+first.img+'" alt="First photo"><figcaption>Start · '+E(dFmt(first.ds))+'</figcaption></figure><figure><img src="'+last.img+'" alt="Latest photo"><figcaption>'+(done?'Finish':'Latest')+' · '+E(dFmt(last.ds))+'</figcaption></figure></div>';
-    if(!done) h += '<button type="button" class="pj-new" data-pj="add" data-id="'+p.id+'">'+icon('camera',16)+' Add progress</button>';
+    if(first && last && first!==last) h += '<div class="pj-ba"><figure><\u0069mg src="'+pic(first.img)+'" alt="First photo"><figcaption>Start · '+E(dFmt(first.ds))+'</figcaption></figure><figure><\u0069mg src="'+pic(last.img)+'" alt="Latest photo"><figcaption>'+(done?'Finish':'Latest')+' · '+E(dFmt(last.ds))+'</figcaption></figure></div>';
+    if(!done) h += '<button type="button" class="pj-new" data-pj="add" data-id="'+E(p.id)+'">'+icon('camera',16)+' Add progress</button>';
     h += '<div class="pj-h">Every step</div>';
     h += p.entries.length ? p.entries.slice().reverse().map(function(e){
-      return '<div class="pj-ent">'+(e.img ? '<img class="pj-eimg" src="'+e.img+'" alt="" data-pj="view" data-id="'+p.id+'" data-e="'+e.id+'">' : '')
+      return '<div class="pj-ent">'+(e.img ? '<\u0069mg class="pj-eimg" src="'+pic(e.img)+'" alt="" data-pj="view" data-id="'+E(p.id)+'" data-e="'+E(e.id)+'">' : '')
         + '<div class="pj-etx"><b>'+E(dFmt(e.ds))+'</b>'+((e.tags||[]).length ? '<div class="pj-tags">'+e.tags.map(function(t){ return '<span>'+E(t)+'</span>'; }).join('')+'</div>' : '')+(e.note ? '<p>'+E(e.note)+'</p>' : '')
-        + '<button type="button" class="pj-x" data-pj="delentry" data-id="'+p.id+'" data-e="'+e.id+'">'+(ARM==='e'+e.id ? 'Tap again to delete' : 'Delete')+'</button></div></div>'; }).join('')
+        + '<button type="button" class="pj-x" data-pj="delentry" data-id="'+E(p.id)+'" data-e="'+E(e.id)+'">'+(ARM==='e'+e.id ? 'Tap again to delete' : 'Delete')+'</button></div></div>'; }).join('')
       : '<div class="pj-empty">No steps yet. Add your first photo or a few taps about what you did.</div>';
-    h += '<div class="pj-acts">'+(done ? '<button type="button" class="pj-btn" data-pj="again" data-id="'+p.id+'">'+icon('sparkle',15)+' Start another like this</button><button type="button" class="pj-btn ghost" data-pj="reopen" data-id="'+p.id+'">Back to in progress</button>'
-      : '<button type="button" class="pj-btn" data-pj="finish" data-id="'+p.id+'">'+icon('check',15)+' Finish this project</button>')
-      + '<button type="button" class="pj-btn ghost danger" data-pj="del" data-id="'+p.id+'">'+(ARM==='p'+p.id ? 'Tap again to delete the project' : 'Delete project')+'</button></div>';
+    h += '<div class="pj-acts">'+(done ? '<button type="button" class="pj-btn" data-pj="again" data-id="'+E(p.id)+'">'+icon('sparkle',15)+' Start another like this</button><button type="button" class="pj-btn ghost" data-pj="reopen" data-id="'+E(p.id)+'">Back to in progress</button>'
+      : '<button type="button" class="pj-btn" data-pj="finish" data-id="'+E(p.id)+'">'+icon('check',15)+' Finish this project</button>')
+      + '<button type="button" class="pj-btn ghost danger" data-pj="del" data-id="'+E(p.id)+'">'+(ARM==='p'+p.id ? 'Tap again to delete the project' : 'Delete project')+'</button></div>';
     return h;
   }
   function renderProjects(){
     var p = VIEW ? byId(VIEW) : null; if(VIEW && !p) VIEW = null;
-    app.innerHTML = renderTopbar('Project collection', true) + '<div class="page-body pj-page">' + (p ? detail(p) : dashboard()) + '</div><div class="gap-block"></div>';
+    app.innerHTML = renderTopbar('Projects', true) + '<div class="page-body pj-page">' + (p ? detail(p) : dashboard()) + '</div><div class="gap-block"></div>';
   }
   PAGE_RENDERERS.projects = renderProjects;
 
@@ -15312,7 +15350,7 @@ if(LAYOUT_MQ){
     if(a==='again'){ var q = byId(id); if(q) newSheet(q.hobby, q.name); return; }
     if(a==='del'){ if(ARM==='p'+id){ DB.projects = list().filter(function(x){ return x.id!==id; }); ARM = null; VIEW = null; saveDB(); flashSaved('Project deleted'); } else ARM = 'p'+id; return render(); }
     if(a==='delentry'){ var eid = b.getAttribute('data-e'); if(ARM==='e'+eid){ var r = byId(id); if(r){ r.entries = r.entries.filter(function(x){ return x.id!==eid; }); saveDB(); } ARM = null; } else ARM = 'e'+eid; return render(); }
-    if(a==='view'){ var s = byId(id), en = s && s.entries.filter(function(x){ return x.id===b.getAttribute('data-e'); })[0]; if(en) openSheet('<div class="sheet-title"><span>'+E(dFmt(en.ds))+'</span><button class="sheet-close" onclick="closeSheet()" aria-label="Close">'+icon('close',15)+'</button></div><div class="ui-sheetbody"><img src="'+en.img+'" alt="" style="width:100%;border-radius:14px;display:block">'+(en.note ? '<p style="margin:10px 2px;color:var(--ink-soft)">'+E(en.note)+'</p>' : '')+'</div>'); return; }
+    if(a==='view'){ var s = byId(id), en = s && s.entries.filter(function(x){ return x.id===b.getAttribute('data-e'); })[0]; if(en) openSheet('<div class="sheet-title"><span>'+E(dFmt(en.ds))+'</span><button class="sheet-close" onclick="closeSheet()" aria-label="Close">'+icon('close',15)+'</button></div><div class="ui-sheetbody"><\u0069mg src="'+pic(en.img)+'" alt="" style="width:100%;border-radius:14px;display:block">'+(en.note ? '<p style="margin:10px 2px;color:var(--ink-soft)">'+E(en.note)+'</p>' : '')+'</div>'); return; }
     if(a==='pick'){ var f = document.getElementById('pj-file'); if(f) f.click(); return; }
     if(a==='tag'){ if(!DRAFT) return; var t = b.getAttribute('data-t'), i = DRAFT.tags.indexOf(t); if(i>=0) DRAFT.tags.splice(i,1); else DRAFT.tags.push(t); var on = i<0; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); return; }
     if(a==='save'){
@@ -15321,6 +15359,7 @@ if(LAYOUT_MQ){
       var ent = { id:'e'+Date.now().toString(36)+Math.floor(Math.random()*1e3), ds:todayStr(), ts:Date.now(), img:DRAFT.img, tags:DRAFT.tags.slice(), note:note.trim().slice(0,300) };
       pr.entries.push(ent);
       if(!trySave(function(){ pr.entries.pop(); })) return;
+      try{ var lp = getPage(todayStr(),'lane'); var lid = (LANES.filter(function(l){ return l.name===pr.hobby; })[0]||{}).id; if(lid) lp.hobby = lid; markTouched(todayStr(),'lane'); saveDB(); }catch(x){}   /* a day with progress ticks today's Projects tile + counts in Insights */
       DRAFT = null; closeSheet(); flashSaved('Progress saved');
       if(ROUTE.view==='page' && ROUTE.pageId==='projects'){ VIEW = pr.id; } render(); return;
     }
@@ -15329,29 +15368,34 @@ if(LAYOUT_MQ){
     var t = e.target; if(!t || t.id!=='pj-file' || !DRAFT) return; var f = t.files && t.files[0]; t.value = ''; if(!f) return;
     try{ flashSaved('Shrinking photo…'); }catch(x){}
     compress(f, function(uri){ if(!uri || !DRAFT){ try{ flashSaved('Could not read that photo'); }catch(x){} return; } DRAFT.img = uri;
-      var pv = document.getElementById('pj-prev'); if(pv){ pv.classList.add('has'); pv.innerHTML = '<img src="'+uri+'" alt="Your photo"><span>Tap to change</span>'; } });
+      var pv = document.getElementById('pj-prev'); if(pv){ pv.classList.add('has'); pv.innerHTML = '<\u0069mg src="'+uri+'" alt="Your photo"><span>Tap to change</span>'; } });
   });
   document.addEventListener('keydown', function(e){ var c = e.target && e.target.closest && e.target.closest('.pj-card'); if(c && (e.key==='Enter' || e.key===' ') && e.target===c){ e.preventDefault(); VIEW = c.getAttribute('data-id'); render(); } });
 
-  /* ---------- where you reach it: Settings row, and a card at the bottom of every hobby log ---------- */
+  /* ---------- Projects REPLACE "Daily Hobbies" in the Sober apps ---------- */
+  /* The old hobby picker + hobby log are no longer reachable: every road to them lands on the Projects page.
+     Old hobby entries stay in the saved data (and in the Insights counts); nothing is deleted.
+     shortcut: DB.lane is kept set (to any hobby) so the old "Daily Hobbies" slot, home tile and timetable mapping still count as available. */
+  if(!DB.lane){ DB.lane = 'DY'; }
   function counts(){ var L = list(); return { act:L.filter(function(p){ return p.status!=='done'; }).length, fin:L.filter(function(p){ return p.status==='done'; }).length }; }
+  function sub(){ var c = counts(); return c.act||c.fin ? c.act+' in progress \u00b7 '+c.fin+' finished' : 'Start something you make'; }
+  [typeof CORE_PAGES!=='undefined' ? CORE_PAGES : [], typeof FOCUS_PAGES!=='undefined' ? FOCUS_PAGES : []].forEach(function(arr){ arr.forEach(function(p){ if(p.id==='lane'){ p.name = 'Projects'; p.icon = 'camera'; if(p.status) p.status = sub; } }); });
+  var baseNav = nav;
+  nav = function(view, pageId, opts){ if(view==='lanelog' || (view==='page' && pageId==='lane')){ view = 'page'; pageId = 'projects'; } return baseNav.call(this, view, pageId, opts); };
+  var baseDone = doneSummary;
+  doneSummary = function(ds, id){ if(id==='lane'){ var n = ''; list().forEach(function(p){ p.entries.forEach(function(e){ if(e.ds===ds) n = p.name; }); }); return n || 'Logged'; } return baseDone.apply(this, arguments); };
   var baseR = render;
   render = function(){
     var out = baseR.apply(this, arguments);
     try{
-      if(typeof ROUTE!=='undefined' && ROUTE.view==='settings' && !document.querySelector('[data-pj-row]')){
-        var c = counts(), row = '<button class="settings-row" data-pj-row="1" onclick="VIEWPJ()"><div><div class="sr-name">Project collection</div><div class="sr-desc">'+(c.act||c.fin ? c.act+' in progress · '+c.fin+' finished' : 'Photo log of what you make, from start to finish')+'</div></div><div class="sr-ico">'+icon('camera',16)+'</div></button>';
-        var at = null; Array.prototype.forEach.call(document.querySelectorAll('#app .settings-row .sr-name'), function(n){ if(/^Book vault$/i.test(n.textContent.trim())) at = n.closest('.settings-row'); });
-        if(at) at.insertAdjacentHTML('afterend', row); else { var sec = document.querySelector('#app .settings-section'); if(sec) sec.insertAdjacentHTML('beforeend', row); }
+      if(typeof ROUTE!=='undefined' && ROUTE.view==='settings'){
+        Array.prototype.forEach.call(document.querySelectorAll('#app .settings-row'), function(r){
+          var n = r.querySelector('.sr-name'); if(!n || !/^Daily Hobbies$/i.test(n.textContent.trim())) return;
+          n.textContent = 'Projects'; var d = r.querySelector('.sr-desc'); if(d) d.textContent = sub(); r.setAttribute('onclick', "VIEWPJ()");
+        });
       }
-      if(typeof ROUTE!=='undefined' && ROUTE.view==='lanelog' && DB.lane && !document.querySelector('#app .pj-foot')){
-        var pb = document.querySelector('#app .page-body'), hb = (LANES.filter(function(l){ return l.id===DB.lane; })[0]||{}).name || '';
-        if(pb){
-          var mine = list().filter(function(p){ return p.status!=='done' && p.hobby===hb; }).slice(0,3), c2 = counts();
-          pb.insertAdjacentHTML('beforeend', '<div class="pj-foot"><div class="pj-fh">'+icon('camera',14)+' Project collection</div>'
-            + (mine.length ? mine.map(function(p){ return '<div class="pj-frow"><span><b>'+E(p.name)+'</b><small>'+p.entries.length+' update'+(p.entries.length===1?'':'s')+'</small></span><button type="button" data-pj="add" data-id="'+p.id+'">'+icon('camera',14)+' Add progress</button></div>'; }).join('') : '<div class="pj-fs">Making something over several days? Keep a photo log of it and finish it when it is done.</div>')
-            + '<button type="button" class="pj-fall" onclick="VIEWPJ()">'+(c2.act||c2.fin ? 'Open the collection ('+c2.act+' in progress, '+c2.fin+' finished)' : 'Start a project')+'</button></div>');
-        }
+      if(typeof ROUTE!=='undefined' && ROUTE.view==='home'){
+        Array.prototype.forEach.call(document.querySelectorAll('#app .lane-note'), function(n){ if(/No hobby picked/i.test(n.textContent)) n.remove(); });
       }
     }catch(e){ if(window.console) console.error('projects links', e); }
     return out;
@@ -15374,11 +15418,719 @@ if(LAYOUT_MQ){
     + '.pj-ent{display:flex;gap:12px;background:var(--surface);border:1.5px solid var(--line);border-radius:18px;padding:10px;margin:0 0 8px}.pj-eimg{width:92px;height:92px;border-radius:14px;object-fit:cover;flex:none;cursor:zoom-in}.pj-etx{flex:1;min-width:0}.pj-etx b{font-size:13.5px;color:var(--ink)}.pj-etx p{margin:4px 0 0;font-size:13px;line-height:1.4;color:var(--ink-soft);overflow-wrap:anywhere}'
     + '.pj-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}.pj-tags span{font-size:11.5px;font-weight:700;background:var(--accent-soft);color:var(--ink);border-radius:999px;padding:3px 9px}.pj-x{border:0;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:700;padding:8px 0 0;cursor:pointer}'
     + '.pj-acts{display:flex;flex-direction:column;gap:8px;margin:18px 0 0}.pj-btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:50px;border:0;border-radius:16px;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:800;font-size:14.5px;cursor:pointer;touch-action:manipulation}.pj-btn.ghost{background:transparent;border:1.5px solid var(--line);color:var(--ink-soft);font-weight:700}.pj-btn.danger{color:#c0463c}'
-    + '.pj-form{display:flex;flex-direction:column;gap:10px;padding-bottom:8px}.pj-fn{font-family:var(--font-display);font-weight:800;font-size:17px;color:var(--ink)}.pj-photo{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:120px;border:2px dashed var(--line);border-radius:18px;background:var(--surface-2);color:var(--ink-soft);font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;overflow:hidden;padding:0}.pj-photo.has{border-style:solid;min-height:0}.pj-photo img{width:100%;max-height:240px;object-fit:cover;display:block}.pj-photo.has span{padding:8px}'
-    + '.pj-foot{margin:16px 0 8px;background:var(--surface-2);border-radius:18px;padding:12px}.pj-fh{display:flex;align-items:center;gap:6px;font-weight:800;font-size:13px;color:var(--ink)}.pj-fs{font-size:12.5px;color:var(--ink-soft);margin:6px 0 8px;line-height:1.4}.pj-frow{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:8px 0}.pj-frow span{min-width:0}.pj-frow b{display:block;font-size:13.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.pj-frow small{font-size:11.5px;color:var(--muted)}.pj-frow button{flex:none;display:flex;align-items:center;gap:5px;min-height:42px;padding:0 12px;border:0;border-radius:13px;background:var(--accent);color:var(--accent-ink);font:inherit;font-weight:800;font-size:12.5px;cursor:pointer}'
-    + '.pj-fall{display:flex;align-items:center;justify-content:center;width:100%;min-height:42px;margin-top:6px;border:1.5px dashed var(--line);border-radius:13px;background:transparent;color:var(--ink-soft);font:inherit;font-weight:700;font-size:13px;cursor:pointer}';
+    + '.pj-form{display:flex;flex-direction:column;gap:10px;padding-bottom:8px}.pj-fn{font-family:var(--font-display);font-weight:800;font-size:17px;color:var(--ink)}.pj-photo{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-height:120px;border:2px dashed var(--line);border-radius:18px;background:var(--surface-2);color:var(--ink-soft);font:inherit;font-weight:700;font-size:13.5px;cursor:pointer;overflow:hidden;padding:0}.pj-photo.has{border-style:solid;min-height:0}.pj-photo img{width:100%;max-height:240px;object-fit:cover;display:block}.pj-photo.has span{padding:8px}';
   var st = document.createElement('style'); st.id = 'pj-css'; st.textContent = css; document.head.appendChild(st);
 }catch(e){ if(window.console) console.error('projects patch', e); } })();
+</script>
+<script>window.SUBSCRIPTION_CONFIG={"provider": "none", "gate": "off", "trialDays": 7, "entitlementId": "premium", "prices": {"own": {"name": "Own", "price": "$7", "unit": "one time", "hint": "Pay once. Yours to keep."}, "subscribe": {"name": "Subscribe", "price": "$2", "unit": "/ month", "hint": "Billed monthly. Cancel any time."}}, "qonversion": {"projectKey": ""}, "checkoutUrls": {"own": "", "subscribe": ""}, "supportEmail": "", "termsUrl": "", "privacyUrl": ""};</script><script>
+/* =====================================================================================================
+   ACCOUNT + SUBSCRIPTION LAYER (every app)
+
+   WHAT IT IS, IN PLAIN WORDS
+   The app asks ONE small question: "is this person allowed to use everything?"  That answer lives in DB.unlocked
+   (the old flag; it survives "Erase data" and is never taken from a backup file, because the shop decides, not a file).
+   Who answers the question is a PROVIDER, chosen in build/subscription.config.json:
+     'none'       (default for the shipped app) nothing is shown, everything is free. Safe to ship before billing exists.
+     'qonversion' the real one. Needs the project key + a checkout link per plan (see HANDOFF "Wiring Qonversion").
+     'mock'       the test build only: Buy simply unlocks, so every screen and the trial lock can be tried in the hub.
+   WHAT THE PERSON SEES (only when a provider is ready):
+     Settings > Account > "Account & plan" > the Upgrade screen: email (their purchase is tied to it), two plans, "I have paid, check again".
+     gate:'trial' (optional): free for N days, then a full-screen "trial ended" page. Settings and "Download my data" always stay reachable,
+     so nobody is ever locked out of their own entries.
+   HONEST LIMITS
+     - The email is an IDENTITY for the shop, not a password login. Nothing in this app can prove who typed it.
+     - Qonversion's web SDK only RECORDS Stripe / Paddle purchases and reports entitlements; the payment itself happens on your
+       hosted checkout link. That link + the Qonversion project key are the two things you still have to supply.
+     - The Qonversion calls follow its public web-SDK page; they have NOT been run against a live Qonversion account.
+   ===================================================================================================== */
+(function(){ try{
+  var DEFAULTS = { provider:'none', gate:'off', trialDays:7, entitlementId:'premium',
+    prices:{ own:{ name:'Own', price:'$7', unit:'one time', hint:'Pay once. Yours to keep.' }, subscribe:{ name:'Subscribe', price:'$2', unit:'/ month', hint:'Billed monthly. Cancel any time.' } },
+    qonversion:{ projectKey:'' }, checkoutUrls:{ own:'', subscribe:'' }, supportEmail:'', termsUrl:'', privacyUrl:'' };
+  var TESTFLAVOR = false;
+  function merge(a, b){ var o = {}, k; for(k in a) o[k] = a[k]; for(k in (b||{})){ o[k] = (b[k] && typeof b[k]==='object' && !Array.isArray(b[k]) && a[k] && typeof a[k]==='object') ? merge(a[k], b[k]) : b[k]; } return o; }
+  var CFG = merge(DEFAULTS, window.SUBSCRIPTION_CONFIG || {});
+  if(TESTFLAVOR && !(window.SUBSCRIPTION_CONFIG && window.SUBSCRIPTION_CONFIG.provider)) CFG.provider = 'mock';   /* the hub build always has a try-it provider */
+  var AK = STORAGE_KEY + '-acct';
+  function ls(k, v){ try{ if(v===undefined) return localStorage.getItem(k); if(v===null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){} return null; }
+  function rd(){ try{ return JSON.parse(ls(AK) || '{}') || {}; }catch(e){ return {}; } }
+  function wr(o){ ls(AK, JSON.stringify(o)); }
+  var A = rd(); if(!A.first){ A.first = new Date().toISOString(); wr(A); }       /* first open: the trial clock starts here */
+  var SIM = TESTFLAVOR ? (function(){ try{ return JSON.parse(ls(AK+'-sim') || '{}') || {}; }catch(e){ return {}; } })() : {};
+  function gate(){ return SIM.gate || CFG.gate; }
+  function firstOpen(){ return new Date(SIM.first || A.first || Date.now()); }
+  function mail(){ try{ return (window.AUTH && AUTH.email && AUTH.email()) || A.email || ''; }catch(e){ return A.email || ''; } }   /* the logged-in account's email wins; otherwise the one typed on the upgrade screen */
+  function E(s){ return esc(String(s==null ? '' : s)); }
+  function clean(s){ return String(s||'').trim().slice(0,120); }
+  function okEmail(s){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s); }
+
+  /* ---------- providers ---------- */
+  var PR = {
+    none:{ ready:function(){ return false; }, why:function(){ return 'no provider (everything is free)'; } },
+    mock:{ ready:function(){ return true; }, why:function(){ return 'test provider'; },
+      refresh:function(){ return Promise.resolve(!!ls(AK+'-mock')); },
+      buy:function(type){ ls(AK+'-mock', type); return Promise.resolve({ ok:true }); },
+      reset:function(){ ls(AK+'-mock', null); } },
+    qonversion:(function(){
+      var inst = null, idd = '';
+      function sdk(){ return window.QonversionSDK; }
+      function open(){ var S = sdk(); if(!S || !CFG.qonversion.projectKey) return null; if(!inst) inst = S.Qonversion.initialize(new S.QonversionConfigBuilder(CFG.qonversion.projectKey).build()); return inst; }
+      function active(ents){   /* the SDK hands back a Map of entitlements; be forgiving about the exact shape */
+        var id = CFG.entitlementId, x = null;
+        if(ents && typeof ents.get==='function') x = ents.get(id);
+        else if(Array.isArray(ents)) x = ents.filter(function(e){ return e && (e.id===id || e.entitlementId===id); })[0];
+        else if(ents && typeof ents==='object') x = ents[id];
+        return !!(x && (x.isActive===true || x.active===true));
+      }
+      return { ready:function(){ return !!(sdk() && CFG.qonversion.projectKey); },
+        why:function(){ return !CFG.qonversion.projectKey ? 'Qonversion project key is empty' : (!sdk() ? 'Qonversion SDK is not inside this build' : 'ready'); },
+        refresh:function(){ var q = open(); if(!q) return Promise.resolve(null);
+          var email = mail(), step = (email && idd!==email) ? q.identify(email).then(function(){ idd = email; }) : Promise.resolve();
+          return step.then(function(){ return q.entitlements(); }).then(active, function(){ return null; }); },   /* offline or error: null = "keep what we knew" */
+        buy:function(type){ var u = CFG.checkoutUrls[type]; if(!u) return Promise.resolve({ ok:false, msg:'Checkout for this plan is not set up yet.' });
+          if(!mail()) return Promise.resolve({ ok:false, msg:'Add your email first.' });
+          u += (u.indexOf('?')<0 ? '?' : '&') + 'prefilled_email=' + encodeURIComponent(mail()) + '&client_reference_id=' + encodeURIComponent(mail());
+          try{ window.open(u, '_blank', 'noopener'); }catch(e){}
+          return Promise.resolve({ ok:true, pending:true, msg:'Finish paying in the new tab, then come back and tap "I have paid".' }); },
+        reset:function(){} };
+    })()
+  };
+  function prov(){ return PR[CFG.provider] || PR.none; }
+
+  /* ---------- the state the rest of the app asks about ---------- */
+  var S = { cfg:CFG, pending:false, busy:false, last:0,
+    ready:function(){ return prov().ready(); },
+    entitled:function(){ return DB.unlocked === true; },
+    trialLeft:function(){ return Math.max(0, CFG.trialDays - Math.floor((Date.now() - firstOpen().getTime())/864e5)); },
+    locked:function(){ return S.ready() && gate()==='trial' && !S.entitled() && S.trialLeft()<=0; },
+    status:function(){ return { provider:CFG.provider, ready:S.ready(), why:prov().why(), gate:gate(), entitled:S.entitled(), trialLeft:S.trialLeft(), email:mail()||'' }; },
+    configure:function(p){ CFG = merge(CFG, p||{}); S.cfg = CFG; render(); },
+    account:function(){ return { email:mail()||'', first:A.first }; },
+    saveEmail:function(v){ v = clean(v == null ? (document.getElementById('sub-email')||{}).value : v); if(!okEmail(v)){ try{ flashSaved('That email does not look right'); }catch(e){} return false; }
+      A.email = v; wr(A); /*KEEP*/ try{ flashSaved('Saved'); }catch(e){} render(); return true; },
+    refresh:function(force){
+      if(!S.ready() || !prov().refresh || S.busy) return Promise.resolve(null);
+      if(!force && Date.now() - S.last < 20000) return Promise.resolve(null);
+      S.busy = true; S.last = Date.now();
+      return prov().refresh().then(function(r){ S.busy = false;
+        if(r===true || r===false){ if(DB.unlocked !== r){ DB.unlocked = r; saveDB(); if(r) S.pending = false; render(); } }
+        return r; }, function(){ S.busy = false; return null; });
+    },
+    buy:function(type){
+      if(!S.ready()) return;
+      prov().buy(type).then(function(res){
+        if(!res.ok){ try{ flashSaved(res.msg || 'Could not start the purchase'); }catch(e){} return; }
+        if(res.pending){ S.pending = true; try{ flashSaved(res.msg); }catch(e){} render(); return; }
+        S.refresh(true).then(function(){ try{ flashSaved('Unlocked. Thank you!'); }catch(e){} });
+      });
+    },
+    checkAgain:function(){ S.refresh(true).then(function(r){ try{ flashSaved(r===true ? 'Unlocked. Thank you!' : (r===false ? 'No purchase found for this email yet' : 'Could not check right now. Try again online.')); }catch(e){} }); },
+    sim:function(p){ if(!TESTFLAVOR) return; SIM = merge(SIM, p||{}); ls(AK+'-sim', JSON.stringify(SIM)); render(); },
+    lockAgain:function(){ if(!TESTFLAVOR) return; (PR.mock.reset)(); DB.unlocked = false; saveDB(); render(); }
+  };
+  window.SUBSCRIPTION = S;
+
+  /* ---------- screens ---------- */
+  function card(inner){ return '<div class="field-card">'+inner+'</div>'; }
+  function paywall(isLocked){
+    var un = S.entitled(), p = CFG.prices, h = '';
+    h += '<div class="home-hero" style="margin:0 0 16px;"><p class="brand">'+E(BRAND.wordmark)+'</p><h2 class="headline" style="margin-bottom:0;">'+(un ? E(BRAND.shortName||BRAND.name) : (isLocked ? 'Your free trial has ended' : 'Unlock '+E(BRAND.shortName||BRAND.name)))+'</h2></div>';
+    if(un){
+      h += card('<div class="nextup-alldone"><span class="ok-badge">'+icon('check',18)+'</span><div><div class="nextup-title">Unlocked</div><div class="nextup-sub">Thanks! Everything in '+E(BRAND.name)+' is unlocked'+(mail() ? ' for '+E(mail()) : '')+'.</div></div></div>');
+    } else {
+      if(isLocked) h += '<p class="onb-sub" style="margin-bottom:14px;">Everything you logged is safe on this phone. Unlock to keep going, or download a copy of your data first.</p>';
+      else if(gate()==='trial') h += '<p class="onb-sub" style="margin-bottom:14px;">Free trial: '+S.trialLeft()+' day'+(S.trialLeft()===1?'':'s')+' left.</p>';
+      else h += '<p class="onb-sub" style="margin-bottom:14px;">Two ways to unlock '+E(BRAND.name)+'. Pick whichever suits you.</p>';
+      if(CFG.provider!=='mock' && !(window.AUTH && AUTH.signedIn && AUTH.signedIn())){
+        h += card('<div class="fc-label">Your email</div><div class="fc-hint">Your purchase is tied to it, so you can get it back on another phone.</div>'
+          + '<input class="textline" id="sub-email" type="email" inputmode="email" autocomplete="email" placeholder="you@example.com" value="'+E(mail()||'')+'" style="margin:8px 0;">'
+          + '<button class="onboard-cta" onclick="SUBSCRIPTION.saveEmail()">'+(mail() ? 'Change email' : 'Save email')+' '+icon('chevright',16)+'</button>');
+      }
+      ['own','subscribe'].forEach(function(k){ var o = p[k]; if(!o) return;
+        h += card('<div class="fc-label">'+E(o.name)+'</div><div class="fc-hint">'+E(o.hint)+'</div><div class="nextup-title" style="font-size:30px;margin:2px 0 14px;">'+E(o.price)+' <span class="nextup-sub" style="font-family:var(--font-body);font-weight:600;font-size:13px;">'+E(o.unit)+'</span></div>'
+          + '<button class="onboard-cta" onclick="SUBSCRIPTION.buy(\''+k+'\')">'+(k==='own' ? 'Own it' : 'Subscribe')+' · '+E(o.price)+(k==='own' ? '' : E(o.unit))+' '+icon('chevright',16)+'</button>'); });
+      h += card('<div class="fc-label">'+(S.pending ? 'Finished paying?' : 'Already paid?')+'</div><div class="fc-hint">'+(CFG.provider==='mock' ? 'Test build: checks the pretend purchase.' : 'Checks your purchase for '+(mail() ? E(mail()) : 'your email')+'.')+'</div>'
+        + '<button class="onboard-cta" onclick="SUBSCRIPTION.checkAgain()">I have paid, check again '+icon('chevright',16)+'</button>');
+    }
+    if(isLocked) h += card('<div class="fc-label">Your data</div><div class="fc-hint">A copy of every entry, as one file.</div><button class="onboard-cta" onclick="exportData()">Download my data '+icon('download',16)+'</button>');
+    if(isLocked || un) h += '';
+    if(TESTFLAVOR && window.APP_TEST_MODE){
+      h += card('<div class="fc-label">Test controls</div><div class="fc-hint">Only in test mode. Gate now: <b>'+E(gate())+'</b> · trial left: <b>'+S.trialLeft()+'</b> · unlocked: <b>'+(un?'yes':'no')+'</b></div>'
+        + '<div class="pill-row ui-chips"><button class="pill ui-chip" onclick="SUBSCRIPTION.sim({gate:\'trial\'})">Gate: trial</button><button class="pill ui-chip" onclick="SUBSCRIPTION.sim({gate:\'off\'})">Gate: off</button>'
+        + '<button class="pill ui-chip" onclick="SUBSCRIPTION.sim({first:new Date(Date.now()-40*864e5).toISOString()})">Trial: ended</button><button class="pill ui-chip" onclick="SUBSCRIPTION.sim({first:new Date().toISOString()})">Trial: fresh</button>'
+        + '<button class="pill ui-chip" onclick="SUBSCRIPTION.lockAgain()">Remove purchase</button></div>');
+    }
+    var links = []; if(CFG.termsUrl) links.push('<a href="'+E(CFG.termsUrl)+'" target="_blank" rel="noopener">Terms</a>'); if(CFG.privacyUrl) links.push('<a href="'+E(CFG.privacyUrl)+'" target="_blank" rel="noopener">Privacy</a>'); if(CFG.supportEmail) links.push('<a href="mailto:'+E(CFG.supportEmail)+'">Support</a>');
+    if(links.length) h += '<p class="onb-sub" style="text-align:center;margin-top:10px;">'+links.join(' · ')+'</p>';
+    app.innerHTML = renderTopbar(isLocked ? 'Trial ended' : 'Account & plan', !isLocked) + '<div class="page-body">'+h+'</div><div class="gap-block"></div>';
+  }
+
+  var baseR = render;
+  render = function(){
+    if(DB.onboarded && typeof ROUTE!=='undefined' && S.ready()){
+      if(ROUTE.view==='upgrade'){ try{ clearSideRail(); }catch(e){} return paywall(false); }
+      if(S.locked() && ROUTE.view!=='settings'){ try{ clearSideRail(); }catch(e){} return paywall(true); }
+    }
+    var out = baseR.apply(this, arguments);
+    try{
+      if(typeof ROUTE!=='undefined' && ROUTE.view==='settings' && S.ready() && !document.querySelector('[data-sub-row]')){
+        var un = S.entitled(), desc = un ? 'Unlocked' : (gate()==='trial' ? 'Free trial: '+S.trialLeft()+' day'+(S.trialLeft()===1?'':'s')+' left' : 'Free'); if(mail()) desc += ' · ' + mail();
+        var row = '<button class="settings-row" data-sub-row="1" onclick="nav(\'upgrade\')"><div><div class="sr-name">Account &amp; plan</div><div class="sr-desc">'+E(desc)+'</div></div><div class="sr-ico">'+icon(un ? 'check' : 'bolt', 16)+'</div></button>';
+        var set = document.querySelector('#app .c4-set'), at = null;
+        if(set) Array.prototype.forEach.call(set.querySelectorAll('.c4-sector'), function(s){ if(/Your data/i.test(s.textContent)) at = s; });
+        if(set && at) at.insertAdjacentHTML('beforebegin', '<div class="c4-sector"><span>Account</span></div><div><div class="settings-section c4-group">'+row+'</div></div>');
+        else { var first = document.querySelector('#app .settings-section'); if(first) first.insertAdjacentHTML('beforebegin', '<div class="settings-section">'+row+'</div>'); }
+      }
+    }catch(e){ if(window.console) console.error('account row', e); }
+    return out;
+  };
+
+  /* check the shop when the app opens, when you come back to it, and when the phone gets internet again */
+  if(S.ready()){
+    setTimeout(function(){ S.refresh(true); }, 900);
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden) S.refresh(); });
+    window.addEventListener('online', function(){ S.refresh(true); });
+  }
+}catch(e){ if(window.console) console.error('subscription patch', e); } })();
+</script>
+<script>
+/* =====================================================================================================
+   SWITCH LOGBOOK (only inside the all-in-one "Logbooks" file)
+   That file holds several logbooks behind a picker. Instead of a bar above the app, the app itself gets one Settings row,
+   "Switch logbook", which goes back to the picker. Anywhere else (a single logbook opened alone, the Test Hub) this does nothing.
+   ===================================================================================================== */
+(function(){ try{
+  var hub = null; try{ hub = window.parent && window.parent !== window ? window.parent.LOGBOOKS : null; }catch(e){}
+  if(!hub || !hub.home) return;
+  var baseR = render;
+  render = function(){
+    var out = baseR.apply(this, arguments);
+    try{
+      if(typeof ROUTE!=='undefined' && ROUTE.view==='settings' && !document.querySelector('[data-hub-row]')){
+        var row = '<button class="settings-row" data-hub-row="1" onclick="window.parent.LOGBOOKS.home()"><div><div class="sr-name">Switch logbook</div><div class="sr-desc">Now: '+esc(BRAND.name)+' · tap to pick another</div></div><div class="sr-ico">'+icon('chevleft',16)+'</div></button>';
+        var set = document.querySelector('#app .c4-set'), at = null;
+        if(set) Array.prototype.forEach.call(set.querySelectorAll('.c4-sector'), function(s){ if(/Your data/i.test(s.textContent)) at = s; });
+        if(set && at) at.insertAdjacentHTML('beforebegin', '<div class="c4-sector"><span>Logbooks</span></div><div><div class="settings-section c4-group">'+row+'</div></div>');
+        else { var first = document.querySelector('#app .settings-section'); if(first) first.insertAdjacentHTML('beforebegin', '<div class="settings-section">'+row+'</div>'); }
+      }
+    }catch(e){ if(window.console) console.error('switch logbook', e); }
+    return out;
+  };
+}catch(e){ if(window.console) console.error('hubswitch patch', e); } })();
+</script>
+<script>window.AUTH_CONFIG=Object.assign({"mode": "local", "required": true, "minPassword": 8, "idleMinutes": 15, "backgroundMinutes": 5, "maxSessionHours": 12, "reauthMinutes": 5, "privacyCover": true}, window.__AUTH_OVERRIDE||{});</script><script>
+/* =====================================================================================================
+   ACCOUNT LOGIN (every app): create account, log in, log out, forgot password, change password
+
+   WHAT IT IS, IN PLAIN WORDS
+   Before the logbook opens, the person creates an account (email + password) once, then logs in. Settings > Account has Log out,
+   Change password, New recovery code and Delete account. The email is also what the billing layer (subscription_patch.js) uses as the
+   person's identity, so one email = one account = one purchase.
+
+   HOW IT IS KEPT (read this before you trust it)
+   There is no server yet, so the account lives ON THIS PHONE, in the browser's storage, next to the logbook:
+     - the password is never stored: only a salted PBKDF2-SHA256 hash (60,000 rounds)
+     - a RECOVERY CODE is made at sign-up (shown once). It is the only way to set a new password if the old one is forgotten
+     - 5 wrong tries lock the form for 30 seconds, then 60, 120... up to 15 minutes (it only slows a person at the keyboard; not server-grade)
+     - the session times out: logged out after 15 minutes of no use, after 5 minutes in the background, and after 12 hours in total
+     - the password is asked for AGAIN before a backup is downloaded, restored or erased (if it was last typed more than 5 minutes ago)
+     - a plain cover hides the screen when the app goes to the background (so the phone's app switcher does not show your entries)
+   What this gives: the logbook cannot be opened by someone who just picks up the phone. What it does NOT give: signing in on a second
+   phone (accounts are not shared between devices), or email-based password reset. Both need a server. To add one later, replace the
+   functions marked REMOTE HOOK (signUp / logIn / reset) with calls to your auth service and keep everything else.
+   Erasing the logbook data keeps the account. Clearing the browser's site data removes both.
+   Config: build/auth.config.json  { mode: 'local' | 'off', required, minPassword, idleMinutes, backgroundMinutes, maxSessionHours, reauthMinutes, privacyCover }
+   ===================================================================================================== */
+(function(){ try{
+  var CFG = (function(a, b){ for(var k in b) a[k] = b[k]; return a; })({ mode:'local', required:true, minPassword:8, idleMinutes:15, backgroundMinutes:5, maxSessionHours:12, reauthMinutes:5, privacyCover:true, maxTries:5, waitSeconds:30, iterations:60000 }, window.AUTH_CONFIG || {});
+  var TESTFLAVOR = false;
+  var K = STORAGE_KEY + '-auth', KS = K + '-session', KT = K + '-tries';
+  function E(s){ return esc(String(s==null ? '' : s)); }
+  function ls(k, v){ try{ if(v===undefined) return localStorage.getItem(k); if(v===null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){} return null; }
+  function rec(){ try{ return JSON.parse(ls(K) || 'null'); }catch(e){ return null; } }
+
+  /* ---------- the password hash: PBKDF2-HMAC-SHA256. The browser's own fast version when it has one, otherwise the same maths in plain JS ---------- */
+  var KK = new Int32Array([0x428a2f98,0x71374491,0xb5c0fbcf,0xe9b5dba5,0x3956c25b,0x59f111f1,0x923f82a4,0xab1c5ed5,0xd807aa98,0x12835b01,0x243185be,0x550c7dc3,0x72be5d74,0x80deb1fe,0x9bdc06a7,0xc19bf174,0xe49b69c1,0xefbe4786,0x0fc19dc6,0x240ca1cc,0x2de92c6f,0x4a7484aa,0x5cb0a9dc,0x76f988da,0x983e5152,0xa831c66d,0xb00327c8,0xbf597fc7,0xc6e00bf3,0xd5a79147,0x06ca6351,0x14292967,0x27b70a85,0x2e1b2138,0x4d2c6dfc,0x53380d13,0x650a7354,0x766a0abb,0x81c2c92e,0x92722c85,0xa2bfe8a1,0xa81a664b,0xc24b8b70,0xc76c51a3,0xd192e819,0xd6990624,0xf40e3585,0x106aa070,0x19a4c116,0x1e376c08,0x2748774c,0x34b0bcb5,0x391c0cb3,0x4ed8aa4a,0x5b9cca4f,0x682e6ff3,0x748f82ee,0x78a5636f,0x84c87814,0x8cc70208,0x90befffa,0xa4506ceb,0xbef9a3f7,0xc67178f2]);
+  var IV = new Int32Array([0x6a09e667,0xbb67ae85,0x3c6ef372,0xa54ff53a,0x510e527f,0x9b05688c,0x1f83d9ab,0x5be0cd19]);
+  var W = new Int32Array(64);
+  function comp(H, B){   /* one SHA-256 block: H = 8 words, B = 16 words, returns the new 8 words */
+    var i, a=H[0], b=H[1], c=H[2], d=H[3], e=H[4], f=H[5], g=H[6], h=H[7], t1, t2, x, y;
+    for(i=0;i<16;i++) W[i] = B[i];
+    for(i=16;i<64;i++){ x = W[i-15]; y = W[i-2]; W[i] = (W[i-16] + (((x>>>7)|(x<<25)) ^ ((x>>>18)|(x<<14)) ^ (x>>>3)) + W[i-7] + (((y>>>17)|(y<<15)) ^ ((y>>>19)|(y<<13)) ^ (y>>>10))) | 0; }
+    for(i=0;i<64;i++){
+      t1 = (h + (((e>>>6)|(e<<26)) ^ ((e>>>11)|(e<<21)) ^ ((e>>>25)|(e<<7))) + ((e&f) ^ (~e&g)) + KK[i] + W[i]) | 0;
+      t2 = ((((a>>>2)|(a<<30)) ^ ((a>>>13)|(a<<19)) ^ ((a>>>22)|(a<<10))) + ((a&b) ^ (a&c) ^ (b&c))) | 0;
+      h=g; g=f; f=e; e=(d+t1)|0; d=c; c=b; b=a; a=(t1+t2)|0;
+    }
+    return Int32Array.of((H[0]+a)|0, (H[1]+b)|0, (H[2]+c)|0, (H[3]+d)|0, (H[4]+e)|0, (H[5]+f)|0, (H[6]+g)|0, (H[7]+h)|0);
+  }
+  function words(u8, off){ var o = new Int32Array(16), i; for(i=0;i<16;i++) o[i] = (u8[off+4*i]<<24) | (u8[off+4*i+1]<<16) | (u8[off+4*i+2]<<8) | u8[off+4*i+3]; return o; }
+  function hashFrom(H, msg, prefix){   /* finish a hash that already consumed `prefix` bytes (a whole number of blocks) */
+    var n = msg.length, total = prefix + n, padLen = ((n + 9 + 63) >> 6) << 6, u = new Uint8Array(padLen), i;
+    u.set(msg); u[n] = 0x80; var bits = total * 8; u[padLen-4] = (bits>>>24)&255; u[padLen-3] = (bits>>>16)&255; u[padLen-2] = (bits>>>8)&255; u[padLen-1] = bits&255;
+    for(i=0;i<padLen;i+=64) H = comp(H, words(u, i));
+    return H;
+  }
+  function w2b(H){ var o = new Uint8Array(32), i; for(i=0;i<8;i++){ o[4*i] = H[i]>>>24; o[4*i+1] = (H[i]>>>16)&255; o[4*i+2] = (H[i]>>>8)&255; o[4*i+3] = H[i]&255; } return o; }
+  function sha256(u8){ return w2b(hashFrom(IV, u8, 0)); }
+  function pbkdf2js(pass, salt, iter){
+    var key = pass.length > 64 ? sha256(pass) : pass, k = new Uint8Array(64), ip = new Uint8Array(64), op = new Uint8Array(64), i;
+    k.set(key); for(i=0;i<64;i++){ ip[i] = k[i]^0x36; op[i] = k[i]^0x5c; }
+    var hi = comp(IV, words(ip,0)), ho = comp(IV, words(op,0));
+    var s4 = new Uint8Array(salt.length + 4); s4.set(salt); s4[salt.length+3] = 1;
+    var U = hashFrom(ho, w2b(hashFrom(hi, s4, 64)), 64), T = Int32Array.from(U), blk = new Int32Array(16), n;
+    for(n=1;n<iter;n++){
+      blk.set(U); blk[8] = 0x80000000|0; for(i=9;i<15;i++) blk[i] = 0; blk[15] = 768;     /* 32 bytes after a 64-byte prefix = 768 bits */
+      var inner = comp(hi, blk);
+      blk.set(inner); blk[8] = 0x80000000|0; for(i=9;i<15;i++) blk[i] = 0; blk[15] = 768;
+      U = comp(ho, blk); for(i=0;i<8;i++) T[i] ^= U[i];
+    }
+    return w2b(T);
+  }
+  function utf8(s){ return new TextEncoder().encode(s); }
+  function hex(u8){ var s = '', i; for(i=0;i<u8.length;i++) s += (u8[i]<16 ? '0' : '') + u8[i].toString(16); return s; }
+  function unhex(h){ var o = new Uint8Array(h.length/2), i; for(i=0;i<o.length;i++) o[i] = parseInt(h.substr(2*i,2),16); return o; }
+  function rand(n){ var u = new Uint8Array(n); try{ crypto.getRandomValues(u); }catch(e){ for(var i=0;i<n;i++) u[i] = Math.floor(Math.random()*256); } return u; }
+  function derive(pass, saltHex, iter){
+    var p = utf8(pass), s = unhex(saltHex);
+    try{ if(window.crypto && crypto.subtle && crypto.subtle.importKey)
+      return crypto.subtle.importKey('raw', p, 'PBKDF2', false, ['deriveBits']).then(function(k){ return crypto.subtle.deriveBits({ name:'PBKDF2', hash:'SHA-256', salt:s, iterations:iter }, k, 256); })
+        .then(function(b){ return hex(new Uint8Array(b)); }, function(){ return hex(pbkdf2js(p, s, iter)); }); }catch(e){}
+    return new Promise(function(res){ setTimeout(function(){ res(hex(pbkdf2js(p, s, iter))); }, 20); });
+  }
+  function same(a, b){ if(a.length !== b.length) return false; var d = 0, i; for(i=0;i<a.length;i++) d |= a.charCodeAt(i) ^ b.charCodeAt(i); return d === 0; }
+  var ALPHA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  function newCode(){ var u = rand(16), s = '', i; for(i=0;i<16;i++){ s += ALPHA[u[i] % 32]; if(i%4===3 && i<15) s += '-'; } return s; }
+  function normCode(s){ return String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,''); }
+  function okEmail(s){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s); }
+  function normEmail(s){ return String(s||'').trim().toLowerCase().slice(0,120); }
+
+  /* ---------- tries / waiting ---------- */
+  /* wrong-password lockout. It is kept in storage (a page refresh does not reset it) and gets longer each round: 30 s, 60 s, 120 s ... max 15 min.
+     shortcut: the counter lives in the browser, so someone with developer tools can clear it. Only a server can fully stop guessing. */
+  function waitLeft(){ try{ var t = JSON.parse(ls(KT) || '{}'); return t.until && t.until > Date.now() ? Math.min(900, Math.ceil((t.until - Date.now())/1000)) : 0; }catch(e){ return 0; } }
+  function fail(){ var t = {}; try{ t = JSON.parse(ls(KT) || '{}') || {}; }catch(e){} t.n = (t.n||0) + 1;
+    if(t.n >= CFG.maxTries){ t.n = 0; t.lvl = Math.min((t.lvl||0) + 1, 10); t.until = Date.now() + Math.min(900, CFG.waitSeconds * Math.pow(2, t.lvl - 1)) * 1000; } ls(KT, JSON.stringify(t)); }
+  function okTry(){ ls(KT, null); }
+  function waitText(w){ return w >= 120 ? Math.ceil(w/60) + ' minutes' : w + ' seconds'; }
+
+  /* ---------- the session: when you logged in, and when you last touched the app. It runs out (idle / background / total). ---------- */
+  function sess(){ try{ var o = JSON.parse(ls(KS) || 'null'); return o && o.s && o.l ? o : null; }catch(e){ return null; } }
+  function startSession(){ var n = Date.now(); ls(KS, JSON.stringify({ s:n, l:n, p:n })); }          /* s = started, l = last used, p = password last typed */
+  function sessLeft(){ var o = sess(); if(!o) return 0; var n = Date.now();
+    var idle = CFG.idleMinutes > 0 ? o.l + CFG.idleMinutes*60000 - n : 1e12, total = CFG.maxSessionHours > 0 ? o.s + CFG.maxSessionHours*3600000 - n : 1e12; return Math.min(idle, total); }
+  function touch(){ var o = sess(); if(!o || Date.now() - o.l < 4000) return; o.l = Date.now(); ls(KS, JSON.stringify(o)); }
+  var BAD = ['password','passw0rd','qwerty','qwertyui','letmein','iloveyou','welcome','admin','administrator','login','monkey','dragon','football','baseball','master','shadow','sunshine','princess','trustno','abc','abcdefgh','whatever','superman','batman','freedom','secret','changeme','asdfgh','zxcvbn','starwars','pokemon','computer'];
+  var BADNUM = /^(?:0?123456789?0?|1234567890|12345678|87654321|11111111|00000000|123123123|1q2w3e4r|1qaz2wsx|qazwsx12|abc12345|a1b2c3d4)$/;
+  /* returns '' if the password is fine, otherwise the reason (plain words). A short password, a famous one, or one made from the email is refused. */
+  function pwProblem(pw, email){
+    if(pw.length < CFG.minPassword) return 'Use at least ' + CFG.minPassword + ' characters for the password.';
+    var low = pw.toLowerCase(), letters = low.replace(/[^a-z]/g, ''), local = String(email || '').split('@')[0].toLowerCase();
+    if(BADNUM.test(low) || BAD.indexOf(letters) >= 0 || BAD.indexOf(low) >= 0 || /^(.)\1+$/.test(low)) return 'That password is too easy to guess. Pick something less common.';
+    if(email && (low === String(email).toLowerCase() || (local.length >= 4 && low.indexOf(local) >= 0))) return 'The password should not contain your email name.';
+    return '';
+  }
+
+  /* ---------- state ---------- */
+  var ST = { screen:null, err:'', busy:false, email:'', code:'', force:false, msg:'', note:'' };
+  function consentDue(){ var r = rec(); return !!(window.LEGAL && r && sess() && (!r.consent || r.consent.v < LEGAL.version)); }
+  function signedIn(){ return !!rec() && !!sess() && sessLeft() > 0; }
+  function needAuth(){ if(CFG.mode !== 'local') return false; return ST.force || (CFG.required && !signedIn()) || (signedIn() && consentDue()); }
+  function startScreen(){ return rec() ? (signedIn() && consentDue() ? 'consent' : 'login') : 'signup'; }
+  function done(){ ST.screen = null; ST.err = ''; ST.note = ''; ST.force = false; ST.code = ''; try{ if(window.SUBSCRIPTION) SUBSCRIPTION.refresh(true); }catch(e){} render(); }
+
+  /* ---------- REMOTE HOOK: the three server calls. Today they are local; swap these for your auth service later. ---------- */
+  function signUp(email, pw){ var salt = hex(rand(16)), rsalt = hex(rand(16)), code = newCode();
+    return Promise.all([derive(pw, salt, CFG.iterations), derive(normCode(code), rsalt, CFG.iterations)]).then(function(h){
+      var r = { v:1, email:email, salt:salt, hash:h[0], iter:CFG.iterations, rsalt:rsalt, rhash:h[1], created:new Date().toISOString() };
+      if(window.LEGAL) r.consent = { v:LEGAL.version, at:new Date().toISOString() };      /* when they agreed to the Terms + Privacy Policy */
+      ls(K, JSON.stringify(r)); return { code:code }; }); }
+  function logIn(email, pw){ var r = rec(); if(!r || r.email !== email) return derive(pw, hex(rand(16)), 1000).then(function(){ return false; });   /* same time taken either way */
+    return derive(pw, r.salt, r.iter).then(function(h){ return same(h, r.hash); }); }
+  function reset(code, pw){ var r = rec(); if(!r) return Promise.resolve(null);
+    return derive(normCode(code), r.rsalt, r.iter).then(function(h){ if(!same(h, r.rhash)) return null;
+      var salt = hex(rand(16)), rsalt = hex(rand(16)), nc = newCode();
+      return Promise.all([derive(pw, salt, r.iter), derive(normCode(nc), rsalt, r.iter)]).then(function(x){ r.salt = salt; r.hash = x[0]; r.rsalt = rsalt; r.rhash = x[1]; ls(K, JSON.stringify(r)); return { code:nc }; }); }); }
+
+  /* ---------- screens ---------- */
+  function val(id){ var e = document.getElementById(id); return e ? e.value : ''; }
+  function field(id, label, type, auto, v, hint){
+    var pw = type === 'password';
+    return '<label class="au-f"><span>'+E(label)+'</span><div class="au-in"><input class="textline" id="'+id+'" type="'+type+'" autocomplete="'+auto+'" '+(type==='email' ? 'inputmode="email" autocapitalize="off" spellcheck="false"' : 'autocapitalize="off" spellcheck="false"')+' value="'+E(v||'')+'">'
+      + (pw ? '<button type="button" class="au-eye" onclick="AUTH.ui.eye(this)" aria-label="Show or hide password">Show</button>' : '') + '</div>' + (hint ? '<small>'+E(hint)+'</small>' : '') + '</label>';
+  }
+  function shell(title, sub, body, cta, action, footer){
+    var w = waitLeft();
+    app.innerHTML = '<div class="onboard-screen au-screen"><div class="onboard-top"><span></span><span></span></div><div class="onboard-body">'
+      + '<div class="au-mark">'+icon(BRAND.markIcon || 'flag', 26)+'</div><div class="onb-eyebrow">'+E(BRAND.wordmark)+'</div><h1 class="onb-title">'+title+'</h1><p class="onb-sub">'+sub+'</p>'
+      + '<div class="onb-scroll">'+body+'<div class="au-err" role="alert" id="au-err">'+E(w ? 'Too many tries. Wait '+waitText(w)+', then try again.' : ST.err)+'</div></div></div>'
+      + '<div class="onboard-actions">'+(cta ? '<button class="onboard-cta" id="au-go" '+((ST.busy||w) ? 'disabled' : '')+' onclick="'+action+'">'+(ST.busy ? 'Working…' : E(cta))+' '+icon('chevright',16)+'</button>' : '')+(footer || '')+'</div></div>';
+  }
+  function agree(){ if(!window.LEGAL) return '';
+    return '<label class="au-check"><input type="checkbox" id="au-agree"> <span>I am at least '+E(LEGAL.config.minAge)+' and I agree to the <button type="button" class="au-inl" onclick="AUTH.ui.legal(\'terms\')">Terms of Use</button> and <button type="button" class="au-inl" onclick="AUTH.ui.legal(\'privacy\')">Privacy Policy</button>.</span></label>'; }
+  function link(label, action){ return '<button type="button" class="au-link" onclick="'+action+'">'+label+'</button>'; }
+  function screen(){
+    var s = ST.screen || startScreen();
+    if(s === 'signup') return shell('Create your account', 'One email and a password. They stay on this phone and keep your logbook private.',
+      field('au-email','Email','email','username',ST.email) + field('au-pw','Password','password','new-password','','At least '+CFG.minPassword+' characters. Not a common one.') + field('au-pw2','Password again','password','new-password','') + agree(),
+      'Create account', 'AUTH.ui.signup()', rec() ? link('I already have an account', "AUTH.ui.go('login')") : '');
+    if(s === 'legal') return shell(E(window.LEGAL ? LEGAL.title(ST.doc) : ''), '', '<div class="lg-card">' + (window.LEGAL ? LEGAL.body(ST.doc) : '') + '</div>', 'Back', 'AUTH.ui.go(AUTH.back())', '');
+    if(s === 'consent') return shell('Please review', 'We updated our Terms of Use and Privacy Policy. Please read and agree to keep using the app.', agree(), 'Agree and continue', 'AUTH.ui.consent()', link('Log out', 'AUTH.logout()'));
+    if(s === 'login') return shell('Welcome back', E(ST.note) || 'Log in to open your logbook.',
+      field('au-email','Email','email','username',ST.email || (rec()||{}).email) + field('au-pw','Password','password','current-password',''),
+      'Log in', 'AUTH.ui.login()', link('Forgot password?', "AUTH.ui.go('reset')"));
+    if(s === 'reset') return shell('Set a new password', 'Enter the recovery code you saved when you made your account.',
+      field('au-code','Recovery code','text','off',ST.code) + field('au-pw','New password','password','new-password','','At least '+CFG.minPassword+' characters') + field('au-pw2','New password again','password','new-password',''),
+      'Save new password', 'AUTH.ui.reset()', link('Back to log in', "AUTH.ui.go('login')") + '<p class="au-note">No code? It cannot be reset without it: nothing is stored anywhere else. Your logbook entries stay safe on this phone.</p>');
+    if(s === 'code') return shell(ST.msg || 'Save your recovery code', 'This is the only way to reset your password. It is shown once. Write it down or copy it somewhere safe.',
+      '<div class="au-code" id="au-code">'+E(ST.code)+'</div><div class="au-row"><button type="button" class="au-link" onclick="AUTH.ui.copy()">Copy code</button></div>'
+      + '<label class="au-check"><input type="checkbox" id="au-saved" onchange="AUTH.ui.saved()"> <span>I saved my recovery code</span></label>',
+      'Continue', 'AUTH.ui.finish()', '');
+  }
+  function paint(){ if(needAuth()){ app.innerHTML = ''; screen(); var b = document.getElementById('au-go'); if(b && ST.screen === 'code') b.disabled = true; } }
+
+  function busy(on){ ST.busy = on; var b = document.getElementById('au-go'); if(b){ b.disabled = on; } }
+  function err(m){ ST.err = m; ST.busy = false; var e = document.getElementById('au-err'); if(e) e.textContent = m; else paint(); var b = document.getElementById('au-go'); if(b){ b.disabled = false; } }
+  function enter(sc){ ST.screen = sc; ST.err = ''; paint(); }
+
+  var UI = {
+    go:function(s){ ST.email = val('au-email') || ST.email; enter(s); },
+    eye:function(b){ var i = b.parentNode.querySelector('input'); var show = i.type === 'password'; i.type = show ? 'text' : 'password'; b.textContent = show ? 'Hide' : 'Show'; },
+    signup:function(){ if(ST.busy) return; var em = normEmail(val('au-email')), p1 = val('au-pw'), p2 = val('au-pw2'); ST.email = em;
+      if(!okEmail(em)) return err('That email does not look right.');
+      var bad = pwProblem(p1, em); if(bad) return err(bad);
+      if(p1 !== p2) return err('The two passwords are not the same.');
+      if(window.LEGAL && !(document.getElementById('au-agree')||{}).checked) return err('Please tick the box to agree to the Terms and Privacy Policy.');
+      busy(true); signUp(em, p1).then(function(r){ ST.code = r.code; ST.msg = ''; ST.err = ''; ST.busy = false; ST.screen = 'code'; ST.pending = 'signup'; paint(); }, function(){ err('Could not create the account on this device.'); }); },
+    login:function(){ if(ST.busy) return; if(waitLeft()) return paint(); var em = normEmail(val('au-email')), p = val('au-pw'); ST.email = em;
+      if(!em || !p) return err('Enter your email and password.');
+      busy(true); logIn(em, p).then(function(ok){ if(ok){ okTry(); startSession(); ST.busy = false; done(); } else { fail(); err(waitLeft() ? '' : 'Email or password is not right.'); if(waitLeft()) paint(); } }, function(){ err('Could not check the password on this device.'); }); },
+    reset:function(){ if(ST.busy) return; if(waitLeft()) return paint(); var c = val('au-code'), p1 = val('au-pw'), p2 = val('au-pw2'); ST.code = c;
+      if(normCode(c).length !== 16) return err('The recovery code has 16 letters and numbers.');
+      var bad = pwProblem(p1, (rec()||{}).email); if(bad) return err(bad);
+      if(p1 !== p2) return err('The two passwords are not the same.');
+      busy(true); reset(c, p1).then(function(r){ if(!r){ fail(); err(waitLeft() ? '' : 'That recovery code is not right.'); if(waitLeft()) paint(); return; } okTry(); ST.code = r.code; ST.msg = 'Password changed. Here is your NEW recovery code'; ST.err = ''; ST.busy = false; ST.screen = 'code'; ST.pending = 'reset'; paint(); }, function(){ err('Could not reset on this device.'); }); },
+    saved:function(){ var b = document.getElementById('au-go'), c = document.getElementById('au-saved'); if(b && c) b.disabled = !c.checked; },
+    copy:function(){ try{ navigator.clipboard.writeText(ST.code); flashSaved('Copied'); }catch(e){ try{ var r = document.createRange(); r.selectNodeContents(document.getElementById('au-code')); var s = getSelection(); s.removeAllRanges(); s.addRange(r); flashSaved('Selected: copy it'); }catch(x){} } },
+    finish:function(){ if(!(document.getElementById('au-saved')||{}).checked) return; startSession(); ST.pending = null; done(); },
+    legal:function(d){ ST.email = val('au-email') || ST.email; ST.back = ST.screen || startScreen(); ST.doc = d; enter('legal'); },
+    consent:function(){ if(!(document.getElementById('au-agree')||{}).checked) return err('Please tick the box to agree.'); var r = rec(); r.consent = { v:LEGAL.version, at:new Date().toISOString() }; ls(K, JSON.stringify(r)); done(); }
+  };
+
+  /* ---------- Settings > Account ---------- */
+  function accountPage(){
+    var r = rec(), h = '', T = TESTFLAVOR && window.APP_TEST_MODE;
+    function card(l, hint, inner){ return '<div class="field-card"><div class="fc-label">'+l+'</div>'+(hint ? '<div class="fc-hint">'+hint+'</div>' : '')+inner+'</div>'; }
+    if(!r) h += card('No account yet', 'Create one to keep this logbook private.', '<button class="onboard-cta" onclick="AUTH.start()">Create account '+icon('chevright',16)+'</button>');
+    else {
+      h += card('Signed in as', E(r.email), '<button class="onboard-cta" onclick="AUTH.logout()">Log out '+icon('chevright',16)+'</button>');
+      h += card('Change password', 'Needs your current password.', field('ac-old','Current password','password','current-password','') + field('ac-new','New password','password','new-password','','At least '+CFG.minPassword+' characters') + '<div class="au-err" id="ac-e1"></div><button class="onboard-cta" onclick="AUTH.ui.change()">Change password '+icon('chevright',16)+'</button>');
+      h += card('New recovery code', 'Makes a fresh code and cancels the old one.', field('ac-old2','Your password','password','current-password','') + '<div class="au-err" id="ac-e2"></div><button class="onboard-cta" onclick="AUTH.ui.newcode()">Make a new code '+icon('chevright',16)+'</button><div class="au-code" id="ac-code" hidden></div>');
+      h += card('Delete account', 'Removes the email and password from this phone. Your logbook entries are kept.', field('ac-old3','Your password','password','current-password','') + '<div class="au-err" id="ac-e3"></div><button class="onboard-cta au-danger" onclick="AUTH.ui.del()">Delete account '+icon('chevright',16)+'</button>');
+    }
+    if(r) h += card('Delete everything on this phone', 'Removes your logbook entries, photos, settings AND the account from this phone, then restarts the app. A backup file you already downloaded is not touched. Cannot be undone.', field('ac-old4','Your password','password','current-password','') + '<div class="au-err" id="ac-e4"></div><button class="onboard-cta au-danger" onclick="AUTH.ui.wipe()">Delete everything '+icon('chevright',16)+'</button>');
+    if(T) h += card('Test controls', 'Only in test mode.', '<div class="pill-row ui-chips"><button class="pill ui-chip" onclick="AUTH.logout()">Show the login screen</button><button class="pill ui-chip" onclick="AUTH.forget()">Show the sign-up screen</button></div>');
+    app.innerHTML = renderTopbar('Account', true) + '<div class="page-body">'+h+'</div><div class="gap-block"></div>';
+  }
+  UI.change = function(){ var r = rec(), o = val('ac-old'), n = val('ac-new'), e = document.getElementById('ac-e1'); var bad = pwProblem(n, r.email); if(bad){ e.textContent = bad; return; }
+    derive(o, r.salt, r.iter).then(function(h){ if(!same(h, r.hash)){ e.textContent = 'Current password is not right.'; return; }
+      var salt = hex(rand(16)); derive(n, salt, r.iter).then(function(nh){ r.salt = salt; r.hash = nh; ls(K, JSON.stringify(r)); flashSaved('Password changed'); var o = sess(); if(o){ o.p = Date.now(); ls(KS, JSON.stringify(o)); } render(); }); }); };
+  UI.newcode = function(){ var r = rec(), o = val('ac-old2'), e = document.getElementById('ac-e2');
+    derive(o, r.salt, r.iter).then(function(h){ if(!same(h, r.hash)){ e.textContent = 'Password is not right.'; return; }
+      var nc = newCode(), rs = hex(rand(16)); derive(normCode(nc), rs, r.iter).then(function(rh){ r.rsalt = rs; r.rhash = rh; ls(K, JSON.stringify(r)); e.textContent = ''; var c = document.getElementById('ac-code'); c.hidden = false; c.textContent = nc; ST.code = nc; flashSaved('New code made. Save it now.'); }); }); };
+  UI.wipe = function(){ var r = rec(), o = val('ac-old4'), e = document.getElementById('ac-e4'); if(waitLeft()){ e.textContent = 'Too many tries. Wait ' + waitText(waitLeft()) + '.'; return; }
+    derive(o, r.salt, r.iter).then(function(h){ if(!same(h, r.hash)){ fail(); e.textContent = 'Password is not right.'; return; } okTry();
+      try{ var gone = []; for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(k && k.indexOf(STORAGE_KEY) === 0) gone.push(k); } gone.forEach(function(k){ localStorage.removeItem(k); }); }catch(x){}
+      try{ sessionStorage.clear(); }catch(x){} location.reload(); }); };
+  UI.del = function(){ var r = rec(), o = val('ac-old3'), e = document.getElementById('ac-e3');
+    derive(o, r.salt, r.iter).then(function(h){ if(!same(h, r.hash)){ e.textContent = 'Password is not right.'; return; } AUTH.forget(); flashSaved('Account deleted. Your entries are still here.'); }); };
+
+  /* ---------- hook into the app ---------- */
+  var AUTH = { signedIn:signedIn, email:function(){ var r = rec(); return signedIn() && r ? r.email : ''; }, ui:UI, cfg:CFG,
+    status:function(){ return { mode:CFG.mode, required:CFG.required, hasAccount:!!rec(), signedIn:signedIn(), screen:ST.screen }; },
+    locked:needAuth, back:function(){ return ST.back || 'login'; }, sessionLeft:sessLeft, pwProblem:pwProblem,
+    logout:function(why){ ls(KS, null); ST.screen = 'login'; ST.err = ''; ST.force = false; ST.pending = null; ST.code = '';
+      ST.note = why === 'idle' ? 'You were logged out after ' + CFG.idleMinutes + ' minutes without use.' : why === 'background' ? 'You were logged out because the app was in the background.' : why === 'total' ? 'For safety, please log in again.' : '';
+      try{ closeSheet(); }catch(e){} try{ var w = document.getElementById('au-warn'); if(w) w.remove(); }catch(e){}
+      try{ ROUTE = { view:'home', date:SELECTED_DATE }; }catch(e){} render(); },
+    forget:function(){ ls(K, null); ls(KS, null); ls(KT, null); ST.screen = null; ST.force = false; ST.code = ''; try{ ROUTE = { view:'home', date:SELECTED_DATE }; }catch(e){} render(); },
+    start:function(){ ST.force = true; ST.screen = 'signup'; ST.err = ''; render(); },
+    _js:function(p, saltHex, iter){ return hex(pbkdf2js(utf8(p), unhex(saltHex), iter)); }, _derive:derive, _sha256:function(s){ return hex(sha256(utf8(s))); } };
+  window.AUTH = AUTH;
+  if(CFG.mode !== 'local') return;
+
+  var baseR = render;
+  render = function(){
+    if(needAuth()){ try{ clearSideRail(); }catch(e){} paint(); return; }
+    if(typeof ROUTE!=='undefined' && ROUTE.view==='account' && DB.onboarded){ try{ clearSideRail(); }catch(e){} return accountPage(); }
+    var out = baseR.apply(this, arguments);
+    try{
+      if(typeof ROUTE!=='undefined' && ROUTE.view==='settings' && !document.querySelector('[data-auth-row]')){
+        var r = rec(), row = '<button class="settings-row" data-auth-row="1" onclick="nav(\'account\')"><div><div class="sr-name">Account</div><div class="sr-desc">'+E(r ? r.email : 'Not created yet')+'</div></div><div class="sr-ico">'+icon('user' in (typeof ICONS!=='undefined' ? ICONS : {}) ? 'user' : 'check', 16)+'</div></button>';
+        var sub = document.querySelector('[data-sub-row]');
+        if(sub && sub.parentNode) sub.parentNode.insertAdjacentHTML('afterbegin', row);
+        else { var set = document.querySelector('#app .c4-set'), at = null;
+          if(set) Array.prototype.forEach.call(set.querySelectorAll('.c4-sector'), function(s){ if(/Your data/i.test(s.textContent)) at = s; });
+          if(set && at) at.insertAdjacentHTML('beforebegin', '<div class="c4-sector"><span>Account</span></div><div><div class="settings-section c4-group">'+row+'</div></div>');
+          else { var first = document.querySelector('#app .settings-section'); if(first) first.insertAdjacentHTML('beforebegin', '<div class="settings-section">'+row+'</div>'); } }
+      }
+    }catch(e){ if(window.console) console.error('account row', e); }
+    return out;
+  };
+  /* Enter key submits the form */
+  document.addEventListener('keydown', function(e){ if(e.key === 'Enter' && e.target && e.target.closest && e.target.closest('.au-screen')){ var b = document.getElementById('au-go'); if(b && !b.disabled){ e.preventDefault(); b.click(); } } });
+  /* ---------- the session watch: activity, idle / total timeout, background logout, the privacy cover, the "you are about to be logged out" bar ---------- */
+  ['pointerdown','keydown','touchstart','scroll','wheel'].forEach(function(ev){ document.addEventListener(ev, function(){ if(signedIn()){ touch(); var w = document.getElementById('au-warn'); if(w && sessLeft() > 60000) w.remove(); } }, { capture:true, passive:true }); });
+  function warn(sec){ var w = document.getElementById('au-warn'); if(!w){ w = document.createElement('div'); w.id = 'au-warn'; w.setAttribute('role', 'alert'); w.onclick = function(){ touch(); w.remove(); }; document.body.appendChild(w); }
+    w.textContent = 'Logging out in ' + sec + ' s. Tap here to stay logged in.'; }
+  function watch(){ if(!rec() || !sess()) return; var left = sessLeft();
+    if(left <= 0){ var o = sess(), why = CFG.maxSessionHours > 0 && Date.now() - o.s >= CFG.maxSessionHours*3600000 ? 'total' : 'idle'; AUTH.logout(why); }
+    else if(left <= 60000 && CFG.idleMinutes > 0) warn(Math.ceil(left/1000)); }
+  setInterval(watch, 5000);
+  var hid = 0;
+  function cover(on){ var c = document.getElementById('au-cover');
+    if(on && !c && CFG.privacyCover && rec()){ c = document.createElement('div'); c.id = 'au-cover'; c.innerHTML = '<div class="au-mark">'+icon(BRAND.markIcon || 'flag', 26)+'</div><div class="onb-eyebrow">'+E(BRAND.wordmark || BRAND.name)+'</div>'; document.body.appendChild(c); }
+    if(!on && c) c.remove(); }
+  document.addEventListener('visibilitychange', function(){
+    if(document.hidden){ hid = Date.now(); cover(true); return; }
+    cover(false);
+    if(hid && signedIn() && CFG.backgroundMinutes > 0 && Date.now() - hid > CFG.backgroundMinutes*60000) AUTH.logout('background'); else watch();
+    hid = 0; });
+  window.addEventListener('pagehide', function(){ cover(true); });
+  window.addEventListener('pageshow', function(){ if(!document.hidden) cover(false); });
+
+  /* ---------- ask for the password again before the risky things (download / restore / erase), if it was typed more than N minutes ago ---------- */
+  function fresh(){ var o = sess(); return !CFG.reauthMinutes || (o && o.p && Date.now() - o.p < CFG.reauthMinutes*60000); }
+  function ask(what, go){
+    if(!rec() || fresh()) return go();
+    var m = document.getElementById('au-reauth'); if(m) m.remove();
+    m = document.createElement('div'); m.id = 'au-reauth'; m.setAttribute('role', 'dialog'); m.setAttribute('aria-modal', 'true');
+    m.innerHTML = '<div class="au-card"><h3>Confirm it is you</h3><p>Type your password to ' + E(what) + '.</p>' + field('au-rp', 'Password', 'password', 'current-password', '') + '<div class="au-err" id="au-re"></div><div class="au-btns"><button type="button" class="au-link" id="au-rc">Cancel</button><button type="button" class="onboard-cta" id="au-ro">Confirm</button></div></div>';
+    document.body.appendChild(m); var inp = document.getElementById('au-rp'); try{ inp.focus(); }catch(e){}
+    function close(){ m.remove(); }
+    document.getElementById('au-rc').onclick = close;
+    function submit(){ var r = rec(), e = document.getElementById('au-re'); if(waitLeft()){ e.textContent = 'Too many tries. Wait ' + waitText(waitLeft()) + '.'; return; }
+      derive(inp.value, r.salt, r.iter).then(function(h){ if(!same(h, r.hash)){ fail(); e.textContent = waitLeft() ? 'Too many tries. Wait ' + waitText(waitLeft()) + '.' : 'Password is not right.'; return; }
+        okTry(); var o = sess(); if(o){ o.p = Date.now(); ls(KS, JSON.stringify(o)); } close(); go(); }); }
+    document.getElementById('au-ro').onclick = submit;
+    inp.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); submit(); } });
+  }
+  AUTH.ask = ask;
+  ['exportData:download a backup', 'triggerImport:restore a backup', 'confirmEraseAll:erase your logbook'].forEach(function(x){
+    var n = x.split(':')[0], what = x.split(':')[1], f = window[n]; if(typeof f !== 'function') return;
+    window[n] = function(){ var a = arguments, me = this; ask(what, function(){ f.apply(me, a); }); };
+  });
+
+  var css = '.au-screen .onboard-body{padding-top:4px}.au-mark{width:56px;height:56px;border-radius:18px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;margin:6px 0 16px;box-shadow:var(--shadow-lg)}'
+    + '.au-f{display:block;margin:0 0 12px}.au-f>span{display:block;font-size:12.5px;font-weight:800;color:var(--ink-soft);margin:0 0 5px}.au-f small{display:block;font-size:12px;color:var(--muted);margin-top:4px}'
+    + '.au-in{position:relative}.au-in .textline{width:100%;box-sizing:border-box;min-height:52px;padding:0 70px 0 14px;background:var(--surface-2);border:1.5px solid var(--line);border-radius:14px;font-size:16px;color:var(--ink)}.au-in .textline:focus{outline:none;border-color:var(--accent)}.au-f:not(:has(.au-eye)) .textline{padding-right:14px}.au-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);min-height:38px;padding:0 12px;border:0;border-radius:10px;background:var(--surface-2);color:var(--ink-soft);font:inherit;font-weight:700;font-size:12.5px;cursor:pointer}'
+    + '.au-err{min-height:20px;margin:2px 0 8px;font-size:13px;font-weight:700;color:var(--red,#C0463C)}.au-link{display:block;width:100%;min-height:44px;margin-top:6px;border:0;background:transparent;color:var(--accent);font:inherit;font-weight:800;font-size:14px;cursor:pointer}'
+    + '.au-note{font-size:12px;line-height:1.45;color:var(--muted);text-align:center;margin:8px 8px 0}.au-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:22px;font-weight:800;letter-spacing:.06em;text-align:center;background:var(--surface-2);border:1.5px dashed var(--line);border-radius:16px;padding:18px 8px;margin:6px 0 4px;color:var(--ink);user-select:all;overflow-wrap:anywhere}.au-code[hidden]{display:none}'
+    + '.au-row{display:flex;justify-content:center}.au-check{display:flex;align-items:center;gap:10px;margin:14px 2px 6px;font-size:14px;font-weight:700;color:var(--ink)}.au-check input{width:22px;height:22px;accent-color:var(--accent)}'
+    + '.au-danger{background:transparent!important;color:#C0463C!important;border:1.5px solid #C0463C!important}'
+    + '.au-inl{display:inline;min-height:0!important;height:auto!important;line-height:1.4;border:0;background:transparent;padding:0;font:inherit;font-weight:800;color:var(--accent);text-decoration:underline;cursor:pointer}.au-check{align-items:flex-start}.au-check input{margin-top:1px;flex:none}.au-check span{line-height:1.4}.lg-card{padding:4px 2px 12px}.lg-intro{font-size:14px;line-height:1.5;color:var(--ink-soft);margin:0 0 6px}.lg-h{font-size:15px;font-weight:800;margin:16px 0 4px;color:var(--ink)}.lg-p{font-size:14px;line-height:1.55;color:var(--ink);margin:0}.lg-meta{font-size:12px;color:var(--muted);margin:18px 0 0}'
+    + '#au-cover{position:fixed;inset:0;z-index:2147483000;background:var(--bg,#fff);display:flex;flex-direction:column;align-items:center;justify-content:center}'
+    + '#au-warn{position:fixed;left:12px;right:12px;top:calc(env(safe-area-inset-top,0px) + 10px);z-index:2147482000;background:var(--ink,#222);color:var(--bg,#fff);padding:12px 14px;border-radius:14px;font-weight:700;font-size:14px;text-align:center;box-shadow:var(--shadow-lg);cursor:pointer}'
+    + '#au-reauth{position:fixed;inset:0;z-index:2147481000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px}#au-reauth .au-card{width:100%;max-width:380px;background:var(--surface,#fff);color:var(--ink);border-radius:20px;padding:20px;box-shadow:var(--shadow-lg)}#au-reauth h3{margin:0 0 4px;font-size:18px}#au-reauth p{margin:0 0 12px;font-size:14px;color:var(--ink-soft)}.au-btns{display:flex;gap:8px;align-items:center}.au-btns .au-link{margin:0}.au-btns .onboard-cta{margin:0}';
+  var st = document.createElement('style'); st.id = 'au-css'; st.textContent = css; document.head.appendChild(st);
+}catch(e){ if(window.console) console.error('auth patch', e); } })();
+</script>
+<script>window.LEGAL_CONFIG={"company": "Clean Routine Co.", "email": "", "country": "", "version": 1, "effective": "2026-10-24", "minAge": 13, "draft": true};</script><script>
+/* =====================================================================================================
+   LEGAL: Terms of Use, Privacy Policy and a "not professional advice" notice, inside the app (every app)
+
+   WHAT IT IS, IN PLAIN WORDS
+   Three short documents, written in plain language, that match what THIS app really does (it keeps everything on the phone, has no
+   tracking and no server). They show up in three places: Settings > "Privacy & terms", the sign-up screen (a tick box to agree),
+   and the plan screen. When you change the documents, raise `version` in build/legal.config.json: everybody is asked to agree again.
+
+   IMPORTANT: THIS IS A TEMPLATE, NOT LEGAL ADVICE. It is a sensible starting text. Before you sell the app, have a lawyer in your country
+   read it (the laws on personal data differ by country). Then set "draft": false in legal.config.json to hide the draft label.
+
+   Config: build/legal.config.json { company, email, country, version, effective, minAge, draft }
+   The notice changes with the app: Sober apps get the health/recovery wording, Hustler's gets a "not financial advice" line.
+   ===================================================================================================== */
+(function(){ try{
+  var C = (function(a, b){ for(var k in b) a[k] = b[k]; return a; })({ company:'Clean Routine Co.', email:'', country:'', version:1, effective:'', minAge:13, draft:true }, window.LEGAL_CONFIG || {});
+  function E(s){ return esc(String(s==null ? '' : s)); }
+  var SC = window.SUBSCRIPTION_CONFIG || {};
+  var KEY = String(STORAGE_KEY).toLowerCase();
+  var KIND = /sober/.test(KEY) ? 'sober' : /hustler|canvas/.test(KEY) ? 'biz' : 'general';
+  var NAME = (typeof BRAND !== 'undefined' && BRAND.name) || 'this app';
+  var MAIL = C.email || SC.supportEmail || '';
+  var who = E(C.company);
+  function billing(){ var p = SC.provider || ''; return (p && p !== 'none') || SC.gate === 'trial'; }      /* payment wording appears only once billing is switched on */
+
+  /* ---------- the texts. Each doc = [title, intro, [[heading, paragraph(s)], ...]]. Plain strings; escaped when shown. ---------- */
+  var DOCS = {};
+  var TS = [
+    ['What the app is', NAME + ' is a personal logbook. You write things down, and it shows them back to you. It is meant for your own private use.'],
+    ['Your account', 'Your account is an email and a password that live on this phone. You are responsible for keeping your password and your recovery code safe. We cannot reset your password for you: we do not have a copy of it, and without the recovery code the account cannot be recovered. Your logbook entries stay on the phone either way.'],
+    ['Using the app', 'Use it for yourself and in a lawful way. Do not try to break it, copy it to sell it, or take it apart. You keep ownership of everything you write or add. We do not claim any right to it.'],
+    ['Not professional advice', 'The app gives general information and a place to keep records. It is not medical, mental-health, legal, financial or other professional advice. See the "Important notice" for more.'],
+    ['Your backups', 'The backup file you download holds everything you logged, in plain text that anyone can read. Keep it somewhere private. You are responsible for backups: if you clear your browser data or lose the phone without a backup, the logbook cannot be recovered.']];
+  TS = TS.concat(billing() ? [['Free trial and payment', 'The app may start with a free trial. After that, using it needs a one-time purchase or a subscription, shown at the time you buy. Payments are handled by an outside payment company, not by this app. A subscription renews until you cancel it with that payment company. Refunds follow the rules of the store or payment company you used and the law where you live.']] : [])
+  TS = TS.concat([
+    ['No guarantees', 'We work to keep the app reliable, but it is provided "as is". Data kept on a phone can be lost (a cleared browser, a broken phone), so we cannot promise it will always be available or error-free. As far as the law allows, ' + C.company + ' is not responsible for indirect losses or for losses caused by things outside its control. Nothing here limits rights you have by law that cannot be limited.'],
+    ['Changes', 'We may update the app and these terms. If the terms change in a way that matters, the app asks you to agree again. If you do not agree, stop using the app and use "Delete everything on this phone" in Settings > Account.'],
+    ['Age', 'You must be at least ' + C.minAge + ' years old to make an account. If you are younger, ask a parent or guardian to help.'],
+    ['Law and contact', (C.country ? 'These terms follow the law of ' + C.country + '. ' : '') + (MAIL ? 'Questions: ' + MAIL + '.' : 'Questions: use the support contact where you got the app.')]]);
+  DOCS.terms = ['Terms of Use', NAME + ' is made by ' + C.company + '. By making an account or using the app you agree to these terms.', TS];
+
+  var PS = [
+    ['What the app keeps', 'Everything you enter: your daily logs, notes, goals, lists, photos you add, and your settings. Also your account: your email, a scrambled (hashed) version of your password, and a scrambled version of your recovery code. The real password is never stored.'],
+    ['Where it is kept', 'On this phone, in the browser\'s own storage for this app. It is not sent to us or anyone else. Anyone who can unlock your phone and open the browser tools could read it, so use a screen lock on your phone. The entries are not encrypted inside the browser storage.'],
+    ['What we do NOT do', 'No ads. No tracking or analytics. No selling or sharing of your information. No cookies used for tracking. The app makes no network requests of its own (a security setting on the page blocks them).']];
+  PS = PS.concat(billing() ? [['Payments', 'If you buy through the app, your email and a purchase record are shared with the billing service the app uses (Qonversion) and the payment company that takes your money (for example Stripe or Paddle), only to check that you have paid. We never see your card number. Those companies have their own privacy policies.']] : []);
+  PS = PS.concat([
+    ['Your choices and control', 'You hold your data, so you control it. Settings > Your data: download a backup, restore one, or erase all entries. Settings > Account: delete the account, or "Delete everything on this phone" to remove the logbook, the photos and the account in one go. Clearing the browser\'s site data does the same.'],
+    ['How long it is kept', 'For as long as you keep it on your phone. When you delete it, it is gone. We have no copy and cannot restore it.'],
+    ['Keeping it safe', 'Your password is stored only as a salted hash. The app logs you out after a period of no use or after being in the background, slows down repeated wrong passwords, and asks for your password again before you download or erase your data. These protect the logbook from someone who just picks up your phone. They cannot protect it if the phone itself is hacked or if someone has full control of your browser.'],
+    ['Children', 'The app is not meant for people under ' + C.minAge + '. We do not knowingly collect information from them, and since nothing is sent to us, there is nothing to collect.'],
+    ['Changes and contact', 'If this policy changes in a way that matters, the app asks you to read and agree again. ' + (MAIL ? 'Questions or requests: ' + MAIL + '.' : 'Questions: use the support contact where you got the app.')]]);
+  DOCS.privacy = ['Privacy Policy', 'This explains what ' + NAME + ' keeps about you and where. The short version: your logbook stays on your phone, and we do not run a server that receives it.', PS];
+
+  if(KIND === 'sober'){
+    DOCS.notice = ['Important notice', 'Please read this once.', [
+      ['Not medical advice', NAME + ' is a personal log. It is not medical advice, diagnosis or treatment, and it is not a replacement for a doctor, therapist, counsellor or a support group.'],
+      ['Stopping can be dangerous', 'Stopping alcohol, or some other substances or medicines, suddenly can be medically dangerous. Talk to a doctor or a health service before you stop or change anything.'],
+      ['If you are in crisis', 'If you feel you may harm yourself, or you are in danger, or you are having a medical emergency, call your local emergency number now, or reach a crisis line or someone you trust. Do not wait for the app.'],
+      ['Counting days', 'A streak is only a number. A slip does not erase your progress, and the app is not the judge of how you are doing.']]];
+  } else if(KIND === 'biz'){
+    DOCS.notice = ['Important notice', 'Please read this once.', [
+      ['Not financial advice', NAME + ' is a notebook for your own numbers and goals. It is not financial, tax, legal or investment advice. Talk to a qualified professional before you make decisions about money.'],
+      ['Your figures', 'The totals and charts only add up what you typed in. Check them before you rely on them.']]];
+  } else {
+    DOCS.notice = ['Important notice', 'Please read this once.', [
+      ['Not professional advice', NAME + ' is a personal log. Its tips and suggestions are general ideas, not medical, health, skin-care, nutrition or other professional advice. If you have a health concern, ask a qualified professional.'],
+      ['Your own limits', 'Go at your own pace. Stop anything that hurts or worries you.']]];
+  }
+  var ORDER = ['terms', 'privacy', 'notice'];
+
+  /* the body (without page chrome) so the sign-up screen can reuse it */
+  function body(id){
+    var d = DOCS[id]; if(!d) return '';
+    var h = '<p class="lg-intro">' + E(d[1]) + '</p>';
+    d[2].forEach(function(s){ h += '<h3 class="lg-h">' + E(s[0]) + '</h3><p class="lg-p">' + E(s[1]) + '</p>'; });
+    h += '<p class="lg-meta">Version ' + E(C.version) + (C.effective ? ' · ' + E(C.effective) : '') + (C.draft ? ' · DRAFT: have a lawyer review before release' : '') + '</p>';
+    return h;
+  }
+  var cur = null;
+  var LEGAL = { version:C.version, title:function(id){ return DOCS[id] ? DOCS[id][0] : ''; }, body:body, docs:ORDER, text:function(id){ return JSON.stringify(DOCS[id]); },
+    open:function(id){ cur = id || null; nav('legal'); render(); }, config:C };
+  window.LEGAL = LEGAL;
+
+  function page(){
+    var h = '';
+    if(cur && DOCS[cur]){
+      h += '<div class="field-card lg-card">' + body(cur) + '</div><button class="onboard-cta" onclick="LEGAL.open(null)">All documents ' + icon('chevright', 16) + '</button>';
+      app.innerHTML = renderTopbar(DOCS[cur][0], true) + '<div class="page-body">' + h + '</div><div class="gap-block"></div>';
+    } else {
+      ORDER.forEach(function(id){ h += '<button class="settings-row lg-row" data-legal="' + id + '" onclick="LEGAL.open(\'' + id + '\')"><div><div class="sr-name">' + E(DOCS[id][0]) + '</div><div class="sr-desc">' + E(DOCS[id][1]).slice(0, 90) + '</div></div></button>'; });
+      h = '<div class="settings-section">' + h + '</div>' + (MAIL ? '<p class="au-note">Questions: ' + E(MAIL) + '</p>' : '');
+      app.innerHTML = renderTopbar('Privacy & terms', true) + '<div class="page-body">' + h + '</div><div class="gap-block"></div>';
+    }
+  }
+
+  var baseR = render;
+  render = function(){
+    if(typeof ROUTE !== 'undefined' && ROUTE.view === 'legal' && DB.onboarded && !(window.AUTH && AUTH.locked && AUTH.locked())){ try{ clearSideRail(); }catch(e){} return page(); }
+    if(typeof ROUTE !== 'undefined' && ROUTE.view !== 'legal') cur = null;
+    var out = baseR.apply(this, arguments);
+    try{
+      if(typeof ROUTE !== 'undefined' && ROUTE.view === 'settings' && !document.querySelector('[data-legal-row]')){
+        var row = '<button class="settings-row" data-legal-row="1" onclick="LEGAL.open(null)"><div><div class="sr-name">Privacy & terms</div><div class="sr-desc">Terms of Use, Privacy Policy, important notice</div></div></button>';
+        var a = document.querySelector('[data-auth-row]');
+        if(a && a.parentNode) a.insertAdjacentHTML('afterend', row);
+        else { var set = document.querySelector('#app .c4-set'), at = null;
+          if(set) Array.prototype.forEach.call(set.querySelectorAll('.c4-sector'), function(s){ if(/Your data/i.test(s.textContent)) at = s; });
+          if(set && at) at.insertAdjacentHTML('beforebegin', '<div class="c4-sector"><span>Legal</span></div><div><div class="settings-section c4-group">' + row + '</div></div>');
+          else { var first = document.querySelector('#app .settings-section'); if(first) first.insertAdjacentHTML('beforebegin', '<div class="settings-section">' + row + '</div>'); } }
+      }
+    }catch(e){ if(window.console) console.error('legal row', e); }
+    return out;
+  };
+
+  var css = '.lg-card{padding:18px}.lg-intro{font-size:14px;line-height:1.5;color:var(--ink-soft);margin:0 0 6px}.lg-h{font-size:15px;font-weight:800;margin:16px 0 4px;color:var(--ink)}.lg-p{font-size:14px;line-height:1.55;color:var(--ink);margin:0}.lg-meta{font-size:12px;color:var(--muted);margin:18px 0 0}.lg-row{width:100%;text-align:left}';
+  var st = document.createElement('style'); st.id = 'lg-css'; st.textContent = css; document.head.appendChild(st);
+}catch(e){ if(window.console) console.error('legal patch', e); } })();
+</script>
+<script>
+/* =====================================================================================================
+   SECURITY CHECKS ON DATA COMING IN (every app, works with or without the login)
+
+   WHAT IT IS, IN PLAIN WORDS
+   A backup file is typed by a stranger as far as the app is concerned: someone could hand a person a doctored "backup".
+   Every time data is loaded (from storage or from a restored backup file) it is first COPIED through a filter that:
+     - removes quotes, brackets, & and $ from record keys and from every id-like value (they are pasted into HTML attributes)
+     - drops the three special keys that can be used to tamper with how JavaScript objects work (__proto__, constructor, prototype)
+     - refuses anything nested more than 30 levels deep, or any single text longer than 3 million characters (a normal photo is far less)
+   and a backup file bigger than 8 MB is refused before it is even read (the browser could not store it anyway).
+   The other half of the defence is that all text is escaped when drawn (esc()), and the page's Content-Security-Policy stops it
+   from sending anything out. qa/security_test.js attacks every app with hostile text to prove it.
+   ===================================================================================================== */
+(function(){ try{
+  var NO = { '__proto__':1, 'constructor':1, 'prototype':1 };
+  /* Names that are used as IDs (the "id" of a box, project, page... and the keys of every record) end up inside HTML attributes and onclick="..."
+     in many places. The app makes them itself and they are always plain letters/numbers, so any quote, bracket, & or $ in one can only mean a doctored
+     file: those characters are removed (the same way everywhere, so every reference to that id still matches). */
+  function safe(s){ var r = String(s).replace(/[<>"'`\\&$\u0000-\u001f\u007f]/g, ''); return r === '' && s !== '' ? '_' : r; }
+  function idKey(k){ return k === 'id' || /(^|[a-z])Id$/.test(k) || /_id$/.test(k) || k === 'ds' || k === 'status' || k === 'lane' || k === 'theme' || k === 'icon' || k === 'ico'; }
+  function clean(v, depth, key){
+    if(depth > 30) throw new Error('too deep');
+    if(typeof v === 'string'){ if(v.length > 3e6) throw new Error('too long'); return key && idKey(key) ? safe(v) : v; }
+    if(!v || typeof v !== 'object') return v;
+    var i, o;
+    if(Array.isArray(v)){ o = new Array(v.length); for(i = 0; i < v.length; i++) o[i] = clean(v[i], depth + 1, key); return o; }
+    o = {}; for(var k in v){ if(Object.prototype.hasOwnProperty.call(v, k) && !NO[k]) o[safe(k)] = clean(v[k], depth + 1, k); }
+    return o;
+  }
+  var baseNorm = normalizeDB;
+  normalizeDB = function(parsed){ return baseNorm.call(this, clean(parsed, 0)); };
+  var baseImp = handleImportFile;
+  handleImportFile = function(input){
+    var f = input && input.files && input.files[0];
+    if(f && f.size > 8e6){ input.value = ''; flashSaved('That file is too big to be a backup'); return; }
+    return baseImp.apply(this, arguments);
+  };
+  /* a photo is only ever a small data: picture the app made itself. Anything else (from a doctored backup) is shown as no photo. */
+  window.safePic = function(u){ return /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(String(u == null ? '' : u)) ? u : ''; };
+  window.SECURITY = { clean:clean, safePic:window.safePic };
+}catch(e){ if(window.console) console.error('security patch', e); } })();
+</script>
+<script>
+/* =====================================================================================================
+   SCREEN-READER NAMES + TAP SIZE (every app)
+
+   WHAT IT IS, IN PLAIN WORDS
+   A few controls had no name a screen reader (VoiceOver / TalkBack) could say: the - and + buttons next to a number, the number box
+   itself, and the big writing boxes. This gives each one a name taken from what is already on screen (the field's own heading).
+   It runs after every screen is drawn (a watcher on the page), never changes how anything looks, and never overwrites a name that exists.
+   ===================================================================================================== */
+(function(){ try{
+  function labelFor(el){
+    var card = el.closest('.field-card,.fc,.bx-field,.counter,.page-card,.card'), l = card && card.querySelector('.fc-label,.fw-label,label,.bx-l,.counter-label,h3,h2');
+    var t = l && (l.innerText || '').trim(); return t ? t.slice(0, 60) : '';
+  }
+  function fix(){
+    var i, a, els;
+    els = document.querySelectorAll('.counter-btn:not([aria-label])');
+    for(i = 0; i < els.length; i++){ var m = /,(-?\d+)\)/.exec(els[i].getAttribute('onclick') || ''); var n = m ? +m[1] : 0, f = labelFor(els[i]);
+      els[i].setAttribute('aria-label', (n < 0 ? 'Subtract ' + (-n) : 'Add ' + n) + (f ? ' · ' + f : '')); }
+    /* icon-only buttons: a name from their job */
+    els = document.querySelectorAll('button:not([aria-label]),[role=button]:not([aria-label])');
+    for(i = 0; i < els.length; i++){ var b = els[i]; if((b.innerText || '').trim() || b.getAttribute('title')) continue;
+      var nm = b.classList.contains('onboard-back') ? 'Back' : b.classList.contains('sheet-close') ? 'Close' : b.classList.contains('add-row-btn') ? 'Add' : '';
+      if(nm) b.setAttribute('aria-label', nm); }
+    els = document.querySelectorAll('input:not([aria-label]):not([type=hidden]):not([type=file]):not([type=checkbox]),textarea:not([aria-label]),select:not([aria-label])');
+    for(i = 0; i < els.length; i++){ var e = els[i]; if((e.labels && e.labels.length) || e.getAttribute('placeholder') || e.getAttribute('title')) continue;
+      a = labelFor(e) || (e.classList.contains('counter-val') ? 'Amount' : ''); if(a) e.setAttribute('aria-label', a); }
+  }
+  var raf = 0;
+  new MutationObserver(function(){ if(raf) return; raf = requestAnimationFrame(function(){ raf = 0; try{ fix(); }catch(e){} }); }).observe(document.body, { childList:true, subtree:true });
+  var st = document.createElement('style'); st.id = 'a11y-css'; st.textContent = '.focus-tt-link{position:relative;}.focus-tt-link::after{content:"";position:absolute;left:-8px;right:-8px;top:-8px;bottom:-8px;}'; document.head.appendChild(st);
+  fix();
+}catch(e){ if(window.console) console.error('a11y patch', e); } })();
 </script>
 <script>
 /* ============================================================
