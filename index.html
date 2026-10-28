@@ -16007,7 +16007,7 @@ if(LAYOUT_MQ){
     ['Law and contact', (C.country ? 'These terms follow the law of ' + C.country + '. ' : '') + (MAIL ? 'Questions: ' + MAIL + '.' : 'Questions: use the support contact where you got the app.')]]);
   function setSec(arr, head, text){ arr.forEach(function(x){ if(x[0] === head) x[1] = text; }); }
   if(CLOUDON){
-    setSec(TS, 'Your account', 'An account is optional. You need one only to buy, to restore a purchase, or to unlock what you bought on another phone. You sign in with an emailed link, with Sign in with Apple, or with Google, so there is no password to remember. You are responsible for who can open your email, your Apple account and your Google account. You can sign out at any time, and delete the account in Settings > Account. Your logbook entries stay on the phone either way: deleting the account does not delete them.');
+    setSec(TS, 'Your account', 'An account is optional. You need one only to buy, to restore a purchase, or to unlock what you bought on another phone. You sign in with an email and a password you choose, with Sign in with Apple, or with Google. You are responsible for keeping your password private and for who can open your email, your Apple account and your Google account. If you forget the password, use "Forgot password" on the sign-in screen. You can sign out at any time, and delete the account in Settings > Account. Your logbook entries stay on the phone either way: deleting the account does not delete them.');
     setSec(TS, 'Changes', 'We may update the app and these terms. If the terms change in a way that matters, the app asks you to agree again. If you do not agree, stop using the app, delete your account in Settings > Account, and use "Delete everything on this phone" if you want the logbook gone too.');
   }
   DOCS.terms = ['Terms of Use', NAME + ' is made by ' + C.company + '. By making an account or using the app you agree to these terms.', TS];
@@ -16024,12 +16024,12 @@ if(LAYOUT_MQ){
     ['Children', 'The app is not meant for people under ' + C.minAge + '. We do not knowingly collect information from them, and since nothing is sent to us, there is nothing to collect.'],
     ['Changes and contact', 'If this policy changes in a way that matters, the app asks you to read and agree again. ' + (MAIL ? 'Questions or requests: ' + MAIL + '.' : 'Questions: use the support contact where you got the app.')]]);
   if(CLOUDON){
-    setSec(PS, 'What the app keeps', 'Everything you enter: your daily logs, notes, goals, lists, photos you add, and your settings. These stay on this phone. If you make an account we also keep: your email address, a user ID, and sign-in records (when you signed in and with which method). If you sign in with Apple or Google, we receive only what they pass on, usually your email address.');
+    setSec(PS, 'What the app keeps', 'Everything you enter: your daily logs, notes, goals, lists, photos you add, and your settings. These stay on this phone. If you make an account we also keep: your email address, your password (held by our sign-in service; this app never stores it), a user ID, and sign-in records (when you signed in and with which method). If you sign in with Apple or Google, we receive only what they pass on, usually your email address.');
     setSec(PS, 'Where it is kept', 'Your logbook entries: only on this phone, in the browser\'s own storage for this app. They are never sent to us or anyone else, and are not encrypted inside the browser storage, so use a screen lock. Your account details: on the servers of our sign-in service (Supabase). Your sign-in is also remembered in the browser storage until you sign out.');
     setSec(PS, 'What we do NOT do', 'No ads. No tracking or analytics. No selling or sharing of your logbook. The app only contacts the internet when you sign in, manage your account, or buy or restore a purchase; a security setting on the page allows only those addresses.');
     setSec(PS, 'Your choices and control', 'You hold your logbook, so you control it. Settings > Your data: download a backup, restore one, or erase all entries. Settings > Account: sign out, or delete your account. Deleting the account removes your sign-in details from our sign-in service. It does not remove the logbook from the phone ("Delete everything on this phone" does that), and the billing and payment companies may keep purchase records as the law requires.');
     setSec(PS, 'How long it is kept', 'Logbook entries: for as long as you keep them on your phone. Account details: until you delete the account. We have no copy of your logbook and cannot restore it.');
-    setSec(PS, 'Keeping it safe', 'We do not store a password: you sign in by an emailed link, Apple or Google. Account data is protected by our sign-in service. Your logbook is protected only by your phone: use a screen lock. The entries are not encrypted inside the browser storage, so they cannot be protected from a hacked phone or someone with full control of your browser.');
+    setSec(PS, 'Keeping it safe', 'Your password is handled by our sign-in service and is never stored in this app or in your logbook. Use a password you do not use anywhere else. Account data is protected by our sign-in service. Your logbook is protected only by your phone: use a screen lock. The entries are not encrypted inside the browser storage, so they cannot be protected from a hacked phone or someone with full control of your browser.');
     setSec(PS, 'Children', 'The app is not meant for people under ' + C.minAge + '. We do not knowingly collect information from them. Logbook entries are never sent to us; account details are collected only from people who sign in.');
     PS.forEach(function(x){ if(x[0] === 'Payments') x[1] = 'If you buy through the app, your account\'s user ID (and your email, if the payment company asks for it) and a purchase record are shared with the billing service the app uses (Qonversion) and the payment company that takes your money (for example Stripe or Paddle), only to check that you have paid. We never see your card number. Those companies have their own privacy policies.'; });
   }
@@ -16114,7 +16114,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
    CLOUD ACCOUNT CORE (shared by the 7 apps and the website page)
 
    WHAT IT DOES, IN PLAIN WORDS
-   It signs a person in with Supabase Auth (email magic link, Sign in with Apple, Google) and tells the rest of the page
+   It signs a person in with Supabase Auth (email + password, Sign in with Apple, Google) and tells the rest of the page
    when that changes. It knows nothing about screens, billing or logbooks: the app layer (cloud_patch.js) and the web page
    listen to it with CLOUD.on(...).
    It stores NOTHING about logbook entries. The only thing kept for the account is the Supabase session, which
@@ -16126,9 +16126,13 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 
    SUPABASE CALLS USED (each one is in the Supabase JS reference, nothing else):
      createClient(url, anonKey, { auth:{ persistSession, autoRefreshToken, detectSessionInUrl } })
-     auth.signInWithOtp({ email, options:{ emailRedirectTo } })
+     auth.signUp({ email, password, options:{ emailRedirectTo } })
+     auth.signInWithPassword({ email, password })
+     auth.resetPasswordForEmail(email, { redirectTo })
+     auth.updateUser({ password })                      (after the reset link: event PASSWORD_RECOVERY)
+     auth.resend({ type:'signup', email, options:{ emailRedirectTo } })
      auth.signInWithOAuth({ provider:'apple'|'google', options:{ redirectTo } })
-     auth.onAuthStateChange((event, session) => ...)      events INITIAL_SESSION, SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED
+     auth.onAuthStateChange((event, session) => ...)      events INITIAL_SESSION, SIGNED_IN, SIGNED_OUT, TOKEN_REFRESHED, PASSWORD_RECOVERY, USER_UPDATED
      auth.getSession()   auth.signOut({ scope:'local' })
      deleting the account = POST to the delete-account serverless function (it holds the service-role key; see supabase/functions)
 
@@ -16139,15 +16143,16 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
    ===================================================================================================== */
 (function(){ try{
   var CFG = window.CLOUD_CONFIG || {};
-  var KEY_INTENT = (typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'cloud') + '-cloud-intent';   /* kept apart from the logbook data */
+  var KEY_INTENT = (typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'cloud') + '-cloud-intent';
+  var KEY_NEW = (typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'cloud') + '-cloud-newacct';   /* "this email just signed up here" (so a confirmation link later still counts as a brand-new account) */   /* kept apart from the logbook data */
   function real(v){ return typeof v === 'string' && v.length > 8 && !/^[A-Z][A-Z0-9]*(_[A-Z0-9]+)+$/.test(v); }
   function okEmail(s){ return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s); }
   function normEmail(s){ return String(s == null ? '' : s).trim().toLowerCase().slice(0, 120); }
   function ls(k, v){ try{ if(v === undefined) return localStorage.getItem(k); if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); }catch(e){} return null; }
 
   var listeners = [], client = null, session = null, started = false, sessKey = '';
-  var S = { phase:'init',      /* init | out | sending | sent | oauth | verifying | in | deleting */
-            email:'', sentTo:'', sentAt:0, err:null, busy:false, lastOAuth:'' };
+  var S = { phase:'init',      /* init | out | sending | sent | oauth | verifying | recovery | in | deleting */
+            email:'', sentTo:'', sentAt:0, sentKind:'', recovery:false, err:null, busy:false, lastOAuth:'' };
 
   function emit(name, info){ listeners.slice().forEach(function(f){ try{ f(name, info || {}); }catch(e){ if(window.console) console.error('cloud listener', e); } }); }
   function change(){ emit('change'); }
@@ -16163,7 +16168,12 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   function mapErr(error){
     var code = (error && (error.code || error.error_code)) || '', msg = String((error && (error.message || error.error_description)) || '');
     if(typeof navigator !== 'undefined' && navigator.onLine === false) return { code:'offline', msg:'You are offline. Connect to the internet and try again.' };
-    if(code === 'over_email_send_rate_limit' || (error && error.status === 429)) return { code:'rate', msg:'Too many emails for that address. Wait a minute, then try again.' };
+    if(code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit' || (error && error.status === 429)) return { code:'rate', msg:'Too many tries. Wait a minute, then try again.' };
+    if(code === 'invalid_credentials') return { code:'badLogin', msg:'Wrong email or password.' };
+    if(code === 'email_not_confirmed') return { code:'unconfirmed', msg:'Your email is not confirmed yet. Open the message we sent you and tap its link.' };
+    if(code === 'user_already_exists' || code === 'email_exists') return { code:'exists', msg:'That email already has an account. Use Sign in instead.' };
+    if(code === 'weak_password') return { code:'weak', msg:'That password is too weak. Use at least 8 characters, mixing letters and numbers.' };
+    if(code === 'same_password') return { code:'same', msg:'Choose a password you have not used before on this account.' };
     if(code === 'email_address_invalid') return { code:'badEmail', msg:'That email address is not accepted. Check it and try again.' };
     if(code === 'signup_disabled') return { code:'nosignup', msg:'New accounts are switched off right now.' };
     if(code === 'provider_disabled') return { code:'providerOff', msg:'That sign-in method is not switched on yet.' };
@@ -16191,13 +16201,17 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   var told = '';                                   /* the user id we already announced, so a repeated SIGNED_IN (Supabase sends one when the tab is focused again) does not restart anything */
   function setSession(s, event){
     session = s || null; var u = userOf(session);
+    if(u && (event === 'PASSWORD_RECOVERY' || S.recovery)){                     /* came back from the reset link: ask for the new password before anything else */
+      S.recovery = true; S.phase = 'recovery'; S.err = null; S.busy = false; change(); return;
+    }
     if(u){
       /* a brand-new account: created and first signed in within a minute of each other, and only minutes ago */
       var isNew = false; try{ isNew = !!(u.created_at && u.last_sign_in_at && Math.abs(new Date(u.last_sign_in_at) - new Date(u.created_at)) < 60000 && Date.now() - new Date(u.created_at) < 10*60000); }catch(e){}
+      try{ var pend = JSON.parse(ls(KEY_NEW) || 'null'); if(pend && pend.e && pend.e === normEmail(u.email) && Date.now() - pend.t < 24*3600000){ isNew = true; ls(KEY_NEW, null); } }catch(e){}   /* signed up here a moment (or a confirmation email) ago */
       S.phase = 'in'; S.err = null; S.busy = false; S.email = u.email || S.email;
       if(told !== u.id){ told = u.id; emit('in', { userId:u.id, email:u.email || '', isNew:isNew }); } else change();
     } else {
-      var was = S.phase; told = '';
+      var was = S.phase; told = ''; S.recovery = false;
       if(was === 'in' || was === 'deleting'){ S.phase = 'out'; emit('out', { why:was === 'deleting' ? 'deleted' : 'expired' }); }
       else if(was === 'init'){ S.phase = 'out'; change(); }
       else if(was === 'verifying' && event === 'INITIAL_SESSION'){ S.phase = 'out'; S.err = { code:'expired', msg:'That link did not work. Ask for a new one.' }; change(); }
@@ -16207,7 +16221,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 
   var CLOUD = {
     configured:configured, hosted:hosted, phase:function(){ return S.phase; }, state:function(){ return S; },
-    signedIn:function(){ return !!session; }, userId:function(){ var u = userOf(session); return u ? u.id : ''; }, email:function(){ var u = userOf(session); return u ? (u.email || '') : ''; },
+    signedIn:function(){ return !!session && S.phase !== 'recovery'; }, userId:function(){ var u = userOf(session); return u && S.phase !== 'recovery' ? u.id : ''; },   /* during the reset-password step the person is not "signed in" yet: billing must not be told */ email:function(){ var u = userOf(session); return u ? (u.email || '') : ''; },
     session:function(){ return session; }, okEmail:okEmail, normEmail:normEmail,
     on:function(f){ listeners.push(f); }, returnUrl:returnUrl,
     /* where to go after the sign-in finishes (kept across the page reload that Apple / Google / a link cause) */
@@ -16224,9 +16238,10 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
       }catch(e){ S.phase = 'out'; S.err = { code:'other', msg:'Sign-in could not start.' }; return; }
       var urlErr = readUrlError();
       if(urlErr) S.err = urlErr;
+      if(!urlErr && /(^|[#&])type=recovery(&|$)/.test(location.hash || '')) S.recovery = true;   /* the reset link: the address says so before supabase-js reads it */
       if(!urlErr && returningFromLink()){ S.phase = 'verifying'; S.verifyDeadline = Date.now() + 15000; setTimeout(function(){ if(S.phase === 'verifying'){ S.phase = 'out'; S.err = { code:'expired', msg:'That link did not work. Ask for a new one.' }; change(); } }, 15000); }
       /* Supabase says: do not call other Supabase methods inside this callback, so only record the session here */
-      client.auth.onAuthStateChange(function(event, s){ setTimeout(function(){ setSession(s, event); }, 0); });
+      client.auth.onAuthStateChange(function(event, s){ setTimeout(function(){ setSession(s, event); }, 0); });   /* PASSWORD_RECOVERY arrives here too: setSession turns it into the "choose a new password" step */
       /* Offline launch with an out-of-date access token: supabase-js keeps retrying the refresh and getSession() waits. Meanwhile the person IS
          signed in, so after 3 seconds we show the saved session (display only). The moment the network is back, supabase-js refreshes it
          by itself and its normal events take over. */
@@ -16239,21 +16254,69 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 
     clearError:function(){ S.err = null; },
 
-    /* ----- email magic link ----- */
-    signInEmail:function(email){
-      if(S.busy) return Promise.resolve({ ok:false, code:'busy' });                       /* a double tap does nothing */
-      email = normEmail(email); S.email = email;
-      if(!okEmail(email)){ S.err = { code:'badEmail', msg:'That email does not look right.' }; change(); return Promise.resolve({ ok:false, code:'badEmail' }); }
-      if(!hosted()){ S.err = { code:'file', msg:'Open the app from its web address to sign in. A saved file cannot receive the link.' }; change(); return Promise.resolve({ ok:false, code:'file' }); }
-      if(navigator.onLine === false){ S.err = mapErr({}); change(); return Promise.resolve({ ok:false, code:'offline' }); }
-      if(S.sentAt && Date.now() - S.sentAt < 60000 && S.sentTo === email){ S.phase = 'sent'; change(); return Promise.resolve({ ok:true, again:true }); }   /* Supabase allows one email a minute per address */
-      S.busy = true; S.err = null; S.phase = 'sending'; change();
-      return client.auth.signInWithOtp({ email:email, options:{ emailRedirectTo:returnUrl() } }).then(function(r){
-        S.busy = false;
-        if(r && r.error){ S.phase = 'out'; S.err = mapErr(r.error); change(); return { ok:false, code:S.err.code }; }
-        S.phase = 'sent'; S.sentTo = email; S.sentAt = Date.now(); change(); return { ok:true };
-      }, function(e){ S.busy = false; S.phase = 'out'; S.err = mapErr(e); change(); return { ok:false, code:S.err.code }; });
+    /* ----- email + password ----- */
+    pwOk:function(pw){ return typeof pw === 'string' && pw.length >= 8; },
+    _fail:function(r){ S.busy = false; S.phase = 'out'; S.err = mapErr(r); change(); return { ok:false, code:S.err.code }; },
+    _precheck:function(email, pw, needLink){
+      if(S.busy) return { ok:false, code:'busy' };                                      /* a double tap does nothing */
+      S.email = normEmail(email);
+      if(!okEmail(S.email)){ S.err = { code:'badEmail', msg:'That email does not look right.' }; change(); return { ok:false, code:'badEmail' }; }
+      if(pw !== null && !pw){ S.err = { code:'noPw', msg:'Type your password.' }; change(); return { ok:false, code:'noPw' }; }
+      if(needLink && !hosted()){ S.err = { code:'file', msg:'Open the app from its web address to do this. A saved file cannot receive the link.' }; change(); return { ok:false, code:'file' }; }
+      if(navigator.onLine === false){ S.err = mapErr({}); change(); return { ok:false, code:'offline' }; }
+      return null;
     },
+    signInPassword:function(email, password){
+      var bad = CLOUD._precheck(email, password, false); if(bad) return Promise.resolve(bad);
+      S.busy = true; S.err = null; S.phase = 'sending'; change();
+      return client.auth.signInWithPassword({ email:S.email, password:password }).then(function(r){
+        if(r && r.error) return CLOUD._fail(r.error);
+        S.busy = false; if(r && r.data && r.data.session) setSession(r.data.session, 'SIGNED_IN'); return { ok:true };
+      }, function(e){ return CLOUD._fail(e); });
+    },
+    signUp:function(email, password){
+      var bad = CLOUD._precheck(email, password, false); if(bad) return Promise.resolve(bad);
+      if(!CLOUD.pwOk(password)){ S.err = { code:'shortPw', msg:'Use at least 8 characters for the password.' }; change(); return Promise.resolve({ ok:false, code:'shortPw' }); }
+      S.busy = true; S.err = null; S.phase = 'sending'; change();
+      ls(KEY_NEW, JSON.stringify({ e:S.email, t:Date.now() }));
+      var opts = hosted() ? { emailRedirectTo:returnUrl() } : {};
+      return client.auth.signUp({ email:S.email, password:password, options:opts }).then(function(r){
+        if(r && r.error){ ls(KEY_NEW, null); return CLOUD._fail(r.error); }
+        var d = (r && r.data) || {};
+        if(d.session){ S.busy = false; setSession(d.session, 'SIGNED_IN'); return { ok:true, signedIn:true };   /* email confirmation is switched off in Supabase: signed in right away */ }
+        S.busy = false; S.phase = 'sent'; S.sentKind = 'confirm'; S.sentTo = S.email; S.sentAt = Date.now(); change(); return { ok:true, needsConfirm:true };   /* confirmation is on: wait for the link */
+      }, function(e){ ls(KEY_NEW, null); return CLOUD._fail(e); });
+    },
+    forgot:function(email){
+      var bad = CLOUD._precheck(email, null, true); if(bad) return Promise.resolve(bad);
+      if(S.sentAt && Date.now() - S.sentAt < 60000 && S.sentTo === S.email && S.sentKind === 'reset'){ S.phase = 'sent'; change(); return Promise.resolve({ ok:true, again:true }); }
+      S.busy = true; S.err = null; S.phase = 'sending'; change();
+      return client.auth.resetPasswordForEmail(S.email, { redirectTo:returnUrl() }).then(function(r){
+        if(r && r.error) return CLOUD._fail(r.error);
+        S.busy = false; S.phase = 'sent'; S.sentKind = 'reset'; S.sentTo = S.email; S.sentAt = Date.now(); change(); return { ok:true };
+      }, function(e){ return CLOUD._fail(e); });
+    },
+    resendConfirm:function(){
+      var bad = CLOUD._precheck(S.sentTo || S.email, null, true); if(bad) return Promise.resolve(bad);
+      var em = S.email; S.busy = true; S.err = null; S.phase = 'sending'; change();
+      return client.auth.resend({ type:'signup', email:em, options:{ emailRedirectTo:returnUrl() } }).then(function(r){
+        if(r && r.error) return CLOUD._fail(r.error);
+        S.busy = false; S.phase = 'sent'; S.sentKind = 'confirm'; S.sentTo = em; S.sentAt = Date.now(); change(); return { ok:true };
+      }, function(e){ return CLOUD._fail(e); });
+    },
+    /* after the reset link: the person is signed in by the link; this sets the new password */
+    setNewPassword:function(password){
+      if(S.busy || S.phase !== 'recovery') return Promise.resolve({ ok:false, code:'busy' });
+      if(!CLOUD.pwOk(password)){ S.err = { code:'shortPw', msg:'Use at least 8 characters for the password.' }; change(); return Promise.resolve({ ok:false, code:'shortPw' }); }
+      if(navigator.onLine === false){ S.err = mapErr({}); change(); return Promise.resolve({ ok:false, code:'offline' }); }
+      S.busy = true; S.err = null; change();
+      return client.auth.updateUser({ password:password }).then(function(r){
+        S.busy = false;
+        if(r && r.error){ S.err = mapErr(r.error); change(); return { ok:false, code:S.err.code }; }
+        S.recovery = false; setSession((r && r.data && r.data.user && session) ? Object.assign({}, session, { user:r.data.user }) : session, 'USER_UPDATED'); return { ok:true };
+      }, function(e){ S.busy = false; S.err = mapErr(e); change(); return { ok:false, code:S.err.code }; });
+    },
+    cancelRecovery:function(){ return CLOUD.signOut(); },
     resendWait:function(){ return S.sentAt ? Math.max(0, 60 - Math.floor((Date.now() - S.sentAt) / 1000)) : 0; },
     backToEmail:function(){ S.phase = 'out'; S.err = null; change(); },
 
@@ -16273,7 +16336,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
     /* ----- sign out (this device only) ----- */
     signOut:function(){
       if(!client) return Promise.resolve();
-      var done = function(){ var had = !!session; session = null; told = ''; S.phase = 'out'; S.busy = false; if(had) emit('out', { why:'user' }); else change(); };
+      var done = function(){ var had = !!session; session = null; told = ''; S.recovery = false; S.phase = 'out'; S.busy = false; if(had) emit('out', { why:'user' }); else change(); };
       return client.auth.signOut({ scope:'local' }).then(done, done);
     },
 
@@ -16293,7 +16356,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 }catch(e){ if(window.console) console.error('cloud core', e); } })();
 </script><script>
 /* =====================================================================================================
-   ACCOUNT SCREENS (every app): sign in, check your email, signing in, error, account.   Needs cloud_core.js (window.CLOUD).
+   ACCOUNT SCREENS (every app): sign in, create account, forgot password, check your email, choose a new password, signing in, error, account.   Needs cloud_core.js (window.CLOUD).
 
    WHAT IT IS, IN PLAIN WORDS
    An account is OPTIONAL. The logbook works fully offline and signed out. A person is asked to sign in only to
@@ -16309,7 +16372,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   var TESTFLAVOR = false;
   function E(s){ return esc(String(s==null ? '' : s)); }
   var RIGHTS = (window.LEGAL && LEGAL.rights) || ('© ' + new Date().getFullYear() + ' All rights reserved.');
-  var U = { open:false, tab:'signin', agree:false, email:'', back:null, confirmDel:false, delBusy:false, note:'' };   /* UI-only state */
+  var U = { open:false, tab:'signin', agree:false, email:'', pw:'', showPw:false, back:null, confirmDel:false, delBusy:false, note:'' };   /* UI-only state. tab: signin | signup | forgot. pw is kept only while the screen is open (so a typo does not wipe it) */
   var ON = C.configured();
 
   /* ---------- the glue to billing + routing ---------- */
@@ -16322,12 +16385,12 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   C.on(function(name, info){
     try{
       if(name === 'in'){
-        var wasOpen = U.open; U.open = false; U.confirmDel = false; U.note = '';
+        var wasOpen = U.open; U.open = false; U.confirmDel = false; U.note = ''; U.pw = ''; U.showPw = false;
         if(sub() && sub().linkUser) sub().linkUser(info.userId);                       /* identify(user id) then entitlements() */
         if(wasOpen || info.isNew) goAfter(info);
         try{ flashSaved('Signed in as ' + (info.email || 'your account')); }catch(e){}
       } else if(name === 'out'){
-        U.open = false; U.confirmDel = false; U.delBusy = false;
+        U.open = false; U.confirmDel = false; U.delBusy = false; U.pw = '';
         if(sub() && sub().unlinkUser) sub().unlinkUser();                                // Qonversion logout(), back to anonymous
         try{ flashSaved(info.why === 'deleted' ? 'Account deleted. Your logbook is still on this phone.' : (info.why === 'expired' ? 'You were signed out. Sign in again when you need to.' : 'Signed out. Your logbook is still on this phone.')); }catch(e){}
       }
@@ -16337,7 +16400,9 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 
   /* ---------- screens ---------- */
   function field(id, label, type, auto, v){
-    return '<label class="au-f"><span>'+E(label)+'</span><div class="au-in"><input class="textline" id="'+id+'" type="'+type+'" autocomplete="'+auto+'" inputmode="email" autocapitalize="off" spellcheck="false" value="'+E(v||'')+'"></div></label>';
+    var isPw = type === 'password';
+    return '<label class="au-f"><span>'+E(label)+'</span><div class="au-in"><input class="textline" id="'+id+'" type="'+(isPw && U.showPw ? 'text' : type)+'" autocomplete="'+auto+'"'+(isPw ? ' autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="128"' : ' inputmode="email" autocapitalize="off" spellcheck="false"')+' value="'+E(v||'')+'">'
+      + (isPw ? '<button type="button" class="au-eye" id="au-eye" aria-label="'+(U.showPw ? 'Hide password' : 'Show password')+'" aria-pressed="'+(U.showPw ? 'true' : 'false')+'" onclick="CLOUDUI.eye()">'+(U.showPw ? 'Hide' : 'Show')+'</button>' : '')+'</div></label>';
   }
   function shell(title, sub_, body, cta, action, footer, dis){
     app.innerHTML = '<div class="onboard-screen au-screen"><div class="onboard-top"><button type="button" class="onboard-back" onclick="CLOUDUI.close()" aria-label="Back">'+icon('chevleft',18)+'</button><span></span></div><div class="onboard-body">'
@@ -16355,20 +16420,27 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   function provBtn(p, label){ return '<button type="button" class="onboard-cta" style="background:transparent;color:var(--ink);border:1.5px solid var(--line);box-shadow:none;margin:8px 0 0;" onclick="CLOUDUI.oauth(\''+p+'\')">'+E(label)+'</button>'; }
 
   function paint(){
-    var S = C.state(), ph = S.phase, signup = U.tab === 'signup';
+    var S = C.state(), ph = S.phase, signup = U.tab === 'signup', forgot = U.tab === 'forgot';
     if(ph === 'verifying' || ph === 'oauth' || ph === 'init')
       return shell(ph === 'oauth' ? 'Opening ' + (S.lastOAuth === 'apple' ? 'Apple' : 'Google') + '…' : 'Signing you in…', ph === 'oauth' ? 'You will come back here in a moment.' : 'One moment.', '<div class="au-note" style="margin-top:24px;">If nothing happens, go back and try again.</div>', '', '', link('Back', 'CLOUDUI.cancelWait()'));
-    if(ph === 'sent' || ph === 'sending'){
-      var w = C.resendWait();
-      return shell('Check your email', ph === 'sending' ? 'Sending…' : 'We sent a sign-in link to <b>'+E(S.sentTo || S.email)+'</b>. Open it on this phone and you will come straight back here.',
-        '<p class="au-note">The link works once and runs out after a while. Look in spam if you do not see it. On an iPhone, if the link opens in Safari instead of this app, use that Safari page.</p>',
-        'I opened the link', 'CLOUDUI.waitLink()', link('Wrong email? Change it', 'CLOUDUI.change()') + link(w ? 'Send again in ' + w + 's' : 'Send the link again', w ? '' : 'CLOUDUI.resend()'), ph === 'sending');
+    if(ph === 'sending')
+      return shell(forgot ? 'Sending…' : (signup ? 'Creating your account…' : 'Signing you in…'), 'One moment.', '', '', '', '', true);
+    if(ph === 'recovery')
+      return shell('Choose a new password', 'Pick a new password for <b>'+E(C.email())+'</b>. At least 8 characters.', field('au-pw', 'New password', 'password', 'new-password', U.pw), 'Save password', 'CLOUDUI.newPw()', link('Cancel', 'CLOUDUI.cancelRecovery()'));
+    if(ph === 'sent'){
+      var w = C.resendWait(), reset = S.sentKind === 'reset';
+      return shell('Check your email', reset ? 'If an account exists for <b>'+E(S.sentTo || S.email)+'</b>, we sent a link to reset the password. Open it on this phone and you can choose a new one.' : 'We sent a confirmation link to <b>'+E(S.sentTo || S.email)+'</b>. Tap it to finish creating your account and you come straight back here signed in.',
+        '<p class="au-note">The link works once and runs out after a while. Look in spam if you do not see it.'+(reset ? '' : ' Already have an account with this email? Go back and sign in.')+' On an iPhone, if the link opens in Safari instead of this app, finish in that Safari page.</p>',
+        reset ? 'Back to sign in' : 'I confirmed, sign me in', 'CLOUDUI.afterEmail()', link('Wrong email? Change it', 'CLOUDUI.change()') + link(w ? 'Send again in ' + w + 's' : 'Send the link again', w ? '' : 'CLOUDUI.resend()'), false);
     }
     if(S.err && S.err.code === 'expired')
-      return shell('That link did not work', E(S.err.msg), field('au-email', 'Email', 'email', 'username', S.email || U.email), 'Send me a new link', 'CLOUDUI.email()', link('Back', 'CLOUDUI.close()'));
-    var body = tabs() + field('au-email', 'Email', 'email', 'username', U.email || S.email) + (signup ? '<label class="au-check"><input type="checkbox" id="au-agree" '+(U.agree ? 'checked' : '')+' onchange="CLOUDUI.agree(this)"> <span>I am at least '+E((window.LEGAL && LEGAL.config.minAge) || 13)+' and I agree to the '+legalLinks()+'.</span></label>' : '<p class="au-note" style="text-align:left;margin:4px 0 0;">By continuing you agree to the '+legalLinks()+'.</p>')
+      return shell('That link did not work', E(S.err.msg), field('au-email', 'Email', 'email', 'username', S.email || U.email), 'Email me a new reset link', 'CLOUDUI.forgotNow()', link('Back to sign in', 'CLOUDUI.tab(\'signin\')'));
+    if(forgot)
+      return shell('Reset your password', 'Type your email. We send a link that lets you choose a new password.', field('au-email', 'Email', 'email', 'username', U.email || S.email), 'Email me a reset link', 'CLOUDUI.submit()', link('Back to sign in', 'CLOUDUI.tab(\'signin\')'));
+    var body = tabs() + field('au-email', 'Email', 'email', 'username', U.email || S.email) + field('au-pw', 'Password', 'password', signup ? 'new-password' : 'current-password', U.pw)
+      + (signup ? '<p class="au-note" style="text-align:left;margin:-4px 0 0;">At least 8 characters.</p><label class="au-check"><input type="checkbox" id="au-agree" '+(U.agree ? 'checked' : '')+' onchange="CLOUDUI.agree(this)"> <span>I am at least '+E((window.LEGAL && LEGAL.config.minAge) || 13)+' and I agree to the '+legalLinks()+'.</span></label>' : link('Forgot password?', 'CLOUDUI.tab(\'forgot\')') + '<p class="au-note" style="text-align:left;margin:4px 0 0;">By continuing you agree to the '+legalLinks()+'.</p>')
       + '<div class="au-note" style="margin:14px 0 2px;">or</div>' + provBtn('apple', 'Continue with Apple') + provBtn('google', 'Continue with Google');
-    shell(signup ? 'Create your account' : 'Sign in', signup ? 'No password. We email you a link, or you use Apple or Google. You only need an account to buy or restore a plan.' : 'No password. We email you a link, or you use Apple or Google.', body, signup ? 'Email me a link' : 'Email me a link', 'CLOUDUI.email()', link('Not now', 'CLOUDUI.close()'), false);
+    shell(signup ? 'Create your account' : 'Sign in', signup ? 'Choose a password, or use Apple or Google. You only need an account to buy or restore a plan.' : 'Use your email and password, or Apple or Google.', body, signup ? 'Create account' : 'Sign in', 'CLOUDUI.submit()', link('Not now', 'CLOUDUI.close()'), false);
   }
 
   function accountPage(){
@@ -16400,19 +16472,28 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   function val(id){ var e = document.getElementById(id); return e ? e.value : ''; }
   var UI = window.CLOUDUI = {
     on:function(){ return ON; },
-    open:function(intent, tab){ if(!ON) return; if(intent) C.setIntent(intent); U.open = true; U.tab = tab || 'signin'; C.clearError(); if(C.phase() === 'sent' || C.phase() === 'sending'){} else if(C.phase() !== 'in') C.backToEmail(); render(); },
-    close:function(){ U.open = false; C.clearError(); if(C.phase() === 'sent') C.backToEmail(); render(); },
-    tab:function(t){ U.email = val('au-email') || U.email; U.tab = t; C.clearError(); render(); },
+    open:function(intent, tab){ if(!ON) return; if(intent) C.setIntent(intent); U.open = true; U.tab = tab || 'signin'; C.clearError(); if(C.phase() === 'sent' || C.phase() === 'sending' || C.phase() === 'recovery'){} else if(C.phase() !== 'in') C.backToEmail(); render(); },
+    close:function(){ if(C.phase() === 'recovery'){ C.cancelRecovery(); return; } U.open = false; U.pw = ''; C.clearError(); if(C.phase() === 'sent') C.backToEmail(); render(); },
+    tab:function(t){ U.email = val('au-email') || U.email; U.tab = t; U.pw = ''; U.showPw = false; C.clearError(); if(C.phase() === 'out' || C.phase() === 'sent') C.backToEmail(); render(); },
     agree:function(el){ U.agree = !!el.checked; },
-    email:function(){ U.email = val('au-email'); if(U.tab === 'signup' && !U.agree && !C.state().err){ /* the box is on the sign-up tab only */ }
-      if(U.tab === 'signup' && !(document.getElementById('au-agree')||{}).checked && C.phase() !== 'sent'){ C.state().err = { code:'agree', msg:'Please tick the box to agree to the Terms and Privacy Policy.' }; var e = document.getElementById('au-err'); if(e) e.textContent = C.state().err.msg; return; }
-      C.signInEmail(U.email); },
+    eye:function(){ U.email = val('au-email') || U.email; U.pw = val('au-pw'); U.showPw = !U.showPw; render(); var e = document.getElementById('au-pw'); if(e) e.focus(); },
+    /* the main button: sign in, create account or ask for a reset link, by the tab that is showing */
+    submit:function(){
+      U.email = val('au-email'); if(document.getElementById('au-pw')) U.pw = val('au-pw');
+      if(U.tab === 'forgot'){ C.forgot(U.email); return; }
+      if(U.tab === 'signup'){
+        if(!(document.getElementById('au-agree')||{}).checked){ C.state().err = { code:'agree', msg:'Please tick the box to agree to the Terms and Privacy Policy.' }; var e = document.getElementById('au-err'); if(e) e.textContent = C.state().err.msg; return; }
+        C.signUp(U.email, U.pw); return; }
+      C.signInPassword(U.email, U.pw); },
+    forgotNow:function(){ U.email = val('au-email') || U.email; U.tab = 'forgot'; C.clearError(); C.forgot(U.email); },
+    newPw:function(){ U.pw = val('au-pw'); C.setNewPassword(U.pw); },
+    cancelRecovery:function(){ U.pw = ''; C.cancelRecovery(); },
+    afterEmail:function(){ var s = C.state(); U.email = s.sentTo || s.email; U.tab = 'signin'; U.pw = ''; C.backToEmail(); },
     oauth:function(p){ if(U.tab === 'signup' && !(document.getElementById('au-agree')||{}).checked){ C.state().err = { code:'agree', msg:'Please tick the box to agree to the Terms and Privacy Policy.' }; var e = document.getElementById('au-err'); if(e) e.textContent = C.state().err.msg; return; } U.email = val('au-email') || U.email; C.signInOAuth(p); },
-    change:function(){ C.backToEmail(); },
-    resend:function(){ if(C.resendWait()) return; var s = C.state(); s.sentAt = 0; C.signInEmail(s.sentTo || s.email); },
-    waitLink:function(){ try{ flashSaved('Open the link in the email. This screen continues by itself.'); }catch(e){} },
+    change:function(){ U.tab = C.state().sentKind === 'reset' ? 'forgot' : 'signup'; C.backToEmail(); },
+    resend:function(){ if(C.resendWait()) return; var s = C.state(); if(s.sentKind === 'reset'){ s.sentAt = 0; C.forgot(s.sentTo || s.email); } else C.resendConfirm(); },
     cancelWait:function(){ C.backToEmail(); },
-    legal:function(d){ U.email = val('au-email') || U.email; U.back = true; try{ LEGAL.open(d); }catch(e){} },
+    legal:function(d){ U.email = val('au-email') || U.email; if(document.getElementById('au-pw')) U.pw = val('au-pw'); U.back = true; try{ LEGAL.open(d); }catch(e){} },
     out:function(){ var b = document.getElementById('cl-out'); if(b) b.disabled = true; C.signOut(); },
     askDelete:function(){ U.confirmDel = true; render(); },
     cancelDelete:function(){ if(U.delBusy) return; U.confirmDel = false; closeDialog(); },
@@ -16427,6 +16508,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   var baseR = render;
   render = function(){
     var onbRoute = typeof ROUTE !== 'undefined' ? ROUTE.view : '';
+    if(ON && C.phase() === 'recovery') U.open = true;   /* the reset link always lands on its own screen */
     if(ON && (U.open || C.phase() === 'verifying' || C.phase() === 'oauth') && !(onbRoute === 'legal')){ try{ clearSideRail(); }catch(e){} if(C.phase() === 'in'){ U.open = false; } else { return paint(); } }
     if(ON && onbRoute === 'account' && DB.onboarded){ try{ clearSideRail(); }catch(e){} accountPage(); return; }
     var out = baseR.apply(this, arguments);
@@ -16451,12 +16533,12 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
     }catch(e){ if(window.console) console.error('cloud rows', e); }
     return out;
   };
-  document.addEventListener('keydown', function(e){ if(e.key === 'Enter' && e.target && e.target.id === 'au-email'){ var b = document.getElementById('au-go'); if(b && !b.disabled){ e.preventDefault(); b.click(); } } });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Enter' && e.target && (e.target.id === 'au-email' || e.target.id === 'au-pw')){ var b = document.getElementById('au-go'); if(b && !b.disabled){ e.preventDefault(); b.click(); } } });
 
   /* the same look as the sign-in screens already in the apps (copied, so it works even though the local login is off) */
   var css = '.au-screen .onboard-body{padding-top:4px}.au-mark{width:56px;height:56px;border-radius:18px;background:var(--accent);color:var(--accent-ink);display:flex;align-items:center;justify-content:center;margin:6px 0 16px;box-shadow:var(--shadow-lg)}'
     + '.au-f{display:block;margin:0 0 12px}.au-f>span{display:block;font-size:12.5px;font-weight:800;color:var(--ink-soft);margin:0 0 5px}'
-    + '.au-in{position:relative}.au-in .textline{width:100%;box-sizing:border-box;min-height:52px;padding:0 14px;background:var(--surface-2);border:1.5px solid var(--line);border-radius:14px;font-size:16px;color:var(--ink)}.au-in .textline:focus{outline:none;border-color:var(--accent)}'
+    + '.au-in{position:relative}.au-eye{position:absolute;right:6px;top:50%;transform:translateY(-50%);min-height:40px;min-width:56px;border:0;background:transparent;color:var(--accent);font:inherit;font-weight:800;font-size:13px;cursor:pointer}.au-in .textline[type=password],.au-in #au-pw{padding-right:64px}.au-in .textline{width:100%;box-sizing:border-box;min-height:52px;padding:0 14px;background:var(--surface-2);border:1.5px solid var(--line);border-radius:14px;font-size:16px;color:var(--ink)}.au-in .textline:focus{outline:none;border-color:var(--accent)}'
     + '.au-err{min-height:20px;margin:2px 0 8px;font-size:13px;font-weight:700;color:var(--red,#C0463C)}.au-link{display:block;width:100%;min-height:44px;margin-top:6px;border:0;background:transparent;color:var(--accent);font:inherit;font-weight:800;font-size:14px;cursor:pointer}'
     + '.au-note{font-size:12px;line-height:1.45;color:var(--muted);text-align:center;margin:8px 8px 0}.au-check{display:flex;align-items:flex-start;gap:10px;margin:14px 2px 6px;font-size:14px;font-weight:700;color:var(--ink)}.au-check input{width:22px;height:22px;accent-color:var(--accent);margin-top:1px;flex:none}.au-check span{line-height:1.4}'
     + '.au-danger{background:transparent!important;color:#C0463C!important;border:1.5px solid #C0463C!important}'
@@ -16465,7 +16547,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   var st = document.createElement('style'); st.id = 'cl-css'; st.textContent = css; document.head.appendChild(st);
 
   /* open the link/provider answer as early as possible, then draw */
-  if(ON){ if(C.phase() === 'init' && /(^|[#&?])(access_token|code|error)=/.test((location.hash || '') + (location.search || ''))) U.open = true; C.start(); }
+  if(ON){ if(C.phase() === 'init' && /(^|[#&?])((access_token|code|error)=|type=recovery)/.test((location.hash || '') + (location.search || ''))) U.open = true; C.start(); }
 }catch(e){ if(window.console) console.error('cloud patch', e); } })();
 </script>
 <script>
