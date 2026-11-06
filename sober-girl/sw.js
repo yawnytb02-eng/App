@@ -1,5 +1,5 @@
-/* sober-girl service worker — build a265e78e */
-const CACHE = 'sober-girl-a265e78e';
+/* sober-girl service worker — build abd0e3a2 */
+const CACHE = 'sober-girl-abd0e3a2';
 const SHELL = ["./", "index.html", "manifest.webmanifest", "fonts.css", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "fonts/quicksand-latin-400-normal.woff2", "fonts/quicksand-latin-500-normal.woff2", "fonts/quicksand-latin-600-normal.woff2", "fonts/quicksand-latin-ext-400-normal.woff2", "fonts/quicksand-latin-ext-500-normal.woff2", "fonts/quicksand-latin-ext-600-normal.woff2", "fonts/quicksand-vietnamese-400-normal.woff2", "fonts/quicksand-vietnamese-500-normal.woff2", "fonts/quicksand-vietnamese-600-normal.woff2"];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

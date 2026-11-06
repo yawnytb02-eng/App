@@ -1,5 +1,5 @@
-/* hustler service worker — build f08146e3 */
-const CACHE = 'hustler-f08146e3';
+/* hustler service worker — build 52908345 */
+const CACHE = 'hustler-52908345';
 const SHELL = ["./", "index.html", "manifest.webmanifest", "fonts.css", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "fonts/space-grotesk-latin-400-normal.woff2", "fonts/space-grotesk-latin-500-normal.woff2", "fonts/space-grotesk-latin-600-normal.woff2", "fonts/space-grotesk-latin-700-normal.woff2", "fonts/space-grotesk-latin-ext-400-normal.woff2", "fonts/space-grotesk-latin-ext-500-normal.woff2", "fonts/space-grotesk-latin-ext-600-normal.woff2", "fonts/space-grotesk-latin-ext-700-normal.woff2", "fonts/space-grotesk-vietnamese-400-normal.woff2", "fonts/space-grotesk-vietnamese-500-normal.woff2", "fonts/space-grotesk-vietnamese-600-normal.woff2", "fonts/space-grotesk-vietnamese-700-normal.woff2"];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
