@@ -680,7 +680,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
       + '<ul class="grid" style="margin-top:16px">' + APPS.map(function(a, i){ return tile(a, false, i); }).join('') + CUSTOM.map(function(c, i){ return ctile(c, n + i); }).join('')
       + '<li style="--i:'+(n + CUSTOM.length)+'"><button type="button" class="app new" data-act="make" style="--c:#C2573A"><span class="ic cic">'+glyph('sparkle')+'</span><b>Make your own</b><small>Pick the name, colour and look</small></button></li></ul>'
       + '<div class="two"><button type="button" class="ghost" data-act="move">Move data between logbooks</button><button type="button" class="ghost" data-act="legal" data-doc="terms">Terms &amp; privacy</button></div>' + who
-      + '<p class="foot">Inside a logbook, Settings &gt; Switch logbook brings you back here, and Settings &gt; Download backup keeps a copy.</p>';
+      + '<p class="foot">Inside a logbook, Settings &gt; Switch logbook brings you back here, and Settings &gt; Download backup keeps a copy.</p><p class="foot" style="text-align:center;opacity:.6">Build 07 Nov 03:55 UTC</p>';
   }
 
   /* ---------- Make your own ---------- */

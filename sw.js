@@ -1,5 +1,5 @@
-/* logbooks front door service worker, build b94b4448 */
-const CACHE = 'logbooks-door-b94b4448';
+/* logbooks front door service worker, build d3c0801d */
+const CACHE = 'logbooks-door-d3c0801d';
 self.addEventListener('install', e => { e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./','manifest.webmanifest','icons/icon-192.png','icons/icon-512.png'])).then(() => self.skipWaiting())); });
 self.addEventListener('activate', e => { e.waitUntil(caches.keys().then(ks => Promise.all(ks.filter(k => k.startsWith('logbooks-door-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', e => {
