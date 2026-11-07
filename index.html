@@ -388,7 +388,19 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
       else if(a === 'create' || a === 'have'){ markSeen(); host.remove(); var t = document.getElementById(a === 'create' ? 'au-create' : 'au-have'); if(t) t.click(); }
     });
     sync();
-    try{ var v = root.querySelector('.nk-vid'); v.muted = true; var pr = v.play(); if(pr && pr.catch) pr.catch(function(){}); }catch(e){}
+    try{
+      var v = root.querySelector('.nk-vid'); v.muted = true; v.defaultMuted = true; v.playsInline = true; v.setAttribute('webkit-playsinline', '');
+      var tries = 0;
+      function go(){ if(!v.isConnected || !v.paused) return; try{ v.muted = true; var pr = v.play(); if(pr && pr.catch) pr.catch(function(){}); }catch(e){} }
+      function kick(){ go(); }
+      /* iOS may refuse autoplay at first (Low Power Mode, or video inserted after load). Retry on every ready signal and on the first touch. */
+      ['loadeddata','canplay','canplaythrough','stalled','suspend','pause'].forEach(function(ev){ v.addEventListener(ev, function(){ if(ev === 'pause' && document.hidden) return; setTimeout(go, 50); }); });
+      ['touchstart','pointerdown','click','scroll'].forEach(function(ev){ root.addEventListener(ev, kick, { passive:true, capture:true }); });
+      document.addEventListener('visibilitychange', function(){ if(!document.hidden) go(); });
+      window.addEventListener('pageshow', go);
+      var iv = setInterval(function(){ if(!v.isConnected || ++tries > 20){ clearInterval(iv); return; } go(); }, 500);
+      v.load(); go();
+    }catch(e){}
   }
   /* Who sees what: a brand-new visitor gets the welcome first, then sign-up, then setup, then the app.
      Anyone who has ever been signed in on this device (timed-out sessions too) skips straight to sign-in. */
