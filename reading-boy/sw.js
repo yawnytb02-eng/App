@@ -1,5 +1,5 @@
-/* reading-boy service worker — build 3a2d1153 */
-const CACHE = 'reading-boy-3a2d1153';
+/* reading-boy service worker — build 0a2ab31e */
+const CACHE = 'reading-boy-0a2ab31e';
 const SHELL = ["./", "index.html", "manifest.webmanifest", "fonts.css", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "fonts/lora-latin-500-normal.woff2", "fonts/lora-latin-600-normal.woff2", "fonts/lora-latin-ext-500-normal.woff2", "fonts/lora-latin-ext-600-normal.woff2", "fonts/lora-vietnamese-500-normal.woff2", "fonts/lora-vietnamese-600-normal.woff2", "fonts/work-sans-latin-400-normal.woff2", "fonts/work-sans-latin-500-normal.woff2", "fonts/work-sans-latin-600-normal.woff2", "fonts/work-sans-latin-700-normal.woff2", "fonts/work-sans-latin-ext-400-normal.woff2", "fonts/work-sans-latin-ext-500-normal.woff2", "fonts/work-sans-latin-ext-600-normal.woff2", "fonts/work-sans-latin-ext-700-normal.woff2", "fonts/work-sans-vietnamese-400-normal.woff2", "fonts/work-sans-vietnamese-500-normal.woff2", "fonts/work-sans-vietnamese-600-normal.woff2", "fonts/work-sans-vietnamese-700-normal.woff2"];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

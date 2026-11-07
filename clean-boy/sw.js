@@ -1,5 +1,5 @@
-/* clean-boy service worker — build c3f9edcc */
-const CACHE = 'clean-boy-c3f9edcc';
+/* clean-boy service worker — build 0666ee3c */
+const CACHE = 'clean-boy-0666ee3c';
 const SHELL = ["./", "index.html", "manifest.webmanifest", "fonts.css", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "fonts/manrope-latin-400-normal.woff2", "fonts/manrope-latin-500-normal.woff2", "fonts/manrope-latin-600-normal.woff2", "fonts/manrope-latin-ext-400-normal.woff2", "fonts/manrope-latin-ext-500-normal.woff2", "fonts/manrope-latin-ext-600-normal.woff2", "fonts/manrope-vietnamese-400-normal.woff2", "fonts/manrope-vietnamese-500-normal.woff2", "fonts/manrope-vietnamese-600-normal.woff2"];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
