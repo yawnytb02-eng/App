@@ -269,7 +269,6 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 <script>"serviceWorker"in navigator&&/^https?:$/.test(location.protocol)&&window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js",{scope:"./"}).catch(function(){})});</script>
 <style id="nk-css">
 @font-face{font-family:'Manrope';font-style:normal;font-display:swap;font-weight:700;src:url(fonts/manrope-latin-700-normal.woff2) format("woff2")}
-@font-face{font-family:'Manrope';font-style:normal;font-display:swap;font-weight:800;src:url(fonts/manrope-latin-800-normal.woff2) format("woff2")}
 .nk{--ink:#1B1712;--cream:#F7F2E7;--gold:#C9922F;--deep:#835F1F;position:fixed;inset:0;z-index:80;background:var(--ink);color:var(--cream);font-family:'Manrope',-apple-system,sans-serif;overflow:hidden;-webkit-font-smoothing:antialiased}
 .nk *{box-sizing:border-box}
 .nk-track{position:absolute;inset:0;display:flex;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
@@ -278,27 +277,27 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 .nk-s[data-tone=dark]{background:var(--ink);color:var(--cream)}
 .nk-s[data-tone=light]{background:var(--cream);color:var(--ink)}
 .nk-s[data-tone=gold]{background:var(--gold);color:var(--ink)}
-.nk-k{font-size:12px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;margin:0 0 16px;opacity:.7}
-.nk-h{font-weight:800;text-transform:uppercase;letter-spacing:-.045em;line-height:.86;margin:0;font-size:min(19vw,92px)}
+.nk-k{font-size:12px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;margin:0 0 16px;opacity:.7}
+.nk-h{font-weight:700;text-transform:uppercase;letter-spacing:-.035em;line-height:.9;margin:0;font-size:min(19vw,92px)}
 .nk-h.m{font-size:min(14.5vw,70px)}
 .nk-h em{font-style:normal;color:var(--gold)}
 .nk-s[data-tone=light] .nk-h em{color:var(--deep)}
 .nk-h .o{color:transparent;-webkit-text-stroke:2px var(--gold)}
 .nk-p{font-size:17px;line-height:1.45;font-weight:500;margin:22px 0 0;max-width:30ch;opacity:.86}
-.nk-num{position:absolute;right:-6px;top:calc(env(safe-area-inset-top,0px) + 60px);font-weight:800;font-size:min(58vw,260px);line-height:.8;letter-spacing:-.06em;opacity:.08;pointer-events:none}
+.nk-num{position:absolute;right:-6px;top:calc(env(safe-area-inset-top,0px) + 60px);font-weight:700;font-size:min(58vw,260px);line-height:.8;letter-spacing:-.06em;opacity:.08;pointer-events:none}
 .nk-art{position:absolute;inset:0;pointer-events:none}
 .nk-art svg{position:absolute;right:-8%;top:calc(env(safe-area-inset-top,0px) + 40px);width:112%;height:auto;max-height:52%}
 .nk-arc{stroke-dasharray:900;stroke-dashoffset:900}
 .cur .nk-arc{animation:nkdraw 1.5s .2s cubic-bezier(.3,.7,.2,1) forwards}
 @keyframes nkdraw{to{stroke-dashoffset:0}}
 .nk-pill{display:flex;align-items:baseline;justify-content:space-between;gap:14px;border-top:2px solid currentColor;padding:12px 0 10px}
-.nk-pill b{font-weight:800;text-transform:uppercase;letter-spacing:-.04em;font-size:min(15vw,64px);line-height:.9}
+.nk-pill b{font-weight:700;text-transform:uppercase;letter-spacing:-.04em;font-size:min(15vw,64px);line-height:.9}
 .nk-pill span{font-size:13px;font-weight:700;line-height:1.25;text-align:right;max-width:13ch;opacity:.85}
 .nk-pills{margin-top:30px;border-bottom:2px solid currentColor}
 .nk-steps{list-style:none;margin:26px 0 0;padding:0;display:flex;flex-direction:column;gap:14px}
 .nk-steps li{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:start}
-.nk-steps i{font-style:normal;font-weight:800;font-size:22px;color:var(--gold);letter-spacing:-.03em}
-.nk-steps b{display:block;font-weight:800;text-transform:uppercase;letter-spacing:-.02em;font-size:19px;line-height:1.05}
+.nk-steps i{font-style:normal;font-weight:700;font-size:22px;color:var(--gold);letter-spacing:-.03em}
+.nk-steps b{display:block;font-weight:700;text-transform:uppercase;letter-spacing:-.02em;font-size:19px;line-height:1.05}
 .nk-steps span{display:block;font-size:14px;line-height:1.35;font-weight:500;opacity:.78;margin-top:3px}
 .nk-ring{position:absolute;right:26px;top:calc(env(safe-area-inset-top,0px) + 76px);width:112px;height:112px}
 .nk-ring circle{fill:none;stroke-width:9;stroke-linecap:round}
@@ -306,9 +305,9 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 .nk-ring .f{stroke:var(--gold);stroke-dasharray:289;stroke-dashoffset:289;transform:rotate(-90deg);transform-origin:50% 50%}
 .cur .nk-ring .f{animation:nkring 1.6s .3s cubic-bezier(.3,.7,.2,1) forwards}
 @keyframes nkring{to{stroke-dashoffset:40}}
-.nk-ring text{fill:var(--cream);font:800 22px 'Manrope',sans-serif;text-anchor:middle;dominant-baseline:central;letter-spacing:-.04em}
+.nk-ring text{fill:var(--cream);font:700 22px 'Manrope',sans-serif;text-anchor:middle;dominant-baseline:central;letter-spacing:-.04em}
 .nk-week{display:flex;gap:8px;margin-top:30px}
-.nk-week div{flex:1;text-align:center;font-weight:800;font-size:12px;letter-spacing:.06em}
+.nk-week div{flex:1;text-align:center;font-weight:700;font-size:12px;letter-spacing:.06em}
 .nk-week div i{display:block;aspect-ratio:1;border-radius:50%;border:2px solid currentColor;margin-bottom:8px;transition:background .3s,transform .3s}
 .cur .nk-week div i.y{background:var(--deep);border-color:var(--deep);animation:nkpop .5s calc(var(--d)*.12s + .3s) both}
 .cur .nk-week div i.n{animation:nkpop .5s calc(var(--d)*.12s + .3s) both;opacity:.4;border-style:dashed}
@@ -319,13 +318,13 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 .nk[data-tone=light] .nk-top,.nk[data-tone=gold] .nk-top{color:var(--ink)}
 .nk-bar{flex:1;display:flex;gap:5px}.nk-bar i{flex:1;height:3px;border-radius:3px;background:currentColor;opacity:.22;position:relative;overflow:hidden}
 .nk-bar i.on{opacity:1}
-.nk-skip{border:0;background:none;color:inherit;font:800 12px 'Manrope',sans-serif;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;padding:6px 0}
+.nk-skip{border:0;background:none;color:inherit;font:700 12px 'Manrope',sans-serif;letter-spacing:.16em;text-transform:uppercase;cursor:pointer;padding:6px 0}
 .nk-foot{position:absolute;left:0;right:0;bottom:0;z-index:5;padding:0 22px calc(env(safe-area-inset-bottom,0px) + 22px);display:flex;justify-content:flex-end;transition:opacity .25s}
-.nk-next{border:0;border-radius:999px;background:var(--gold);color:var(--ink);font:800 15px 'Manrope',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:18px 26px;display:flex;align-items:center;gap:10px;cursor:pointer;box-shadow:0 14px 30px -14px rgba(0,0,0,.6)}
+.nk-next{border:0;border-radius:999px;background:var(--gold);color:var(--ink);font:700 15px 'Manrope',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:18px 26px;display:flex;align-items:center;gap:10px;cursor:pointer;box-shadow:0 14px 30px -14px rgba(0,0,0,.6)}
 .nk-s[data-tone=dark]~.nk-foot{}
 .nk.last .nk-foot{opacity:0;pointer-events:none}
 .nk-cta{margin-top:30px;display:flex;flex-direction:column;gap:10px}
-.nk-go{border:0;border-radius:999px;background:var(--gold);color:var(--ink);font:800 17px 'Manrope',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:21px 24px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;width:100%}
+.nk-go{border:0;border-radius:999px;background:var(--gold);color:var(--ink);font:700 17px 'Manrope',sans-serif;letter-spacing:.1em;text-transform:uppercase;padding:21px 24px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;width:100%}
 .nk-ghost{border:0;background:none;color:inherit;font:700 14px 'Manrope',sans-serif;opacity:.7;padding:12px;cursor:pointer}
 .nk-s [data-a]{opacity:0;transform:translateY(26px)}
 .nk-s.cur [data-a]{animation:nkup .7s calc(var(--d,0)*.09s + .1s) cubic-bezier(.2,.8,.2,1) both}
@@ -358,14 +357,14 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
      '<section class="nk-s" data-tone="dark"><div class="nk-num">03</div><svg class="nk-ring" viewBox="0 0 100 100"><circle class="t" cx="50" cy="50" r="46"/><circle class="f" cx="50" cy="50" r="46"/><text x="50" y="50">6/7</text></svg><p class="nk-k"' + D(0) + '>How it works</p><h2 class="nk-h m"' + D(1) + '>Four moves.<br><em>Every day.</em></h2><ol class="nk-steps">'
        + [['Log','Tap in what you did. Under a minute.'],['Close the ring','Each habit you finish fills today’s ring.'],['Build the streak','Every full day adds one to your run.'],['Read your week','Stats show the pattern, not just the numbers.']].map(function(s, i){ return '<li' + D(3 + i) + '><i>0' + (i + 1) + '</i><div><b>' + s[0] + '</b><span>' + s[1] + '</span></div></li>'; }).join('') + '</ol></section>',
      '<section class="nk-s" data-tone="light"><div class="nk-num">04</div><p class="nk-k"' + D(0) + '>The one rule</p><h2 class="nk-h"' + D(1) + '>Miss a day?<br><em>Start again.</em></h2><p class="nk-p"' + D(3) + '>No guilt. The streak restarts, your history stays. The only way to lose is to stop logging.</p><div class="nk-week">' + ['M','T','W','T','F','S','S'].map(function(d, i){ return '<div><i class="' + (i === 4 ? 'n' : 'y') + '" style="--d:' + i + '"></i>' + d + '</div>'; }).join('') + '</div></section>',
-     '<section class="nk-s" data-tone="dark"><p class="nk-k"' + D(0) + '>Ready</p><h2 class="nk-h"' + D(1) + '>Day one<br>starts<br><em>now.</em></h2>' + (g.length ? '<p class="nk-p"' + D(3) + '>Next: ' + g.length + ' quick step' + (g.length === 1 ? '' : 's') + ', all skippable.</p><div class="nk-chips"' + D(4) + '>' + g.map(function(x, i){ return '<span>' + (i + 1) + ' · ' + esc(x) + '</span>'; }).join('') + '</div>' : '')
-       + '<div class="nk-cta"' + D(5) + '><button type="button" class="nk-go" data-nk="go">Let’s go <span aria-hidden="true">→</span></button><button type="button" class="nk-ghost" data-nk="skip">Skip, take me straight in</button></div></section>'
+     '<section class="nk-s" data-tone="dark"><p class="nk-k"' + D(0) + '>Ready</p><h2 class="nk-h"' + D(1) + '>Day one<br>starts<br><em>now.</em></h2>' + (g.length ? '<p class="nk-p"' + D(3) + '>After you sign up: ' + g.length + ' quick step' + (g.length === 1 ? '' : 's') + ', all skippable.</p><div class="nk-chips"' + D(4) + '>' + g.map(function(x, i){ return '<span>' + (i + 1) + ' · ' + esc(x) + '</span>'; }).join('') + '</div>' : '')
+       + '<div class="nk-cta"' + D(5) + '><button type="button" class="nk-go" data-nk="create">Create account <span aria-hidden="true">→</span></button><button type="button" class="nk-ghost" data-nk="have">I already have an account</button></div></section>'
     ];
   }
   function mount(){
-    var S = slides(), n = S.length, seen = 0; try{ seen = sessionStorage.getItem(SK) === '1'; }catch(e){}
-    app.innerHTML = '<div class="nk" data-tone="dark"><video class="nk-vid" src="welcome.mp4" poster="welcome-poster.jpg" muted loop playsinline autoplay preload="auto" aria-hidden="true"></video><div class="nk-top"><div class="nk-bar">' + new Array(n + 1).join('<i></i>') + '</div><button type="button" class="nk-skip" data-nk="last">Skip</button></div><div class="nk-track">' + S.join('') + '</div><div class="nk-foot"><button type="button" class="nk-next" data-nk="next">Next <span aria-hidden="true">→</span></button></div></div>';
-    var root = app.querySelector('.nk'), trk = root.querySelector('.nk-track'), ss = trk.children, idx = 0;
+    var S = slides(), n = S.length;
+    var host = document.createElement('div'); host.id = 'nk-host'; document.body.appendChild(host); host.innerHTML = '<div class="nk" data-tone="dark"><video class="nk-vid" src="welcome.mp4" poster="welcome-poster.jpg" muted loop playsinline autoplay preload="auto" aria-hidden="true"></video><div class="nk-top"><div class="nk-bar">' + new Array(n + 1).join('<i></i>') + '</div><button type="button" class="nk-skip" data-nk="last">Skip</button></div><div class="nk-track">' + S.join('') + '</div><div class="nk-foot"><button type="button" class="nk-next" data-nk="next">Next <span aria-hidden="true">→</span></button></div></div>';
+    var root = host.querySelector('.nk'), trk = root.querySelector('.nk-track'), ss = trk.children, idx = 0;
     function sync(){ var w = trk.clientWidth || 1, i = Math.max(0, Math.min(n - 1, Math.round(trk.scrollLeft / w)));
       idx = i; Array.prototype.forEach.call(ss, function(s, j){ s.classList.toggle('cur', j === i); });
       Array.prototype.forEach.call(root.querySelectorAll('.nk-bar i'), function(b, j){ b.classList.toggle('on', j <= i); });
@@ -375,15 +374,26 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
       var b = e.target.closest('[data-nk]'); if(!b) return; var a = b.getAttribute('data-nk'), w = trk.clientWidth;
       if(a === 'next') trk.scrollTo({ left:(idx + 1) * w, behavior:'smooth' });
       else if(a === 'last') trk.scrollTo({ left:(n - 1) * w, behavior:'smooth' });
-      else if(a === 'go'){ try{ sessionStorage.setItem(SK, '1'); }catch(e){} onboardGoto(ONSTEPS_ORDER[0]); }
-      else if(a === 'skip'){ try{ sessionStorage.setItem(SK, '1'); }catch(e){} finishOnboarding(); }
+      else if(a === 'create' || a === 'have'){ markSeen(); host.remove(); var t = document.getElementById(a === 'create' ? 'au-create' : 'au-have'); if(t) t.click(); }
     });
-    if(seen) trk.scrollLeft = (n - 1) * (trk.clientWidth || 0);
     sync();
     try{ var v = root.querySelector('.nk-vid'); v.muted = true; var pr = v.play(); if(pr && pr.catch) pr.catch(function(){}); }catch(e){}
   }
-  window.renderOnboardWelcome = function(){ mount(); };
-  try{ if(!DB.onboarded && ONSTEP === 'welcome' && document.querySelector('.onboard-screen')) render(); }catch(e){}
+  /* Who sees what: a brand-new visitor gets the welcome first, then sign-up, then setup, then the app.
+     Anyone who has ever been signed in on this device (timed-out sessions too) skips straight to sign-in. */
+  var FLAG = 'cb-welcomed-v1';
+  function seen(){ try{ return localStorage.getItem(FLAG) === '1'; }catch(e){ return true; } }
+  function markSeen(){ try{ localStorage.setItem(FLAG, '1'); }catch(e){} }
+  function check(){
+    try{
+      var ph = CLOUD.phase();
+      if(ph === 'in'){ if(!seen()) markSeen(); return; }
+      if(ph === 'out' && !seen() && !document.getElementById('nk-host') && document.getElementById('au-create')) mount();
+    }catch(e){}
+  }
+  var r0 = window.render;
+  window.render = function(){ var out = r0.apply(this, arguments); check(); return out; };
+  check();
 })();
 </script>
 </body>
