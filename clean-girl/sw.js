@@ -1,5 +1,5 @@
-/* clean-girl service worker — build fcfbf131 */
-const CACHE = 'clean-girl-fcfbf131';
+/* clean-girl service worker — build 6ec35793 */
+const CACHE = 'clean-girl-6ec35793';
 const SHELL = ["./", "index.html", "manifest.webmanifest", "fonts.css", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "fonts/fraunces-latin-500-normal.woff2", "fonts/fraunces-latin-600-normal.woff2", "fonts/fraunces-latin-ext-500-normal.woff2", "fonts/fraunces-latin-ext-600-normal.woff2", "fonts/fraunces-vietnamese-500-normal.woff2", "fonts/fraunces-vietnamese-600-normal.woff2", "fonts/nunito-latin-400-normal.woff2", "fonts/nunito-latin-500-normal.woff2", "fonts/nunito-latin-600-normal.woff2", "fonts/nunito-latin-700-normal.woff2", "fonts/nunito-latin-ext-400-normal.woff2", "fonts/nunito-latin-ext-500-normal.woff2", "fonts/nunito-latin-ext-600-normal.woff2", "fonts/nunito-latin-ext-700-normal.woff2", "fonts/nunito-vietnamese-400-normal.woff2", "fonts/nunito-vietnamese-500-normal.woff2", "fonts/nunito-vietnamese-600-normal.woff2", "fonts/nunito-vietnamese-700-normal.woff2"];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));

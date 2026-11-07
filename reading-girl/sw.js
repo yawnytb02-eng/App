@@ -1,5 +1,5 @@
-/* reading-girl service worker — build 917fd50b */
-const CACHE = 'reading-girl-917fd50b';
+/* reading-girl service worker — build bd6c6203 */
+const CACHE = 'reading-girl-bd6c6203';
 const SHELL = ["./", "index.html", "manifest.webmanifest", "fonts.css", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "fonts/be-vietnam-pro-latin-400-normal.woff2", "fonts/be-vietnam-pro-latin-500-normal.woff2", "fonts/be-vietnam-pro-latin-600-normal.woff2", "fonts/be-vietnam-pro-latin-700-normal.woff2", "fonts/be-vietnam-pro-latin-ext-400-normal.woff2", "fonts/be-vietnam-pro-latin-ext-500-normal.woff2", "fonts/be-vietnam-pro-latin-ext-600-normal.woff2", "fonts/be-vietnam-pro-latin-ext-700-normal.woff2", "fonts/be-vietnam-pro-vietnamese-400-normal.woff2", "fonts/be-vietnam-pro-vietnamese-500-normal.woff2", "fonts/be-vietnam-pro-vietnamese-600-normal.woff2", "fonts/be-vietnam-pro-vietnamese-700-normal.woff2", "fonts/playfair-display-latin-500-normal.woff2", "fonts/playfair-display-latin-600-normal.woff2", "fonts/playfair-display-latin-ext-500-normal.woff2", "fonts/playfair-display-latin-ext-600-normal.woff2", "fonts/playfair-display-vietnamese-500-normal.woff2", "fonts/playfair-display-vietnamese-600-normal.woff2"];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
