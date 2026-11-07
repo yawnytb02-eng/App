@@ -511,7 +511,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   }
   /* the phone's real safe-area sizes are passed into the logbook (some phones report 0 inside a frame, which squeezed the bottom bar) */
   function insets(){ var d = document.createElement('div'); d.style.cssText = 'position:fixed;left:0;top:0;visibility:hidden;padding:env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px)'; document.body.appendChild(d); var cs = getComputedStyle(d), r = [parseFloat(cs.paddingTop) || 0, parseFloat(cs.paddingBottom) || 0]; d.remove(); return r; }
-  function prep(h){ var i = insets(); h = h.replace(/env\(safe-area-inset-bottom,\s*0px\)/g, 'var(--sab,0px)').replace(/env\(safe-area-inset-top,\s*0px\)/g, 'var(--sat,0px)'); return h.replace('<head>', '<head><style>:root{--sab:' + i[1] + 'px;--sat:' + i[0] + 'px}</style>'); }
+  function prep(h){ var i = insets(); h = h.replace(/env\(safe-area-inset-bottom,\s*0px\)/g, 'var(--sab,0px)').replace(/env\(safe-area-inset-top,\s*0px\)/g, 'var(--sat,0px)'); return h.replace('<head>', '<head><style>:root{--sab:' + Math.min(i[1], 10) + 'px;--sat:' + i[0] + 'px}</style>'); }
 
   /* ---------- opening and leaving a logbook ---------- */
   function b64(id){ var bin = atob($('app-'+id).textContent.replace(/\s+/g,'')), n = bin.length, u = new Uint8Array(n); for(var i=0;i<n;i++) u[i] = bin.charCodeAt(i); return new TextDecoder('utf-8').decode(u); }
