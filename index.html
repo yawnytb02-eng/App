@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="copyright" content="&copy; 2026 Clean Routine Co. All rights reserved.">
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; manifest-src 'self'; connect-src 'self' https://api.qonversion.io https://*.qonversion.io https://itkuknjylgqhrjysarre.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self'; manifest-src 'self'; connect-src 'self' https://api.qonversion.io https://*.qonversion.io https://itkuknjylgqhrjysarre.supabase.co; worker-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#F7F2E7">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -332,6 +332,14 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 @keyframes nkup{to{opacity:1;transform:none}}
 .nk-s:last-child{padding-bottom:calc(env(safe-area-inset-bottom,0px) + 22px)}
 @media (max-height:780px){.nk-h{font-size:min(15vw,70px)}.nk-h.m{font-size:min(11.5vw,52px)}.nk-pill b{font-size:min(10.5vw,44px)}.nk-p{font-size:15px;margin-top:12px}.nk-steps{gap:8px;margin-top:14px}.nk-steps b{font-size:17px}.nk-pills{margin-top:14px}.nk-pill{padding:8px 0 6px}.nk-s{padding-top:calc(env(safe-area-inset-top,0px) + 60px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 92px)}.nk-week{margin-top:16px}.nk-k{margin-bottom:8px}.nk-cta{margin-top:18px}.nk-go{padding:17px 22px}.nk-ring{width:92px;height:92px;top:calc(env(safe-area-inset-top,0px) + 62px)}.nk-chips{margin-top:12px}}
+
+.nk-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;background:#1B1712}
+.nk-track{z-index:1}
+.nk-s[data-tone=dark]{background:rgba(27,23,18,.38)}
+.nk-s[data-tone=light]{background:rgba(247,242,231,.94)}
+.nk-s[data-tone=gold]{background:rgba(201,146,47,.9);background-blend-mode:normal}
+.nk-s[data-tone=dark] .nk-h,.nk-s[data-tone=dark] .nk-p{text-shadow:0 2px 24px rgba(0,0,0,.45)}
+@media (prefers-reduced-motion:reduce){.nk-vid{display:none}.nk-s[data-tone=dark]{background:#1B1712}}
 @media (prefers-reduced-motion:reduce){.nk-s [data-a]{opacity:1;transform:none;animation:none!important}.nk-arc{stroke-dashoffset:0;animation:none!important}.nk-ring .f{stroke-dashoffset:40;animation:none!important}}
 </style>
 <script id="nk-js">
@@ -356,7 +364,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   }
   function mount(){
     var S = slides(), n = S.length, seen = 0; try{ seen = sessionStorage.getItem(SK) === '1'; }catch(e){}
-    app.innerHTML = '<div class="nk" data-tone="dark"><div class="nk-top"><div class="nk-bar">' + new Array(n + 1).join('<i></i>') + '</div><button type="button" class="nk-skip" data-nk="last">Skip</button></div><div class="nk-track">' + S.join('') + '</div><div class="nk-foot"><button type="button" class="nk-next" data-nk="next">Next <span aria-hidden="true">→</span></button></div></div>';
+    app.innerHTML = '<div class="nk" data-tone="dark"><video class="nk-vid" src="welcome.mp4" poster="welcome-poster.jpg" muted loop playsinline autoplay preload="auto" aria-hidden="true"></video><div class="nk-top"><div class="nk-bar">' + new Array(n + 1).join('<i></i>') + '</div><button type="button" class="nk-skip" data-nk="last">Skip</button></div><div class="nk-track">' + S.join('') + '</div><div class="nk-foot"><button type="button" class="nk-next" data-nk="next">Next <span aria-hidden="true">→</span></button></div></div>';
     var root = app.querySelector('.nk'), trk = root.querySelector('.nk-track'), ss = trk.children, idx = 0;
     function sync(){ var w = trk.clientWidth || 1, i = Math.max(0, Math.min(n - 1, Math.round(trk.scrollLeft / w)));
       idx = i; Array.prototype.forEach.call(ss, function(s, j){ s.classList.toggle('cur', j === i); });
@@ -372,6 +380,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
     });
     if(seen) trk.scrollLeft = (n - 1) * (trk.clientWidth || 0);
     sync();
+    try{ var v = root.querySelector('.nk-vid'); v.muted = true; var pr = v.play(); if(pr && pr.catch) pr.catch(function(){}); }catch(e){}
   }
   window.renderOnboardWelcome = function(){ mount(); };
   try{ if(!DB.onboarded && ONSTEP === 'welcome' && document.querySelector('.onboard-screen')) render(); }catch(e){}

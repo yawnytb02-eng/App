@@ -1,5 +1,5 @@
 /* clean-boy service worker — build 0666ee3c */
-const CACHE = 'clean-boy-nk1';
+const CACHE = 'clean-boy-nk2';
 const SHELL = ["./", "index.html", "manifest.webmanifest", "fonts.css", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "fonts/manrope-latin-400-normal.woff2", "fonts/manrope-latin-500-normal.woff2", "fonts/manrope-latin-600-normal.woff2", "fonts/manrope-latin-700-normal.woff2", "fonts/manrope-latin-800-normal.woff2", "fonts/manrope-latin-ext-400-normal.woff2", "fonts/manrope-latin-ext-500-normal.woff2", "fonts/manrope-latin-ext-600-normal.woff2", "fonts/manrope-vietnamese-400-normal.woff2", "fonts/manrope-vietnamese-500-normal.woff2", "fonts/manrope-vietnamese-600-normal.woff2"];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -14,6 +14,7 @@ self.addEventListener('fetch', e => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return;
+  if (/\.mp4$/.test(url.pathname)) return;   /* video goes straight to the network: Safari cannot play video served from a service worker cache */
   if (req.mode === 'navigate') {
     // App shell, NETWORK FIRST (Cycle 4): always try for the newest copy so you never get an older version of a screen.
     // If the network is slow (over 2.5 s) or offline, the saved copy is used, so it still works with no signal.
