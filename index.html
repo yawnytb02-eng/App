@@ -340,6 +340,17 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 .nk-s[data-tone=dark] .nk-h,.nk-s[data-tone=dark] .nk-p{text-shadow:0 2px 24px rgba(0,0,0,.45)}
 @media (prefers-reduced-motion:reduce){.nk-vid{display:none}.nk-s[data-tone=dark]{background:#1B1712}}
 @media (prefers-reduced-motion:reduce){.nk-s [data-a]{opacity:1;transform:none;animation:none!important}.nk-arc{stroke-dashoffset:0;animation:none!important}.nk-ring .f{stroke-dashoffset:40;animation:none!important}}
+
+.nk-s.sh{justify-content:flex-start}
+.nk-s.sh .nk-p{margin-top:12px;font-size:15px;max-width:34ch}
+.nk-s.sh .nk-k{margin-bottom:10px}
+.nk-phone{flex:1;min-height:0;margin-top:18px;display:flex;justify-content:center}
+.nk-phone>div{height:100%;aspect-ratio:520/1126;max-width:100%;border-radius:26px;border:4px solid #1B1712;overflow:hidden;box-shadow:0 0 0 1px rgba(247,242,231,.22),0 24px 40px -18px rgba(0,0,0,.55);background:#F7F2E7}
+.nk-phone img{display:block;width:100%;height:100%;object-fit:cover;object-position:top}
+.nk-mini{display:flex;gap:8px;margin-top:14px}
+.nk-mini span{border:1.5px solid currentColor;border-radius:999px;padding:6px 12px;font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.nk-s.sh[data-tone=gold]{background:rgba(201,146,47,.96)}
+@media (max-height:780px){.nk-s.sh .nk-p{font-size:14px;margin-top:8px}.nk-phone{margin-top:12px}.nk-mini{margin-top:10px}}
 </style>
 <script id="nk-js">
 (function(){
@@ -347,16 +358,16 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   var SK = 'cb-nk-seen', TONES = ['dark','light','gold','dark','light','dark'];
   function D(n){ return ' data-a style="--d:' + n + '"'; }
   function groups(){ try{ return ONBOARD_GROUPS.slice(0, 4); }catch(e){ return []; } }
+  function PH(n, alt){ return '<div class="nk-phone"' + D(4) + '><div><img src="shot-' + n + '.jpg" alt="' + alt + '" decoding="async"></div></div>'; }
   function slides(){
     var g = groups(), pills = [['Food','Meals, water, energy'],['Move','Workouts, steps'],['Skin','Skincare, hair, cold showers'],['Mind','Focus, calm, sleep']];
     return [
      '<section class="nk-s" data-tone="dark"><div class="nk-art"><svg viewBox="0 0 400 300" fill="none"><defs><linearGradient id="nkg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#835F1F"/><stop offset="1" stop-color="#E9B756"/></linearGradient></defs><path class="nk-arc" d="M-10 270C90 270 190 230 250 150 300 84 340 50 420 36" stroke="url(#nkg)" stroke-width="46" stroke-linecap="round"/><circle cx="352" cy="60" r="7" fill="#F7F2E7"/></svg></div>'
        + '<p class="nk-k"' + D(0) + '>Clean Boy · Day one</p><h1 class="nk-h"' + D(1) + '>Your<br>daily<br><em>reset.</em></h1><p class="nk-p"' + D(3) + '>A minute a day. Cleaner by the week.</p></section>',
-     '<section class="nk-s" data-tone="light"><div class="nk-num">01</div><p class="nk-k"' + D(0) + '>The idea</p><h2 class="nk-h m"' + D(1) + '>Log it.<br>See it.<br><em>Own it.</em></h2><p class="nk-p"' + D(3) + '>Most apps tell you what to do. Clean Boy shows you what you actually did, so tomorrow gets easier.</p></section>',
-     '<section class="nk-s" data-tone="gold"><div class="nk-num">02</div><p class="nk-k"' + D(0) + '>Four pillars</p><h2 class="nk-h m"' + D(1) + '>One<br>clean day.</h2><div class="nk-pills">' + pills.map(function(p, i){ return '<div class="nk-pill"' + D(3 + i) + '><b>' + p[0] + '</b><span>' + p[1] + '</span></div>'; }).join('') + '</div></section>',
-     '<section class="nk-s" data-tone="dark"><div class="nk-num">03</div><svg class="nk-ring" viewBox="0 0 100 100"><circle class="t" cx="50" cy="50" r="46"/><circle class="f" cx="50" cy="50" r="46"/><text x="50" y="50">6/7</text></svg><p class="nk-k"' + D(0) + '>How it works</p><h2 class="nk-h m"' + D(1) + '>Four moves.<br><em>Every day.</em></h2><ol class="nk-steps">'
-       + [['Log','Tap in what you did. Under a minute.'],['Close the ring','Each habit you finish fills today’s ring.'],['Build the streak','Every full day adds one to your run.'],['Read your week','Stats show the pattern, not just the numbers.']].map(function(s, i){ return '<li' + D(3 + i) + '><i>0' + (i + 1) + '</i><div><b>' + s[0] + '</b><span>' + s[1] + '</span></div></li>'; }).join('') + '</ol></section>',
-     '<section class="nk-s" data-tone="light"><div class="nk-num">04</div><p class="nk-k"' + D(0) + '>The one rule</p><h2 class="nk-h"' + D(1) + '>Miss a day?<br><em>Start again.</em></h2><p class="nk-p"' + D(3) + '>No guilt. The streak restarts, your history stays. The only way to lose is to stop logging.</p><div class="nk-week">' + ['M','T','W','T','F','S','S'].map(function(d, i){ return '<div><i class="' + (i === 4 ? 'n' : 'y') + '" style="--d:' + i + '"></i>' + d + '</div>'; }).join('') + '</div></section>',
+     '<section class="nk-s sh" data-tone="light"><p class="nk-k"' + D(0) + '>The idea</p><h2 class="nk-h m"' + D(1) + '>Log it.<br>See it.<br><em>Own it.</em></h2><p class="nk-p"' + D(3) + '>Tap in what you did. Under a minute.</p>' + PH('food', 'The Food and Fuel page in Clean Boy') + '</section>',
+     '<section class="nk-s sh" data-tone="gold"><p class="nk-k"' + D(0) + '>Four pillars</p><h2 class="nk-h m"' + D(1) + '>One<br>clean day.</h2><div class="nk-mini"' + D(3) + '>' + pills.map(function(p){ return '<span>' + p[0] + '</span>'; }).join('') + '</div>' + PH('time', 'The Timetable page in Clean Boy') + '</section>',
+     '<section class="nk-s sh" data-tone="dark"><p class="nk-k"' + D(0) + '>How it works</p><h2 class="nk-h m"' + D(1) + '>Four moves.<br><em>Every day.</em></h2><p class="nk-p"' + D(3) + '>Log. Close the ring. Build the streak. Read your week.</p>' + PH('home', 'The Clean Boy home page with the daily ring and streak') + '</section>',
+     '<section class="nk-s sh" data-tone="light"><p class="nk-k"' + D(0) + '>The one rule</p><h2 class="nk-h m"' + D(1) + '>Miss a day?<br><em>Start again.</em></h2><p class="nk-p"' + D(3) + '>No guilt. The streak restarts, your history stays.</p>' + PH('stats', 'The Tracker page in Clean Boy') + '</section>',
      '<section class="nk-s" data-tone="dark"><p class="nk-k"' + D(0) + '>Ready</p><h2 class="nk-h"' + D(1) + '>Day one<br>starts<br><em>now.</em></h2>' + (g.length ? '<p class="nk-p"' + D(3) + '>After you sign up: ' + g.length + ' quick step' + (g.length === 1 ? '' : 's') + ', all skippable.</p><div class="nk-chips"' + D(4) + '>' + g.map(function(x, i){ return '<span>' + (i + 1) + ' · ' + esc(x) + '</span>'; }).join('') + '</div>' : '')
        + '<div class="nk-cta"' + D(5) + '><button type="button" class="nk-go" data-nk="create">Create account <span aria-hidden="true">→</span></button><button type="button" class="nk-ghost" data-nk="have">I already have an account</button></div></section>'
     ];
