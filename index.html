@@ -7,9 +7,10 @@
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#ffffff">
 <meta name="copyright" content="&copy; 2026 Clean Routine Co. All rights reserved.">
-<title>Logbooks by Clean Routine Co.</title>
+<title>Clean Routine Co. Logbooks</title>
 <meta name="description" content="Pick a daily logbook or build your own. Works offline on your phone and backs up to your account, where you can see all of it.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111'/%3E%3Ccircle cx='32' cy='32' r='15' fill='none' stroke='%23fff' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='3' fill='%23fff'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%23EFE2CF'/%3E%3Ccircle%20cx='32'%20cy='32'%20r='19.9'%20fill='none'%20stroke='%23B85B38'%20stroke-width='3.2'/%3E%3Cpath%20d='M32%209.25V15M32%2049V54.75M9.25%2032H15M49%2032H54.75'%20stroke='%23B85B38'%20stroke-width='3.2'%20fill='none'/%3E%3Ccircle%20cx='32'%20cy='32'%20r='3.4'%20fill='%23B85B38'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="logbook/apple-touch-icon.png">
 <style>
 @font-face{font-family:'LB';font-weight:400;font-style:normal;font-display:swap;src:url('logbook/fonts/manrope-latin-400-normal.woff2') format('woff2')}
 @font-face{font-family:'LB';font-weight:500;font-style:normal;font-display:swap;src:url('logbook/fonts/manrope-latin-500-normal.woff2') format('woff2')}
@@ -38,8 +39,7 @@ h1,h2,h3{letter-spacing:-.035em;line-height:1.05;font-weight:700}
 .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
 .top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em;text-decoration:none;font-size:17px}
-.brand i{width:22px;height:22px;border:2.5px solid #111;border-radius:50%;position:relative;display:inline-block;flex:none}
-.brand i:after{content:"";position:absolute;inset:6px;background:#111;border-radius:50%}
+.brand i{width:30px;height:30px;border-radius:8px;display:inline-block;flex:none;background:url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%23EFE2CF'/%3E%3Ccircle%20cx='32'%20cy='32'%20r='19.9'%20fill='none'%20stroke='%23B85B38'%20stroke-width='3.2'/%3E%3Cpath%20d='M32%209.25V15M32%2049V54.75M9.25%2032H15M49%2032H54.75'%20stroke='%23B85B38'%20stroke-width='3.2'%20fill='none'/%3E%3Ccircle%20cx='32'%20cy='32'%20r='3.4'%20fill='%23B85B38'/%3E%3C/svg%3E") center/100% 100% no-repeat;box-shadow:0 0 0 1px rgba(0,0,0,.06)}
 .links{display:flex;gap:4px;align-items:center}
 .links a{padding:9px 14px;border-radius:999px;text-decoration:none;font-weight:600;font-size:14px;color:var(--soft)}
 .links a:hover{background:var(--tint);color:var(--ink)}
@@ -220,21 +220,21 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
 @keyframes rise{from{transform:translateY(105%)}to{transform:none}}
 .stage{position:relative;overflow:hidden;background:var(--bg2);color:var(--ink2);transition:background .6s ease,color .6s ease;isolation:isolate;padding:56px 0 0}
 .stage svg.mo{position:absolute;right:0;top:0;width:min(62vw,720px);height:auto;aspect-ratio:1;z-index:-1;opacity:.9;transition:opacity .4s}
-.stage.sw svg.mo{opacity:0}
+.stage.swp svg.mo{opacity:0}
 .st-pick{display:flex;gap:8px;overflow-x:auto;padding:4px 0 2px;margin:22px -28px 0;padding-left:28px;padding-right:28px;scrollbar-width:none}
 .st-pick::-webkit-scrollbar{display:none}
-.st-pick button{flex:none;min-height:42px;padding:0 18px;border-radius:999px;border:1.5px solid currentColor;background:transparent;color:inherit;font-weight:600;font-size:14.5px;cursor:pointer;transition:background .25s,color .25s}
+.st-pick button{flex:none;white-space:nowrap;min-height:42px;padding:0 18px;border-radius:999px;border:1.5px solid currentColor;background:transparent;color:inherit;font-weight:600;font-size:14.5px;cursor:pointer;transition:background .25s,color .25s}
 .st-pick button[aria-pressed=true]{background:var(--ink2);border-color:var(--ink2);color:var(--bg2)}
 .st-row{display:flex;align-items:flex-end;justify-content:space-between;gap:28px;flex-wrap:wrap;margin-top:34px}
 .st-name{font:700 clamp(54px,11.5vw,168px)/.82 'LB',var(--font);letter-spacing:-.06em;text-transform:uppercase;overflow-wrap:anywhere;transition:opacity .25s,transform .35s}
 .st-name em{font-style:normal;color:var(--acc2)}
-.stage.sw .st-name{opacity:0;transform:translateY(10px)}
+.stage.swp .st-name{opacity:0;transform:translateY(10px)}
 .st-side{max-width:340px;padding-bottom:6px}
 .st-side p{font-size:17px;line-height:1.45;opacity:.85}
 .st-side .acts{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
 .stage .btn{background:var(--ink2);border-color:var(--ink2);color:var(--bg2)}.stage .btn.ghost{background:transparent;color:var(--ink2)}
 .st-ph{display:flex;align-items:flex-start;justify-content:center;gap:clamp(10px,2vw,28px);margin-top:44px;height:clamp(300px,34vw,470px);overflow:hidden;transition:opacity .25s}
-.stage.sw .st-ph{opacity:0}
+.stage.swp .st-ph{opacity:0}
 .ph2{flex:none;position:relative;width:clamp(128px,19.5vw,250px);box-sizing:border-box;border-radius:15% / 7%;background:#0b0b0b;padding:2.4%;box-shadow:0 0 0 1px rgba(255,255,255,.14) inset,0 40px 60px -28px rgba(0,0,0,.6)}
 .ph2:nth-child(even){margin-top:clamp(18px,3vw,42px)}
 .ph2 img{display:block;width:100%;height:auto;aspect-ratio:520/1126;object-fit:cover;border-radius:12.5% / 5.8%;background:#fff}
@@ -336,13 +336,13 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   function setStage(id){
     var el = document.getElementById('choose'); if(!el || id === stageId) return; stageId = id;
     var th = TH[id], p = PRESETS.filter(function(x){ return x.id === id; })[0];
-    el.classList.add('sw');
+    el.classList.add('swp');
     setTimeout(function(){
       el.setAttribute('style', themeVars(th)); var old = el.querySelector('svg.mo'); if(old) old.outerHTML = motif(th.mo, th.acc);
       $('stn').innerHTML = stName(p); $('stt').textContent = p.t; $('sto').href = 'logbook/?l=' + p.id; $('sto').textContent = 'Open ' + p.n; $('sti').dataset.i = p.id; $('stp').innerHTML = stPhones(p);
       [].forEach.call(el.querySelectorAll('[data-st]'), function(b){ b.setAttribute('aria-pressed', b.dataset.st === id); });
-      var imgs = [].slice.call($('stp').querySelectorAll('img')), n = 0, go = function(){ if(++n >= imgs.length) el.classList.remove('sw'); };
-      imgs.forEach(function(im){ if(im.complete) go(); else { im.onload = go; im.onerror = go; } }); setTimeout(function(){ el.classList.remove('sw'); }, 900);
+      var imgs = [].slice.call($('stp').querySelectorAll('img')), n = 0, go = function(){ if(++n >= imgs.length) el.classList.remove('swp'); };
+      imgs.forEach(function(im){ if(im.complete) go(); else { im.onload = go; im.onerror = go; } }); setTimeout(function(){ el.classList.remove('swp'); }, 900);
     }, 240);
   }
 
@@ -552,7 +552,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
       + '<p class="tog">' + (mode === 'in' ? 'New here?' : 'Already have an account?') + ' <button type="button" data-act="mode">' + (mode === 'in' ? 'Create an account' : 'Sign in') + '</button></p><p class="note">Password reset by email is not switched on yet, so pick a password you will remember.</p></form>';
   }
   function landing(){
-    return '<header class="top"><div class="wrap"><a class="brand" href="#top"><i aria-hidden="true"></i>Logbooks</a><nav class="links" aria-label="Sections"><a href="#choose">Logbooks</a><a href="#create">Create your own</a><a href="#signin">Sign in</a></nav></div></header>'
+    return '<header class="top"><div class="wrap"><a class="brand" href="#top"><i aria-hidden="true"></i>Clean Routine Co.</a><nav class="links" aria-label="Sections"><a href="#choose">Logbooks</a><a href="#create">Create your own</a><a href="#signin">Sign in</a></nav></div></header>'
       + '<main id="top"><div class="wrap"><div class="hero"><div><h1><span class="ln"><span>Pick a logbook.</span></span><span class="ln"><span>Make it yours.</span></span></h1><p class="lede">A daily logbook that lives on your phone, works with no signal, and backs up to your account. Sign in here and your whole routine is on one screen.</p><div class="row"><a class="btn" href="#choose">Choose a logbook</a><a class="btn ghost" href="#create">Create your own</a></div></div><div class="panel lift" id="signin">' + authForm() + '</div></div>'
       + '<div class="feats"><div class="feat"><b>One dashboard</b><p>Streaks, heat maps and every day you logged, across all your logbooks.</p></div><div class="feat"><b>Works offline</b><p>Install it on your phone. No signal needed once it has opened.</p></div><div class="feat"><b>Your data stays yours</b><p>Each logbook is stored on its own, locked to your account, and you can download it any time.</p></div></div></div>'
       + stageHtml()
@@ -571,11 +571,11 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
     else if(v === 'create') body = '<div class="vh"><div><h1>Create your own</h1><p class="sub">Name it, pick a colour, choose what goes in it.</p></div></div>' + viewCreate();
     else body = viewAccount();
     var cur = function(x){ return v === x ? ' aria-current="page"' : ''; };
-    var side = '<aside class="side"><a class="brand" href="#/"><i aria-hidden="true"></i>Logbooks</a><nav aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create your own</a></nav>'
+    var side = '<aside class="side"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a><nav aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create your own</a></nav>'
       + '<div class="k">Your logbooks</div><div class="lbl">' + ((rows && rows.length) ? rows.map(function(r){ return '<a href="#/lb/' + encodeURIComponent(r.app) + '"' + (v === 'lb' && rt.app === r.app ? ' aria-current="page"' : '') + '><span class="dot" style="background:' + esc(r.name.acc) + '"></span>' + esc(r.name.n) + '<small>' + r.cur + '</small></a>'; }).join('') : '<span style="padding:6px 12px;font-size:13px;color:var(--mute)">' + (loading ? 'Loading…' : 'None synced yet') + '</span>') + '</div>'
       + '<div class="me"><a href="#/account" style="text-decoration:none;font-weight:700;color:var(--ink);display:block">' + esc(sess.email || 'Account') + '</a><button type="button" data-act="signout">Sign out</button></div></aside>';
     var tabs = '<nav class="tabbar" aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create</a><a href="#/account"' + cur('account') + '>' + IC.me + 'Account</a></nav>';
-    return '<div class="shell">' + side + '<main class="main"><div class="mtop"><a class="brand" href="#/"><i aria-hidden="true"></i>Logbooks</a></div>' + body + '</main></div>' + tabs;
+    return '<div class="shell">' + side + '<main class="main"><div class="mtop"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a></div>' + body + '</main></div>' + tabs;
   }
 
   /* ================= render + events ================= */
