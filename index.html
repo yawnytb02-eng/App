@@ -8,57 +8,74 @@
 <meta name="theme-color" content="#ffffff">
 <meta name="copyright" content="&copy; 2026 Clean Routine Co. All rights reserved.">
 <title>Logbooks by Clean Routine Co.</title>
-<meta name="description" content="Pick a daily logbook or build your own. Works offline on your phone and backs up to your account.">
+<meta name="description" content="Pick a daily logbook or build your own. Works offline on your phone and backs up to your account, where you can see all of it.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23111'/%3E%3Ccircle cx='32' cy='32' r='15' fill='none' stroke='%23fff' stroke-width='4'/%3E%3Ccircle cx='32' cy='32' r='3' fill='%23fff'/%3E%3C/svg%3E">
 <style>
-:root{--bg:#fff;--ink:#111;--soft:#555;--mute:#767676;--line:#e8e8e8;--tint:#f6f6f4;--r:20px;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;color-scheme:light}
+:root{--bg:#fff;--ink:#111;--soft:#555;--mute:#777;--line:#e8e8e6;--tint:#f6f6f3;--side:#fafaf8;--r:18px;--font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;color-scheme:light}
 *{box-sizing:border-box;margin:0}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
-body{background:var(--bg);color:var(--ink);font:500 16px/1.5 var(--font);-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom)}
-a{color:inherit}
-button,input{font:inherit;color:inherit}
+body{background:var(--bg);color:var(--ink);font:500 15px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+a{color:inherit}button,input,select{font:inherit;color:inherit}
 :focus-visible{outline:2px solid #111;outline-offset:2px;border-radius:6px}
-.wrap{max-width:1040px;margin:0 auto;padding:0 20px}
-header.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.9);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line)}
-header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:58px}
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em;text-decoration:none}
-.brand i{width:22px;height:22px;border:2.5px solid #111;border-radius:50%;position:relative;display:inline-block}
+.hide{display:none!important}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 20px;border-radius:999px;border:1.5px solid #111;background:#111;color:#fff;font-weight:700;font-size:14.5px;text-decoration:none;cursor:pointer;transition:transform .15s,background .15s;white-space:nowrap}
+.btn:hover{transform:translateY(-1px)}.btn.ghost{background:#fff;color:#111}.btn.sm{min-height:36px;padding:0 15px;font-size:13.5px}.btn[disabled]{opacity:.5;cursor:default;transform:none}
+.k{font-weight:700;font-size:11.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--mute)}
+h1,h2,h3{letter-spacing:-.035em;line-height:1.05;font-weight:700}
+.dot{width:11px;height:11px;border-radius:50%;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.12) inset}
+.err{color:#b00020;font-weight:600;font-size:13.5px;min-height:20px;margin:6px 0 0}
+.note{font-size:13px;color:var(--mute);margin-top:12px}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom));transform:translate(-50%,30px);background:#111;color:#fff;padding:12px 18px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media(min-width:1000px){.toast{bottom:28px}}
+
+/* ---------- signed-out landing ---------- */
+.top{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.9);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 28px}
+.top .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.02em;text-decoration:none;font-size:17px}
+.brand i{width:22px;height:22px;border:2.5px solid #111;border-radius:50%;position:relative;display:inline-block;flex:none}
 .brand i:after{content:"";position:absolute;inset:6px;background:#111;border-radius:50%}
-nav.links{display:flex;gap:6px}
-nav.links a{padding:9px 12px;border-radius:999px;text-decoration:none;font-weight:600;font-size:14px;color:var(--soft)}
-nav.links a:hover{background:var(--tint);color:var(--ink)}
-.hero{padding-top:64px;padding-bottom:36px}
-.hero h1{font-size:clamp(40px,8vw,76px);line-height:.98;letter-spacing:-.045em;font-weight:700;max-width:12ch}
-.hero p{margin-top:20px;font-size:clamp(17px,2.4vw,20px);color:var(--soft);max-width:46ch}
-.hero .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:28px}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 22px;border-radius:999px;border:1.5px solid #111;background:#111;color:#fff;font-weight:700;font-size:15px;text-decoration:none;cursor:pointer;transition:transform .15s,background .15s}
-.btn:hover{transform:translateY(-1px)}
-.btn.ghost{background:#fff;color:#111}
-.btn.sm{min-height:38px;padding:0 16px;font-size:14px}
-.btn[disabled]{opacity:.5;cursor:default;transform:none}
-section{padding:44px 0}
-section>.wrap>h2,.h2{font-size:clamp(26px,4.4vw,38px);letter-spacing:-.035em;line-height:1.05;font-weight:700}
-.sub{margin-top:10px;color:var(--soft);max-width:56ch}
-.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:26px}
-@media(min-width:760px){.grid{grid-template-columns:repeat(4,1fr);gap:18px}}
+.links{display:flex;gap:4px;align-items:center}
+.links a{padding:9px 14px;border-radius:999px;text-decoration:none;font-weight:600;font-size:14px;color:var(--soft)}
+.links a:hover{background:var(--tint);color:var(--ink)}
+.hero{display:grid;gap:36px;padding:72px 0 56px;align-items:center}
+@media(min-width:960px){.hero{grid-template-columns:1.2fr .8fr;gap:64px;padding:96px 0 80px}}
+.hero h1{font-size:clamp(42px,7.4vw,84px);line-height:.96;letter-spacing:-.048em;max-width:11ch}
+.hero p.lede{margin-top:22px;font-size:clamp(17px,2vw,20px);color:var(--soft);max-width:44ch}
+.hero .row{display:flex;gap:10px;flex-wrap:wrap;margin-top:30px}
+.panel{border:1px solid var(--line);border-radius:var(--r);padding:24px;background:#fff}
+.panel.lift{box-shadow:0 30px 60px -34px rgba(0,0,0,.35)}
+.field{display:block;margin-bottom:16px}
+.field>span,.lab{display:block;font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--soft);margin-bottom:7px}
+input[type=text],input[type=email],input[type=password],input[type=search],select{width:100%;height:48px;border:1.5px solid #d9d9d6;border-radius:13px;padding:0 15px;background:#fff;font-size:16px;font-weight:500}
+input:focus,select:focus{outline:none;border-color:#111}
+.tog{margin-top:12px;font-size:14px;color:var(--soft)}.tog button{border:0;background:none;font-weight:700;text-decoration:underline;cursor:pointer;padding:6px}
+.feats{display:grid;gap:14px;padding:6px 0 34px}
+@media(min-width:800px){.feats{grid-template-columns:repeat(3,1fr);gap:20px}}
+.feat{border-top:2px solid #111;padding-top:14px}.feat b{display:block;font-size:18px;letter-spacing:-.02em;margin-bottom:4px}.feat p{color:var(--soft);font-size:14.5px}
+.band{background:var(--tint);padding:56px 0}
+.sec{padding:56px 0}
+.sec h2{font-size:clamp(28px,4vw,42px)}.sub{margin-top:10px;color:var(--soft);max-width:60ch}
+
+/* ---------- logbook cards / library ---------- */
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:24px}
+@media(min-width:800px){.grid{grid-template-columns:repeat(4,1fr);gap:18px}}
 .card{border:1px solid var(--line);border-radius:var(--r);background:#fff;overflow:hidden;display:flex;flex-direction:column;transition:box-shadow .2s,transform .2s}
 .card:hover{box-shadow:0 14px 34px -18px rgba(0,0,0,.25);transform:translateY(-2px)}
-.card .art{height:190px;overflow:hidden;background:var(--tint);position:relative;border-bottom:1px solid var(--line)}
+.card .art{height:190px;overflow:hidden;background:var(--tint);border-bottom:1px solid var(--line)}
 .card .art img{display:block;width:84%;margin:16px auto 0;border-radius:18px 18px 0 0;box-shadow:0 0 0 1px rgba(0,0,0,.08),0 14px 26px -14px rgba(0,0,0,.4)}
 .card .art.make{display:grid;place-items:center;background:#fff}
 .card .art.make b{width:64px;height:64px;border-radius:50%;border:2px dashed #bbb;display:grid;place-items:center;font-size:30px;font-weight:500;color:#888}
 .card .body{padding:14px 14px 16px;display:flex;flex-direction:column;gap:4px;flex:1}
 .card .nm{display:flex;align-items:center;gap:8px;font-weight:700;letter-spacing:-.02em;font-size:17px}
-.dot{width:12px;height:12px;border-radius:50%;flex:none;box-shadow:0 0 0 1px rgba(0,0,0,.12) inset}
 .card p{font-size:13.5px;line-height:1.4;color:var(--soft)}
 .card .acts{display:flex;gap:8px;margin-top:auto;padding-top:12px;flex-wrap:wrap}
-.build{display:grid;gap:22px;margin-top:26px}
-@media(min-width:860px){.build{grid-template-columns:1.15fr .85fr;align-items:start}}
-.panel{border:1px solid var(--line);border-radius:var(--r);padding:22px;background:#fff}
-.field{display:block;margin-bottom:18px}
-.field>span,.lab{display:block;font-weight:700;font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--soft);margin-bottom:8px}
-input[type=text],input[type=email],input[type=password]{width:100%;height:50px;border:1.5px solid #d9d9d9;border-radius:14px;padding:0 16px;background:#fff;font-size:17px;font-weight:500}
-input:focus{outline:none;border-color:#111}
+.badge{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;background:#111;color:#fff;border-radius:999px;padding:2px 8px;margin-left:auto}
+
+/* ---------- builder ---------- */
+.build{display:grid;gap:22px;margin-top:24px}
+@media(min-width:900px){.build{grid-template-columns:1.1fr .9fr;align-items:start}}
 .sw{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .sw button{width:40px;height:40px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1.5px #d5d5d5;cursor:pointer;padding:0}
 .sw button[aria-pressed=true]{box-shadow:0 0 0 2.5px #111}
@@ -67,143 +84,123 @@ input:focus{outline:none;border-color:#111}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chips button{min-height:40px;padding:0 15px;border-radius:999px;border:1.5px solid #d5d5d5;background:#fff;font-weight:600;font-size:14px;cursor:pointer}
 .chips button[aria-pressed=true]{background:#111;border-color:#111;color:#fff}
-.prev{border-radius:24px;padding:20px;color:#fff;min-height:210px;display:flex;flex-direction:column;justify-content:space-between;transition:background .25s}
+.prev{border-radius:24px;padding:22px;color:#fff;min-height:230px;display:flex;flex-direction:column;justify-content:space-between;transition:background .25s}
 .prev small{font-weight:700;letter-spacing:.14em;text-transform:uppercase;opacity:.8;font-size:11px}
-.prev h3{font-size:30px;letter-spacing:-.04em;line-height:1;margin-top:8px;font-weight:700;word-break:break-word}
-.prev .st{display:flex;gap:10px;margin-top:18px}
-.prev .st div{flex:1;border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.18)}
-.prev .st b{display:block;font-size:22px;letter-spacing:-.03em}
-.prev .st span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
-.prev .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
-.prev .tags i{font-style:normal;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.2)}
-.err{color:#b00020;font-weight:600;font-size:14px;min-height:20px;margin:6px 0 0}
-.mine{margin-top:26px}
-.mine h3{font-size:18px;letter-spacing:-.02em;margin-bottom:10px}
-.mrow{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:8px}
+.prev h3{font-size:32px;line-height:1;margin-top:8px;word-break:break-word}
+.prev .st{display:flex;gap:10px;margin-top:18px}.prev .st div{flex:1;border-radius:14px;padding:10px 12px;background:rgba(255,255,255,.18)}
+.prev .st b{display:block;font-size:22px;letter-spacing:-.03em}.prev .st span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;opacity:.85}
+.prev .tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}.prev .tags i{font-style:normal;font-size:12px;font-weight:700;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.2)}
+.mine{margin-top:22px}.mine h3{font-size:18px;margin-bottom:10px}
+.mrow{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:16px;padding:12px 14px;margin-bottom:8px;background:#fff}
 .mrow b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mrow .x{border:0;background:none;color:var(--mute);cursor:pointer;font-size:13px;font-weight:600;padding:8px}
+
+/* ---------- install sheet ---------- */
 dialog{border:0;border-radius:24px;padding:0;width:min(520px,calc(100vw - 24px));max-height:calc(100vh - 24px);box-shadow:0 30px 80px -20px rgba(0,0,0,.45);color:var(--ink)}
 dialog::backdrop{background:rgba(0,0,0,.4)}
-.sheet{padding:24px;overflow:auto;max-height:calc(100vh - 24px)}
-.sheet h3{font-size:26px;letter-spacing:-.035em;line-height:1.05;padding-right:40px}
+.sheet{padding:26px;overflow:auto;max-height:calc(100vh - 24px)}
+.sheet h3{font-size:26px;padding-right:40px}
 .sheet .close{position:absolute;right:14px;top:14px;width:40px;height:40px;border-radius:50%;border:0;background:var(--tint);font-size:20px;cursor:pointer}
-.urlbox{display:flex;gap:8px;margin-top:16px}
-.urlbox input{flex:1;min-width:0;font-size:14px;height:46px}
+.urlbox{display:flex;gap:8px;margin-top:16px}.urlbox input{flex:1;min-width:0;font-size:14px;height:46px}
 .qrrow{display:flex;gap:18px;align-items:center;margin-top:18px;padding:16px;border-radius:18px;background:var(--tint)}
-.qrrow svg{width:112px;height:112px;flex:none;background:#fff;border-radius:10px;padding:6px}
-.qrrow p{font-size:14px;color:var(--soft)}
-.tabs{display:flex;gap:6px;margin-top:20px}
-.tabs button{flex:1;min-height:40px;border-radius:999px;border:1.5px solid #d5d5d5;background:#fff;font-weight:700;font-size:14px;cursor:pointer}
+.qrrow #dq{width:112px;height:112px;flex:none;background:#fff;border-radius:10px;padding:6px}.qrrow p{font-size:14px;color:var(--soft)}
+.tabs{display:flex;gap:6px;margin-top:20px}.tabs button{flex:1;min-height:40px;border-radius:999px;border:1.5px solid #d5d5d5;background:#fff;font-weight:700;font-size:14px;cursor:pointer}
 .tabs button[aria-selected=true]{background:#111;color:#fff;border-color:#111}
-ol.steps{margin:14px 0 0;padding-left:0;list-style:none;counter-reset:s}
+ol.steps{margin:14px 0 0;padding:0;list-style:none;counter-reset:s}
 ol.steps li{counter-increment:s;display:grid;grid-template-columns:30px 1fr;gap:10px;padding:8px 0;font-size:15px}
 ol.steps li:before{content:counter(s);width:26px;height:26px;border-radius:50%;background:#111;color:#fff;font-weight:700;font-size:13px;display:grid;place-items:center;margin-top:1px}
-.note{margin-top:14px;font-size:13px;color:var(--mute)}
-.auth{max-width:440px}
-.tog{margin-top:12px;font-size:14px;color:var(--soft)}
-.tog button{border:0;background:none;font-weight:700;text-decoration:underline;cursor:pointer;padding:6px}
-.dhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:10px}
-.dhead .who{color:var(--soft);font-size:14px;word-break:break-all}
-.lbs{display:grid;gap:16px;margin-top:22px}
-.lb{border:1px solid var(--line);border-radius:var(--r);padding:20px;background:#fff}
-.lb .top{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.lb .top h3{font-size:22px;letter-spacing:-.03em;flex:1;min-width:0}
-.lb .meta{color:var(--mute);font-size:13px;margin-top:2px}
-.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
-.kp div{background:var(--tint);border-radius:16px;padding:12px 14px}
-.kp b{display:block;font-size:28px;letter-spacing:-.04em;line-height:1.05}
-.kp span{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)}
-.heat{display:grid;grid-template-columns:repeat(15,1fr);gap:4px;margin-top:16px}
-.heat i{aspect-ratio:1;border-radius:5px;background:#ececea}
-.legend{font-size:12px;color:var(--mute);margin-top:6px}
-.use{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
-.use span{font-size:13px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:5px 11px}
-.use span b{font-weight:700}
-.days{margin-top:16px;border-top:1px solid var(--line)}
-.days details{border-bottom:1px solid var(--line)}
-.days summary{list-style:none;display:flex;gap:12px;align-items:baseline;padding:12px 2px;cursor:pointer;font-weight:600}
-.days summary::-webkit-details-marker{display:none}
-.days summary em{font-style:normal;color:var(--mute);font-weight:500;font-size:14px;margin-left:auto;text-align:right}
-.days pre{background:var(--tint);border-radius:12px;padding:12px;font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto;max-height:260px;margin:0 0 12px;white-space:pre-wrap;word-break:break-word}
-.empty{border:1.5px dashed #d0d0d0;border-radius:var(--r);padding:26px;color:var(--soft);margin-top:22px}
-.empty b{color:var(--ink)}
-footer{border-top:1px solid var(--line);padding:28px 0 40px;color:var(--mute);font-size:13px;margin-top:30px}
-footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
-.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom));transform:translate(-50%,30px);background:#111;color:#fff;padding:12px 18px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:50}
-.toast.on{opacity:1;transform:translate(-50%,0)}
-.hide{display:none!important}
-@media(max-width:560px){.hero{padding-top:44px}nav.links a.hm{display:none}.kp b{font-size:24px}}
-@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+/* ---------- signed-in app shell ---------- */
+.shell{min-height:100vh}
+.side{display:none}
+.main{padding:22px 20px calc(96px + env(safe-area-inset-bottom));max-width:1240px}
+.mtop{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(255,255,255,.95);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+.tabbar a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 4px;font-size:11.5px;font-weight:700;text-decoration:none;color:var(--mute);border-radius:12px}
+.tabbar a[aria-current=page]{color:#111;background:var(--tint)}
+.tabbar svg{width:22px;height:22px}
+@media(min-width:1000px){
+  .shell{display:grid;grid-template-columns:268px 1fr}
+  .side{display:flex;flex-direction:column;position:sticky;top:0;height:100vh;background:var(--side);border-right:1px solid var(--line);padding:22px 16px 18px}
+  .side .brand{padding:2px 10px 18px}
+  .side nav{display:flex;flex-direction:column;gap:2px}
+  .side nav a,.side .lbl a{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;text-decoration:none;font-weight:600;font-size:14.5px;color:var(--soft)}
+  .side nav a:hover,.side .lbl a:hover{background:#f0f0ec;color:var(--ink)}
+  .side [aria-current=page]{background:#fff;color:var(--ink);box-shadow:0 0 0 1px var(--line),0 4px 12px -8px rgba(0,0,0,.3)}
+  .side svg{width:19px;height:19px;flex:none}
+  .side .k{padding:18px 12px 6px}
+  .side .lbl{display:flex;flex-direction:column;gap:2px;overflow:auto;min-height:0}
+  .side .lbl a small{margin-left:auto;font-weight:700;color:var(--mute);font-size:12px}
+  .side .me{margin-top:auto;border-top:1px solid var(--line);padding:14px 10px 0;font-size:13px;color:var(--soft);word-break:break-all}
+  .side .me button{display:block;margin-top:8px;border:0;background:none;font-weight:700;text-decoration:underline;cursor:pointer;padding:2px 0;font-size:13px}
+  .main{padding:34px 40px 60px;width:100%}
+  .tabbar,.mtop{display:none}
+}
+.vh{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px}
+.vh h1{font-size:clamp(28px,3.6vw,40px)}.vh .sub{margin-top:6px}
+.vh .acts{display:flex;gap:8px;flex-wrap:wrap}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+@media(min-width:760px){.kpis{grid-template-columns:repeat(4,1fr);gap:16px}.kpis.five{grid-template-columns:repeat(5,1fr)}}
+.kpi{border:1px solid var(--line);border-radius:var(--r);padding:16px 18px;background:#fff}
+.kpi b{display:block;font-size:clamp(28px,3vw,38px);letter-spacing:-.045em;line-height:1.05;margin-top:6px}
+.kpi small{display:block;color:var(--mute);font-size:12.5px;margin-top:2px}
+.cols{display:grid;gap:16px;margin-top:16px}
+@media(min-width:1100px){.cols.two{grid-template-columns:1.6fr 1fr}.cols.eq{grid-template-columns:1fr 1fr}}
+.box{border:1px solid var(--line);border-radius:var(--r);padding:20px 22px;background:#fff;min-width:0}
+.box h3{font-size:18px;margin-bottom:2px}.box .hint{color:var(--mute);font-size:13px}
+.hm{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:4px;margin-top:16px}
+.hm i{display:block;aspect-ratio:1;border-radius:4px;background:#ecece8;min-width:0}
+.hmw{overflow-x:auto;padding-bottom:4px}
+.hmw .hm{min-width:420px}
+.lg{display:flex;align-items:center;gap:5px;margin-top:12px;font-size:12px;color:var(--mute)}.lg i{width:12px;height:12px;border-radius:3px;display:inline-block}
+.bars{display:flex;align-items:flex-end;gap:10px;height:150px;margin-top:18px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;min-width:0}
+.bars i{display:block;width:100%;border-radius:8px 8px 3px 3px;min-height:4px;background:#111;transition:height .5s}
+.bars span{font-size:11.5px;color:var(--mute);font-weight:600}.bars em{font-style:normal;font-size:12px;font-weight:700}
+.lbgrid{display:grid;gap:14px;margin-top:16px}
+@media(min-width:700px){.lbgrid{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1180px){.lbgrid{grid-template-columns:repeat(3,1fr)}}
+.lbc{display:block;text-decoration:none;border:1px solid var(--line);border-radius:var(--r);padding:18px;background:#fff;transition:box-shadow .2s,transform .2s}
+.lbc:hover{box-shadow:0 14px 34px -18px rgba(0,0,0,.28);transform:translateY(-2px)}
+.lbc .t{display:flex;align-items:center;gap:9px}.lbc h3{font-size:19px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lbc .m{display:flex;gap:18px;margin-top:14px}.lbc .m b{display:block;font-size:26px;letter-spacing:-.04em;line-height:1}.lbc .m span{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--mute)}
+.strip{display:grid;gap:3px;margin-top:14px}.strip i{aspect-ratio:1;border-radius:3px;background:#ecece8}
+.feed{list-style:none;padding:0;margin-top:10px}
+.feed li{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-top:1px solid var(--line)}.feed li:first-child{border-top:0}
+.feed .d{width:46px;flex:none;text-align:center;line-height:1.1}.feed .d b{display:block;font-size:19px;letter-spacing:-.03em}.feed .d span{font-size:11px;font-weight:700;color:var(--mute);text-transform:uppercase}
+.feed .w{min-width:0}.feed .w b{display:flex;align-items:center;gap:7px;font-size:14.5px}.feed .w p{font-size:13px;color:var(--soft)}
+.use{display:grid;gap:10px;margin-top:14px}.use>div{display:grid;grid-template-columns:150px 1fr 52px;gap:12px;align-items:center;font-size:14px;font-weight:600}
+.use .tr{height:10px;border-radius:6px;background:#ecece8;overflow:hidden}.use .tr i{display:block;height:100%;border-radius:6px}.use>div>span:last-child{color:var(--mute);text-align:right;font-weight:700}
+@media(max-width:560px){.use>div{grid-template-columns:104px 1fr 40px}}
+.tbl{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px}
+.tbl th{text-align:left;font-size:11.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--mute);padding:8px 8px;border-bottom:1px solid var(--line)}
+.tbl td{padding:11px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+.tbl tr.dr{cursor:pointer}.tbl tr.dr:hover td{background:var(--tint)}
+.tbl .tg{display:flex;flex-wrap:wrap;gap:5px}.tbl .tg i{font-style:normal;font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:999px;padding:2px 9px}
+.tbl pre{background:var(--tint);border-radius:12px;padding:12px;font:12.5px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto;max-height:300px;white-space:pre-wrap;word-break:break-word;margin:4px 0}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}.tools input,.tools select{width:auto;flex:1;min-width:160px;height:42px;font-size:14.5px}
+.empty{border:1.5px dashed #d0d0cc;border-radius:var(--r);padding:28px;color:var(--soft);background:#fff}
+.empty h3{color:var(--ink);font-size:22px;margin-bottom:8px}
+.empty ol{margin:14px 0 18px 20px;display:grid;gap:6px}
+.sk{height:96px;border-radius:var(--r);background:linear-gradient(90deg,#f1f1ee,#f8f8f6,#f1f1ee);background-size:200% 100%;animation:sk 1.2s linear infinite}
+@keyframes sk{to{background-position:-200% 0}}
+.acct{display:grid;gap:16px;max-width:720px}.acct dl{display:grid;grid-template-columns:140px 1fr;gap:10px 16px;margin-top:12px;font-size:14.5px}.acct dt{color:var(--mute);font-weight:600}.acct dd{word-break:break-all}
+footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute);font-size:13px}.ft .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
-<header class="top"><div class="wrap">
-  <a class="brand" href="#top"><i aria-hidden="true"></i>Logbooks</a>
-  <nav class="links" aria-label="Sections"><a class="hm" href="#choose">Choose</a><a class="hm" href="#create">Create your own</a><a href="#data">Your data</a></nav>
-</div></header>
-
-<main id="top">
-<div class="wrap hero">
-  <h1>Pick a logbook. Make it yours.</h1>
-  <p>A daily logbook that lives on your phone, works with no signal, and backs up to your account so you can see it here.</p>
-  <div class="row"><a class="btn" href="#choose">Choose a logbook</a><a class="btn ghost" href="#create">Create your own</a></div>
-</div>
-
-<section id="choose"><div class="wrap">
-  <h2>Choose a logbook</h2>
-  <p class="sub">Same logbook underneath, a different look and a different starting set. Tap Install to get the link for your phone.</p>
-  <div class="grid" id="presets"></div>
-</div></section>
-
-<section id="create" style="background:var(--tint)"><div class="wrap">
-  <h2>Create your own</h2>
-  <p class="sub">Name it, pick a colour, choose what goes in it. You get a link to install on your phone.</p>
-  <div class="build">
-    <div class="panel">
-      <label class="field"><span>Name</span><input type="text" id="cn" maxlength="22" placeholder="My Gym" autocomplete="off" value="My Logbook"></label>
-      <div class="field"><span class="lab">Colour</span><div class="sw" id="csw"></div></div>
-      <div class="field"><span class="lab">What goes in it</span><div class="chips" id="cbx"></div></div>
-      <button class="btn" id="cmk" type="button">Create my logbook</button>
-      <p class="err" id="cerr" role="alert"></p>
-    </div>
-    <div>
-      <div class="prev" id="cpv" aria-label="Preview"><div><small>Your logbook</small><h3 id="cpn">My Logbook</h3></div><div><div class="st"><div><b>6</b><span>Day streak</span></div><div><b>2/4</b><span>Today</span></div></div><div class="tags" id="cpt"></div></div></div>
-      <div class="mine hide" id="mine"><h3>Your logbooks</h3><div id="minel"></div></div>
-    </div>
-  </div>
-</div></section>
-
-<section id="data"><div class="wrap">
-  <h2>Your data</h2>
-  <p class="sub">Sign in with the same account you use in your logbooks. Whatever your phone has synced shows up here.</p>
-  <div id="authbox" class="panel auth" style="margin-top:22px">
-    <form id="af" novalidate>
-      <label class="field"><span>Email</span><input type="email" id="ae" autocomplete="email" inputmode="email"></label>
-      <label class="field"><span>Password</span><input type="password" id="ap" autocomplete="current-password"></label>
-      <button class="btn" id="ab" type="submit" style="width:100%">Sign in</button>
-      <p class="err" id="aerr" role="alert"></p>
-      <p class="tog"><span id="at">New here?</span> <button type="button" id="amode">Create an account</button></p>
-      <p class="note">Password reset by email is not switched on yet, so pick a password you will remember.</p>
-    </form>
-  </div>
-  <div id="dash" class="hide">
-    <div class="dhead"><span class="who" id="who"></span><span><button class="btn ghost sm" id="rf" type="button">Refresh</button> <button class="btn ghost sm" id="so" type="button">Sign out</button></span></div>
-    <div class="lbs" id="lbs"></div>
-  </div>
-</div></section>
-</main>
-
-<footer><div class="wrap"><span>&copy; 2026 Clean Routine Co. All rights reserved.</span><span>Made in Ho Chi Minh City</span></div></footer>
+<div id="root"></div>
 
 <dialog id="dlg" aria-labelledby="dt"><div class="sheet"><button class="close" type="button" id="dx" aria-label="Close">&times;</button>
   <h3 id="dt">Install</h3>
   <p class="sub" id="dsub">Open this link on your phone, then add it to your home screen.</p>
   <div class="urlbox"><input type="text" id="du" readonly aria-label="Link"><button class="btn" id="dc" type="button">Copy</button></div>
   <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><a class="btn ghost sm" id="do" href="#">Open it</a><button class="btn ghost sm hide" id="dsh" type="button">Share</button></div>
-  <div class="qrrow"><div id="dq" aria-label="QR code for the link" role="img"></div><p><b style="color:var(--ink)">On a computer?</b><br>Scan this with your phone camera to open the logbook on your phone.</p></div>
+  <div class="qrrow"><div id="dq" role="img" aria-label="QR code for the link"></div><p><b style="color:var(--ink)">On a computer?</b><br>Scan this with your phone camera to open the logbook on your phone.</p></div>
   <div class="tabs" role="tablist"><button role="tab" aria-selected="true" id="ti">iPhone</button><button role="tab" aria-selected="false" id="ta">Android</button></div>
   <ol class="steps" id="dsteps"></ol>
-  <p class="note">Your logbook works offline once it has opened once. To back it up to your account, open the logbook, sign in, then turn Sync on in Settings.</p>
+  <p class="note">It works offline once it has opened once. To see it on this site, open the logbook, sign in, then turn Sync on in Settings.</p>
 </div></dialog>
 <div class="toast" id="toast" role="status"></div>
 
@@ -214,35 +211,40 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   var SB = 'https://itkuknjylgqhrjysarre.supabase.co', KEY = 'sb_publishable_EtleRuUUnLTHw6xmymBDUA_FByfgd0A';
   var $ = function(id){ return document.getElementById(id); };
   var PRESETS = [
-    { id:'clean-boy',    n:'Clean Boy',    c:'#835F1F', t:'Food, movement, skin and mind. The original.' },
-    { id:'clean-girl',   n:'Clean Girl',   c:'#835A5B', t:'Glow routine: meals, movement, skin, sleep.' },
-    { id:'hustler',      n:"Hustler's",    c:'#C81212', t:'Output over excuses. Work, body, journal.' },
-    { id:'reading-boy',  n:'Reading Boy',  c:'#4A6350', t:'Pages read, focus sessions, quiet nights.' },
-    { id:'reading-girl', n:'Reading Girl', c:'#C81212', t:'A reading log with a calm evening routine.' },
-    { id:'sober-boy',    n:'Sober Boy',    c:'#3B6889', t:'Daily check-in, steady nights, one day at a time.' },
-    { id:'sober-girl',   n:'Sober Girl',   c:'#6E5F77', t:'Gentle streaks, clear mornings, a place to write.' }
+    { id:'clean-boy',    n:'Clean Boy',    c:'#835F1F', t:'Food, movement, skin and mind. The original.', key:'cleanboy-logbook-v1' },
+    { id:'clean-girl',   n:'Clean Girl',   c:'#835A5B', t:'Glow routine: meals, movement, skin, sleep.', key:'cleangirl-logbook-v1' },
+    { id:'hustler',      n:"Hustler's",    c:'#C81212', t:'Output over excuses. Work, body, journal.', key:'hustlers-logbook-v1' },
+    { id:'reading-boy',  n:'Reading Boy',  c:'#4A6350', t:'Pages read, focus sessions, quiet nights.', key:'readingboy-logbook-v1' },
+    { id:'reading-girl', n:'Reading Girl', c:'#C81212', t:'A reading log with a calm evening routine.', key:'readinggirl-logbook-v1' },
+    { id:'sober-boy',    n:'Sober Boy',    c:'#3B6889', t:'Daily check-in, steady nights, one day at a time.', key:'soberboy-logbook-v1' },
+    { id:'sober-girl',   n:'Sober Girl',   c:'#6E5F77', t:'Gentle streaks, clear mornings, a place to write.', key:'sobergirl-logbook-v1' }
   ];
   var BOXES = [['dashboard','Food & Fuel'],['workout','Movement'],['reading','Reading'],['mindfocus','Mind & Focus'],['night','Night Wind-down'],['journal','Journal'],['shower','Shower & Hygiene']];
   var BN = {}; BOXES.forEach(function(b){ BN[b[0]] = b[1]; });
   var SWATCH = ['#835F1F','#B4546A','#C81212','#4A6350','#1F7A74','#3B6889','#7A4FB3','#2B2B2B'];
-  var APPNAME = { 'cleanboy-logbook-v1':['Clean Boy','clean-boy'], 'cleangirl-logbook-v1':['Clean Girl','clean-girl'], 'hustlers-logbook-v1':["Hustler's",'hustler'], 'readingboy-logbook-v1':['Reading Boy','reading-boy'], 'readinggirl-logbook-v1':['Reading Girl','reading-girl'], 'soberboy-logbook-v1':['Sober Boy','sober-boy'], 'sobergirl-logbook-v1':['Sober Girl','sober-girl'] };
   var esc = function(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); };
-  function toast(m){ var t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function(){ t.classList.remove('on'); }, 2200); }
+  function toast(m){ var t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function(){ t.classList.remove('on'); }, 2400); }
   function store(k, v){ try{ if(v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); }catch(e){} return null; }
   function urlFor(o){
     var base = new URL('logbook/', location.href.split('#')[0].split('?')[0]).href;
     if(o.preset) return base + '?l=' + o.preset;
     return base + '?l=custom&n=' + encodeURIComponent(o.n) + '&a=' + encodeURIComponent(o.a) + '&k=' + o.k + '&b=' + o.b.join(',');
   }
+  var IC = {
+    home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>',
+    lib:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg>',
+    plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
+    me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
+  };
 
-  /* ---- Choose ---- */
-  var g = $('presets');
-  g.innerHTML = PRESETS.map(function(p){
-    return '<article class="card"><div class="art"><img src="logbook/shots/' + p.id + '/home.jpg" alt="' + esc(p.n) + ' home page" loading="lazy" width="520" height="1126"></div><div class="body"><div class="nm"><span class="dot" style="background:' + p.c + '"></span>' + esc(p.n) + '</div><p>' + esc(p.t) + '</p><div class="acts"><a class="btn sm" href="logbook/?l=' + p.id + '">Open</a><button class="btn ghost sm" type="button" data-i="' + p.id + '">Install</button></div></div></article>';
-  }).join('') + '<article class="card"><div class="art make"><b aria-hidden="true">+</b></div><div class="body"><div class="nm">Your own</div><p>Name it, colour it, choose the boxes.</p><div class="acts"><a class="btn sm" href="#create">Create</a></div></div></article>';
-  g.addEventListener('click', function(e){ var b = e.target.closest('[data-i]'); if(!b) return; var p = PRESETS.filter(function(x){ return x.id === b.dataset.i; })[0]; install(p.n, urlFor({ preset:p.id })); });
+  /* ================= state ================= */
+  var saved = store('lbs-custom') || [];
+  var sess = store('lbs-sess');
+  var rows = null, loadErr = '', loading = false, lastLoad = 0;
+  var cs = { n:'My Logbook', a:SWATCH[0], b:['dashboard','workout','mindfocus','night'] };
+  var mode = 'in', filt = { q:'', m:'' };
 
-  /* ---- Install sheet ---- */
+  /* ================= install sheet ================= */
   var dlg = $('dlg'), curUrl = '';
   function qrSvg(text){
     try{
@@ -251,10 +253,8 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
       return '<svg viewBox="-2 -2 ' + (n + 4) + ' ' + (n + 4) + '" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" style="width:100%;height:100%"><path d="' + d + '" fill="#111"/></svg>';
     }catch(e){ return ''; }
   }
-  var STEPS = {
-    i:['Open the link in <b>Safari</b> (not inside another app).','Tap the <b>Share</b> button at the bottom.','Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.','Open it from your home screen. It runs full screen and works offline.'],
-    a:['Open the link in <b>Chrome</b>.','Tap the <b>menu</b> (three dots) at the top right.','Tap <b>Install app</b> or <b>Add to Home screen</b>.','Open it from your home screen.']
-  };
+  var STEPS = { i:['Open the link in <b>Safari</b> (not inside another app).','Tap the <b>Share</b> button at the bottom.','Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.','Open it from your home screen. It runs full screen and works offline.'],
+                a:['Open the link in <b>Chrome</b>.','Tap the <b>menu</b> (three dots) at the top right.','Tap <b>Install app</b> or <b>Add to Home screen</b>.','Open it from your home screen.'] };
   function steps(k){ $('dsteps').innerHTML = STEPS[k].map(function(s){ return '<li><span>' + s + '</span></li>'; }).join(''); $('ti').setAttribute('aria-selected', k === 'i'); $('ta').setAttribute('aria-selected', k === 'a'); }
   function install(name, url){
     curUrl = url; $('dt').textContent = 'Install ' + name; $('du').value = url; $('do').href = url; $('dq').innerHTML = qrSvg(url);
@@ -267,49 +267,12 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   $('du').addEventListener('focus', function(){ this.select(); });
   $('dc').onclick = function(){
     var done = function(){ toast('Link copied'); };
-    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(curUrl).then(done, function(){ $('du').select(); document.execCommand('copy'); done(); });
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(curUrl).then(done, function(){ $('du').select(); try{ document.execCommand('copy'); }catch(e){} done(); });
     else { $('du').select(); try{ document.execCommand('copy'); }catch(e){} done(); }
   };
   $('dsh').onclick = function(){ try{ navigator.share({ title:$('dt').textContent, url:curUrl }); }catch(e){} };
 
-  /* ---- Create ---- */
-  var cs = { n:'My Logbook', a:SWATCH[0], b:['dashboard','workout','mindfocus','night'] };
-  function swatches(){
-    var h = SWATCH.map(function(c){ return '<button type="button" style="background:' + c + '" data-c="' + c + '" aria-label="Colour ' + c + '" aria-pressed="' + (cs.a.toLowerCase() === c.toLowerCase()) + '"></button>'; }).join('');
-    h += '<label title="Pick any colour" aria-label="Pick any colour">+<input type="color" id="ccol" value="' + cs.a + '"></label>';
-    $('csw').innerHTML = h;
-  }
-  function chips(){ $('cbx').innerHTML = BOXES.map(function(b){ return '<button type="button" data-b="' + b[0] + '" aria-pressed="' + (cs.b.indexOf(b[0]) > -1) + '">' + esc(b[1]) + '</button>'; }).join(''); }
-  function darken(hex){ var r = parseInt(hex.substr(1,2),16), g2 = parseInt(hex.substr(3,2),16), b = parseInt(hex.substr(5,2),16), m = Math.max(r,g2,b)/255, l = (Math.max(r,g2,b)+Math.min(r,g2,b))/510;
-    var f = l > .34 ? .34/l : 1; return 'rgb(' + Math.round(r*f) + ',' + Math.round(g2*f) + ',' + Math.round(b*f) + ')'; }
-  function pv(){ $('cpv').style.background = darken(cs.a); $('cpn').textContent = (cs.n || 'My Logbook'); $('cpt').innerHTML = cs.b.map(function(i){ return '<i>' + esc(BN[i]) + '</i>'; }).join(''); }
-  $('cn').addEventListener('input', function(){ cs.n = this.value.trim(); pv(); });
-  $('csw').addEventListener('click', function(e){ var b = e.target.closest('[data-c]'); if(!b) return; cs.a = b.dataset.c; swatches(); pv(); });
-  $('csw').addEventListener('input', function(e){ if(e.target.id === 'ccol'){ cs.a = e.target.value.toUpperCase(); pv(); [].forEach.call($('csw').querySelectorAll('[data-c]'), function(b){ b.setAttribute('aria-pressed', 'false'); }); } });
-  $('cbx').addEventListener('click', function(e){ var b = e.target.closest('[data-b]'); if(!b) return; var i = cs.b.indexOf(b.dataset.b); if(i > -1) cs.b.splice(i, 1); else cs.b.push(b.dataset.b); chips(); pv(); });
-  function rid(){ return Math.random().toString(36).slice(2, 8); }
-  var saved = store('lbs-custom') || [];
-  function mine(){
-    $('mine').classList.toggle('hide', !saved.length);
-    $('minel').innerHTML = saved.map(function(o, i){ return '<div class="mrow"><span class="dot" style="background:' + esc(o.a) + '"></span><b>' + esc(o.n) + '</b><a class="btn sm" href="' + esc(urlFor(o)) + '">Open</a><button class="btn ghost sm" type="button" data-mi="' + i + '">Install</button><button class="x" type="button" data-md="' + i + '" aria-label="Remove ' + esc(o.n) + ' from this list">Remove</button></div>'; }).join('');
-  }
-  $('minel').addEventListener('click', function(e){
-    var b = e.target.closest('[data-mi]'), d = e.target.closest('[data-md]');
-    if(b){ var o = saved[+b.dataset.mi]; install(o.n, urlFor(o)); }
-    if(d){ saved.splice(+d.dataset.md, 1); store('lbs-custom', saved); mine(); pushPrefs(); toast('Removed from this list. Any data already synced stays in your account.'); }
-  });
-  $('cmk').onclick = function(){
-    var n = (cs.n || '').replace(/[<>"&]/g, '').replace(/\s*logbook\s*$/i, '').trim();
-    if(!n){ $('cerr').textContent = 'Give it a name first.'; return; }
-    if(!cs.b.length){ $('cerr').textContent = 'Pick at least one thing to log.'; return; }
-    $('cerr').textContent = '';
-    var o = { k:rid(), n:n.slice(0, 22), a:cs.a.toUpperCase(), b:cs.b.slice() };
-    saved.unshift(o); store('lbs-custom', saved); mine(); pushPrefs(); install(o.n, urlFor(o));
-  };
-  swatches(); chips(); pv(); mine();
-
-  /* ---- Account (same Supabase account the logbooks use) ---- */
-  var sess = store('lbs-sess'), mode = 'in';
+  /* ================= account (same Supabase account the logbooks use) ================= */
   function hdr(tok){ return { 'apikey':KEY, 'Authorization':'Bearer ' + (tok || KEY), 'Content-Type':'application/json' }; }
   function j(r){ return r.text().then(function(t){ var o = null; try{ o = JSON.parse(t); }catch(e){} return { ok:r.ok, status:r.status, j:o }; }); }
   function emsg(r){
@@ -323,102 +286,250 @@ footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
   }
   function setSess(o){
     if(o && o.access_token){ sess = { at:o.access_token, rt:o.refresh_token, exp:(o.expires_at ? o.expires_at * 1000 : Date.now() + (o.expires_in || 3600) * 1000), id:o.user && o.user.id, email:o.user && o.user.email }; store('lbs-sess', sess); }
-    else { sess = null; store('lbs-sess', null); }
+    else { sess = null; rows = null; store('lbs-sess', null); }
   }
   function fresh(){
     if(!sess) return Promise.reject(new Error('out'));
     if(sess.exp - Date.now() > 60000) return Promise.resolve(sess.at);
     return fetch(SB + '/auth/v1/token?grant_type=refresh_token', { method:'POST', headers:hdr(), body:JSON.stringify({ refresh_token:sess.rt }) }).then(j).then(function(r){
-      if(!r.ok || !r.j || !r.j.access_token){ setSess(null); throw new Error('out'); } setSess(r.j); return sess.at; });
+      if(!r.ok || !r.j || !r.j.access_token){ if(r.status >= 400 && r.status < 500){ setSess(null); } throw new Error('out'); } setSess(r.j); return sess.at; });
   }
-  function api(path, opt){ return fresh().then(function(t){ opt = opt || {}; opt.headers = hdr(t); if(opt.headers && opt.prefer) opt.headers.Prefer = opt.prefer; return fetch(SB + '/rest/v1/' + path, opt).then(j); }); }
-  $('amode').onclick = function(){ mode = mode === 'in' ? 'up' : 'in'; $('ab').textContent = mode === 'in' ? 'Sign in' : 'Create account'; $('at').textContent = mode === 'in' ? 'New here?' : 'Already have an account?'; this.textContent = mode === 'in' ? 'Create an account' : 'Sign in'; $('ap').autocomplete = mode === 'in' ? 'current-password' : 'new-password'; $('aerr').textContent = ''; };
-  $('af').addEventListener('submit', function(e){
-    e.preventDefault(); var em = $('ae').value.trim(), pw = $('ap').value; $('aerr').textContent = '';
-    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ $('aerr').textContent = 'Enter a valid email.'; return; }
-    if(pw.length < 8){ $('aerr').textContent = 'Use at least 8 characters for the password.'; return; }
-    if(navigator.onLine === false){ $('aerr').textContent = 'You are offline.'; return; }
-    $('ab').disabled = true;
-    var url = mode === 'in' ? SB + '/auth/v1/token?grant_type=password' : SB + '/auth/v1/signup';
-    fetch(url, { method:'POST', headers:hdr(), body:JSON.stringify({ email:em, password:pw }) }).then(j).then(function(r){
-      $('ab').disabled = false;
-      if(!r.ok){ $('aerr').textContent = emsg(r); return; }
-      if(r.j && r.j.access_token){ setSess(r.j); $('ap').value = ''; show(); }
-      else $('aerr').textContent = 'Account created. Check your email to confirm it, then sign in.';
-    }, function(){ $('ab').disabled = false; $('aerr').textContent = 'Could not reach the server. Check your connection.'; });
-  });
-  $('so').onclick = function(){ setSess(null); show(); toast('Signed out'); };
-  $('rf').onclick = function(){ load(true); };
-
-  /* The site keeps your custom logbook list in your account too (a small row of its own), so it follows you across devices. */
+  function api(path, opt){ return fresh().then(function(t){ opt = opt || {}; var pf = opt.prefer; delete opt.prefer; opt.headers = hdr(t); if(pf) opt.headers.Prefer = pf; return fetch(SB + '/rest/v1/' + path, opt).then(j); }); }
   function pushPrefs(){
     if(!sess) return;
-    var body = { user_id:sess.id, app:'site-prefs', data:{ logbooks:saved }, rev:1, edit_at:Date.now(), device:'site' };
-    api('logbook_sync?on_conflict=user_id,app', { method:'POST', body:JSON.stringify(body), prefer:'resolution=merge-duplicates,return=minimal' }).catch(function(){});
+    api('logbook_sync?on_conflict=user_id,app', { method:'POST', body:JSON.stringify({ user_id:sess.id, app:'site-prefs', data:{ logbooks:saved }, rev:1, edit_at:Date.now(), device:'site' }), prefer:'resolution=merge-duplicates,return=minimal' }).catch(function(){});
   }
-  function pullPrefs(rows){
-    var r = rows.filter(function(x){ return x.app === 'site-prefs'; })[0]; if(!r || !r.data || !Array.isArray(r.data.logbooks)) return;
+  function pullPrefs(list){
+    var r = list.filter(function(x){ return x.app === 'site-prefs'; })[0]; if(!r || !r.data || !Array.isArray(r.data.logbooks)) return;
     var have = {}; saved.forEach(function(o){ have[o.k] = 1; }); var add = 0;
     r.data.logbooks.forEach(function(o){ if(o && o.k && !have[o.k] && o.n && /^#[0-9A-Fa-f]{6}$/.test(o.a) && Array.isArray(o.b)){ saved.push({ k:String(o.k).replace(/[^a-z0-9]/gi,'').slice(0,8), n:String(o.n).slice(0,22), a:o.a, b:o.b.filter(function(x){ return BN[x]; }) }); add++; } });
-    if(add){ store('lbs-custom', saved); mine(); }
+    if(add) store('lbs-custom', saved);
+  }
+  function load(force){
+    if(!sess || loading) return; loading = true; if(!rows) loadErr = ''; if(force || !rows) render();
+    api('logbook_sync?select=app,data,rev,updated_at,device&order=updated_at.desc').then(function(r){
+      loading = false;
+      if(r.status === 401){ setSess(null); render(); return; }
+      if(!r.ok || !Array.isArray(r.j)){ loadErr = 'Could not load your data right now.'; render(); return; }
+      loadErr = ''; pullPrefs(r.j); rows = r.j.filter(function(x){ return x.app !== 'site-prefs'; }).map(prep); lastLoad = Date.now(); render(); if(force) toast('Up to date');
+    }, function(err){ loading = false; if(err && err.message === 'out'){ render(); return; } loadErr = 'You look offline. Connect and try Refresh.'; render(); });
   }
 
-  /* ---- Dashboard ---- */
+  /* ================= data helpers ================= */
   function nameOf(app){
-    if(APPNAME[app]) return { n:APPNAME[app][0], preset:APPNAME[app][1] };
+    var i; for(i = 0; i < PRESETS.length; i++) if(PRESETS[i].key === app) return { n:PRESETS[i].n, preset:PRESETS[i].id, acc:PRESETS[i].c };
     var m = /^custom-([a-z0-9]+)-(.+)-v1$/.exec(app);
-    if(m){ var s = null; saved.forEach(function(o){ if(o.k === m[1]) s = o; }); var nm = s ? s.n : m[2].split('-').map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' '); return { n:nm, custom:{ k:m[1], n:nm, a:s ? s.a : '#835F1F', b:s ? s.b : ['dashboard','workout','mindfocus','night'] } }; }
-    return { n:app };
+    if(m){ var s = null; saved.forEach(function(o){ if(o.k === m[1]) s = o; });
+      var nm = s ? s.n : m[2].split('-').map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
+      var cu = { k:m[1], n:nm, a:s ? s.a : '#835F1F', b:s ? s.b : ['dashboard','workout','mindfocus','night'] };
+      return { n:nm, custom:cu, acc:cu.a }; }
+    return { n:app, acc:'#111' };
   }
   function ymd(d){ return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
   function touched(day){ var p = day && day.pages || {}, out = []; Object.keys(p).forEach(function(k){ if(p[k] && p[k]._touched) out.push(k); }); return out; }
   function pageName(id, data){ if(BN[id]) return BN[id]; var b = data && data.bx && data.bx.boxes && data.bx.boxes[id]; if(b && b.name) return b.name; return ({ fit:'Fit of the Day', lane:'Canvas', timetable:'Timetable', bucket:'Vision Board' })[id] || id; }
-  function stats(data){
-    var days = (data && data.days) || {}, keys = Object.keys(days).filter(function(k){ return touched(days[k]).length; }).sort(), set = {}; keys.forEach(function(k){ set[k] = 1; });
-    var today = new Date(), cur = 0, d = new Date(today); if(!set[ymd(d)]) d.setDate(d.getDate() - 1); while(set[ymd(d)]){ cur++; d.setDate(d.getDate() - 1); }
-    var best = 0, run = 0, prev = null; keys.forEach(function(k){ var t = new Date(k + 'T12:00:00'); if(prev && Math.round((t - prev) / 864e5) === 1) run++; else run = 1; if(run > best) best = run; prev = t; });
-    var use = {}; keys.forEach(function(k){ touched(days[k]).forEach(function(p){ use[p] = (use[p] || 0) + 1; }); });
-    return { keys:keys, set:set, cur:cur, best:best, use:use, days:days };
+  function streakOf(set){ var d = new Date(), c = 0; if(!set[ymd(d)]) d.setDate(d.getDate() - 1); while(set[ymd(d)]){ c++; d.setDate(d.getDate() - 1); } return c; }
+  function bestOf(keys){ var best = 0, run = 0, prev = null; keys.forEach(function(k){ var t = new Date(k + 'T12:00:00'); if(prev && Math.round((t - prev) / 864e5) === 1) run++; else run = 1; if(run > best) best = run; prev = t; }); return best; }
+  function prep(r){
+    var data = r.data || {}, days = data.days || {}, keys = [], cnt = {}, use = {}, tot = 0;
+    Object.keys(days).sort().forEach(function(k){ var t = touched(days[k]); if(t.length){ keys.push(k); cnt[k] = t.length; tot += t.length; t.forEach(function(p){ use[p] = (use[p] || 0) + 1; }); } });
+    var set = {}; keys.forEach(function(k){ set[k] = 1; });
+    var nm = nameOf(r.app), mo = ymd(new Date()).slice(0, 7), inMonth = keys.filter(function(k){ return k.slice(0, 7) === mo; }).length;
+    return { app:r.app, data:data, days:days, keys:keys, cnt:cnt, set:set, use:use, name:nm, cur:streakOf(set), best:bestOf(keys), total:tot, avg:keys.length ? tot / keys.length : 0, month:inMonth, updated:r.updated_at, device:r.device, size:JSON.stringify(data).length,
+             url: nm.preset ? urlFor({ preset:nm.preset }) : (nm.custom ? urlFor(nm.custom) : '') };
   }
   function ago(t){ var s = Math.max(0, (Date.now() - new Date(t).getTime()) / 1000); if(s < 90) return 'just now'; if(s < 3600) return Math.round(s / 60) + ' min ago'; if(s < 86400) return Math.round(s / 3600) + ' h ago'; return Math.round(s / 86400) + ' days ago'; }
-  function card(r){
-    var nm = nameOf(r.app), st = stats(r.data), heat = '', i, d, k;
-    var acc = '#111'; PRESETS.forEach(function(p){ if(nm.preset === p.id) acc = p.c; }); if(nm.custom) acc = nm.custom.a;
-    for(i = 29; i >= 0; i--){ d = new Date(); d.setDate(d.getDate() - i); k = ymd(d); heat += '<i title="' + k + '"' + (st.set[k] ? ' style="background:' + esc(acc) + '"' : '') + '></i>'; }
-    var use = Object.keys(st.use).sort(function(a, b){ return st.use[b] - st.use[a]; }).map(function(p){ return '<span>' + esc(pageName(p, r.data)) + ' <b>' + st.use[p] + '</b></span>'; }).join('');
-    var recent = st.keys.slice(-7).reverse().map(function(k){
-      var pg = touched(st.days[k]); var dd = new Date(k + 'T12:00:00');
-      return '<details><summary><span style="white-space:nowrap">' + esc(dd.toLocaleDateString(undefined, { weekday:'short', month:'short', day:'numeric' })) + '</span><em>' + esc(pg.map(function(p){ return pageName(p, r.data); }).join(', ')) + '</em></summary><pre>' + esc(JSON.stringify(st.days[k], null, 2)) + '</pre></details>';
-    }).join('');
-    var open = nm.preset ? urlFor({ preset:nm.preset }) : (nm.custom ? urlFor(nm.custom) : '');
-    return '<article class="lb"><div class="top"><span class="dot" style="background:' + esc(acc) + '"></span><h3>' + esc(nm.n) + '</h3>' + (open ? '<a class="btn ghost sm" href="' + esc(open) + '">Open</a>' : '') + '<button class="btn ghost sm" type="button" data-dl="' + esc(r.app) + '">Download</button></div>'
-      + '<div class="meta">Last synced ' + esc(ago(r.updated_at)) + (r.device ? ' from device ' + esc(String(r.device).slice(0, 8)) : '') + '</div>'
-      + '<div class="kp"><div><b>' + st.cur + '</b><span>Day streak</span></div><div><b>' + st.best + '</b><span>Best run</span></div><div><b>' + st.keys.length + '</b><span>Days logged</span></div></div>'
-      + '<div class="heat" aria-label="Last 30 days">' + heat + '</div><div class="legend">Last 30 days</div>'
-      + (use ? '<div class="use">' + use + '</div>' : '')
-      + (recent ? '<div class="days">' + recent + '</div>' : '<p class="meta" style="margin-top:14px">Nothing logged yet in this logbook.</p>') + '</article>';
+  function rgba(hex, a){ var h = /^#[0-9a-f]{6}$/i.test(hex) ? hex : '#111111'; return 'rgba(' + parseInt(h.substr(1,2),16) + ',' + parseInt(h.substr(3,2),16) + ',' + parseInt(h.substr(5,2),16) + ',' + a + ')'; }
+  function level(n, max){ return n <= 0 ? 0 : Math.min(4, Math.max(1, Math.ceil(n / Math.max(1, max) * 4))); }
+  var ALPHA = [0, .28, .5, .75, 1];
+  function heat(weeks, getN, color, max){
+    var end = new Date(); var dow = (end.getDay() + 6) % 7; var start = new Date(end); start.setDate(end.getDate() - dow - (weeks - 1) * 7);
+    var h = '', d = new Date(start), i;
+    for(i = 0; i < weeks * 7; i++){ var k = ymd(d), n = d > end ? -1 : getN(k);
+      h += n < 0 ? '<i style="background:transparent"></i>' : '<i title="' + k + (n ? ' · ' + n + ' logged' : '') + '"' + (n ? ' style="background:' + rgba(color, ALPHA[level(n, max)]) + '"' : '') + '></i>'; d.setDate(d.getDate() + 1); }
+    return '<div class="hmw"><div class="hm" style="grid-template-columns:repeat(' + weeks + ',1fr)">' + h + '</div></div><div class="lg">Less ' + [1,2,3,4].map(function(l){ return '<i style="background:' + rgba(color, ALPHA[l]) + '"></i>'; }).join('') + ' More</div>';
   }
-  var rowsNow = [];
-  function load(force){
-    $('lbs').innerHTML = '<p class="meta" style="margin-top:8px">Loading…</p>';
-    api('logbook_sync?select=app,data,rev,updated_at,device&order=updated_at.desc').then(function(r){
-      if(r.status === 401){ setSess(null); show(); return; }
-      if(!r.ok || !Array.isArray(r.j)){ $('lbs').innerHTML = '<div class="empty">Could not load your data right now. Try Refresh in a moment.</div>'; return; }
-      rowsNow = r.j; pullPrefs(r.j);
-      var rows = r.j.filter(function(x){ return x.app !== 'site-prefs'; });
-      $('lbs').innerHTML = rows.length ? rows.map(card).join('') : '<div class="empty"><b>Nothing synced yet.</b><br>Open one of your logbooks on your phone, sign in, and turn <b>Sync</b> on in Settings. It shows up here within a moment.</div>';
-      if(force) toast('Up to date');
-    }, function(err){ if(err && err.message === 'out'){ show(); return; } $('lbs').innerHTML = '<div class="empty">You look offline. Connect and try Refresh.</div>'; });
+  function strip(r, n){ var h = '', d, i, k; for(i = n - 1; i >= 0; i--){ d = new Date(); d.setDate(d.getDate() - i); k = ymd(d); h += '<i' + (r.set[k] ? ' style="background:' + esc(r.name.acc) + '"' : '') + '></i>'; } return '<div class="strip" style="grid-template-columns:repeat(' + n + ',1fr)">' + h + '</div>'; }
+  function dayLabel(k, o){ return new Date(k + 'T12:00:00').toLocaleDateString(undefined, o || { weekday:'short', month:'short', day:'numeric' }); }
+
+  /* ================= views ================= */
+  function viewDash(){
+    if(loading && !rows) return '<div class="vh"><div><h1>Dashboard</h1></div></div><div class="kpis"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div><div class="cols two"><div class="sk" style="height:220px"></div><div class="sk" style="height:220px"></div></div>';
+    if(loadErr && !rows) return '<div class="vh"><div><h1>Dashboard</h1></div></div><div class="empty"><h3>' + esc(loadErr) + '</h3><button class="btn" data-act="refresh" type="button">Try again</button></div>';
+    var h = new Date().getHours(), greet = h < 5 ? 'Late night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
+    var head = '<div class="vh"><div><p class="k">' + esc(new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' })) + '</p><h1>' + greet + '.</h1></div><div class="acts"><button class="btn ghost sm" data-act="refresh" type="button">Refresh</button><a class="btn sm" href="#/library">Add a logbook</a></div></div>';
+    if(!rows || !rows.length) return head + '<div class="empty"><h3>Nothing synced yet.</h3><p>Your logbooks live on your phone first. Three steps and they show up here:</p><ol><li>Pick a logbook and install it on your phone.</li><li>Open it and sign in with this same account.</li><li>In the logbook, go to <b>Settings</b> and turn <b>Sync</b> on.</li></ol><a class="btn" href="#/library">Pick a logbook</a></div>';
+    var all = {}, ppd = {}; rows.forEach(function(r){ r.keys.forEach(function(k){ all[k] = 1; ppd[k] = (ppd[k] || 0) + r.cnt[k]; }); });
+    var days = Object.keys(all).length, streak = streakOf(all), bestAny = Math.max.apply(null, rows.map(function(r){ return r.best; })), week = 0, mx = 1, wk = [], i, d, k;
+    for(i = 6; i >= 0; i--){ d = new Date(); d.setDate(d.getDate() - i); k = ymd(d); var n = ppd[k] || 0; wk.push({ k:k, n:n }); week += n; }
+    Object.keys(ppd).forEach(function(k2){ if(ppd[k2] > mx) mx = ppd[k2]; });
+    var newest = rows.map(function(r){ return r.updated; }).sort().pop();
+    var kp = '<div class="kpis"><div class="kpi"><span class="k">Streak, any logbook</span><b>' + streak + '</b><small>Best single run: ' + bestAny + '</small></div><div class="kpi"><span class="k">Days logged</span><b>' + days + '</b><small>Across ' + rows.length + ' logbook' + (rows.length === 1 ? '' : 's') + '</small></div><div class="kpi"><span class="k">Boxes this week</span><b>' + week + '</b><small>Filled in the last 7 days</small></div><div class="kpi"><span class="k">Last sync</span><b style="font-size:24px;margin-top:10px">' + esc(ago(newest)) + '</b><small>From your phone</small></div></div>';
+    var wmx = Math.max.apply(null, wk.map(function(x){ return x.n; }).concat([1]));
+    var chart = '<div class="bars">' + wk.map(function(x){ return '<div><em>' + (x.n || '') + '</em><i style="height:' + Math.max(4, Math.round(x.n / wmx * 118)) + 'px;' + (x.n ? '' : 'background:#ecece8') + '"></i><span>' + dayLabel(x.k, { weekday:'short' }).slice(0, 3) + '</span></div>'; }).join('') + '</div>';
+    var hm = heat(26, function(k2){ return ppd[k2] || 0; }, '#111111', Math.max(4, mx));
+    var cards = rows.map(function(r){ return '<a class="lbc" href="#/lb/' + encodeURIComponent(r.app) + '"><div class="t"><span class="dot" style="background:' + esc(r.name.acc) + '"></span><h3>' + esc(r.name.n) + '</h3><span class="k">' + esc(ago(r.updated)) + '</span></div><div class="m"><div><b>' + r.cur + '</b><span>Streak</span></div><div><b>' + r.keys.length + '</b><span>Days</span></div><div><b>' + r.best + '</b><span>Best</span></div></div>' + strip(r, 21) + '</a>'; }).join('');
+    var feed = []; rows.forEach(function(r){ r.keys.slice(-8).forEach(function(k2){ feed.push({ k:k2, r:r }); }); });
+    feed.sort(function(a, b){ return a.k < b.k ? 1 : a.k > b.k ? -1 : 0; });
+    var fl = feed.slice(0, 9).map(function(f){ var dd = new Date(f.k + 'T12:00:00'); return '<li><div class="d"><b>' + dd.getDate() + '</b><span>' + dd.toLocaleDateString(undefined, { month:'short' }) + '</span></div><div class="w"><b><span class="dot" style="background:' + esc(f.r.name.acc) + '"></span>' + esc(f.r.name.n) + '</b><p>' + esc(touched(f.r.days[f.k]).map(function(p){ return pageName(p, f.r.data); }).join(', ')) + '</p></div></li>'; }).join('');
+    return head + kp
+      + '<div class="cols two"><div class="box"><h3>Last 26 weeks</h3><p class="hint">Boxes filled per day, all logbooks together</p>' + hm + '</div><div class="box"><h3>This week</h3><p class="hint">Boxes filled each day</p>' + chart + '</div></div>'
+      + '<div class="vh" style="margin:30px 0 0"><div><h2 style="font-size:24px">Your logbooks</h2></div></div><div class="lbgrid">' + cards + '</div>'
+      + '<div class="cols eq"><div class="box"><h3>Recent activity</h3><p class="hint">Latest days, newest first</p><ul class="feed">' + fl + '</ul></div><div class="box"><h3>Where it lives</h3><p class="hint">Every logbook has its own storage on your phone and its own copy in your account. They never mix.</p><ul class="feed">' + rows.map(function(r){ return '<li><div class="w" style="flex:1"><b><span class="dot" style="background:' + esc(r.name.acc) + '"></span>' + esc(r.name.n) + '</b><p style="word-break:break-all">' + esc(r.app) + ' · ' + Math.max(1, Math.round(r.size / 1024)) + ' KB</p></div></li>'; }).join('') + '</ul></div></div>';
   }
-  $('lbs').addEventListener('click', function(e){
-    var b = e.target.closest('[data-dl]'); if(!b) return; var r = rowsNow.filter(function(x){ return x.app === b.dataset.dl; })[0]; if(!r) return;
-    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(r.data, null, 2)], { type:'application/json' })); a.download = r.app + '-' + ymd(new Date()) + '.json'; document.body.appendChild(a); a.click(); a.remove();
+
+  function viewLb(app){
+    var r = (rows || []).filter(function(x){ return x.app === app; })[0];
+    if(!r) return '<div class="vh"><div><h1>Not found</h1></div></div><div class="empty"><h3>That logbook has not synced yet.</h3><a class="btn" href="#/">Back to dashboard</a></div>';
+    var col = r.name.acc, max = 1; Object.keys(r.cnt).forEach(function(k){ if(r.cnt[k] > max) max = r.cnt[k]; });
+    var head = '<div class="vh"><div><p class="k"><a href="#/" style="text-decoration:none">Dashboard</a> / Logbook</p><h1 style="display:flex;align-items:center;gap:12px"><span class="dot" style="background:' + esc(col) + ';width:16px;height:16px"></span>' + esc(r.name.n) + '</h1><p class="sub">Last synced ' + esc(ago(r.updated)) + (r.device ? ' from device ' + esc(String(r.device).slice(0, 8)) : '') + '</p></div><div class="acts">' + (r.url ? '<a class="btn ghost sm" href="' + esc(r.url) + '">Open logbook</a><button class="btn ghost sm" data-act="install" data-app="' + esc(r.app) + '" type="button">Install</button>' : '') + '<button class="btn sm" data-act="dl" data-app="' + esc(r.app) + '" type="button">Download data</button></div></div>';
+    var kp = '<div class="kpis five"><div class="kpi"><span class="k">Streak</span><b>' + r.cur + '</b></div><div class="kpi"><span class="k">Best run</span><b>' + r.best + '</b></div><div class="kpi"><span class="k">Days logged</span><b>' + r.keys.length + '</b></div><div class="kpi"><span class="k">This month</span><b>' + r.month + '</b></div><div class="kpi"><span class="k">Boxes per day</span><b>' + (r.avg ? r.avg.toFixed(1) : '0') + '</b></div></div>';
+    var wc = [], i, w, d, t; for(i = 11; i >= 0; i--){ t = 0; for(w = 0; w < 7; w++){ d = new Date(); d.setDate(d.getDate() - i * 7 - w); if(r.set[ymd(d)]) t++; } wc.push(t); }
+    var wmax = Math.max.apply(null, wc.concat([1]));
+    var wchart = '<div class="bars">' + wc.map(function(n, ix){ return '<div><em>' + (n || '') + '</em><i style="height:' + Math.max(4, Math.round(n / wmax * 118)) + 'px;background:' + (n ? esc(col) : '#ecece8') + '"></i><span>' + (ix === 11 ? 'Now' : '-' + (11 - ix) + 'w') + '</span></div>'; }).join('') + '</div>';
+    var um = 1; Object.keys(r.use).forEach(function(p){ if(r.use[p] > um) um = r.use[p]; });
+    var use = Object.keys(r.use).sort(function(a, b){ return r.use[b] - r.use[a]; }).map(function(p){ return '<div><span style="color:var(--ink);text-align:left">' + esc(pageName(p, r.data)) + '</span><div class="tr"><i style="width:' + Math.round(r.use[p] / um * 100) + '%;background:' + esc(col) + '"></i></div><span>' + r.use[p] + '</span></div>'; }).join('');
+    var months = {}; r.keys.forEach(function(k2){ months[k2.slice(0, 7)] = 1; });
+    var mopts = '<option value="">All months</option>' + Object.keys(months).sort().reverse().map(function(m){ return '<option value="' + m + '"' + (filt.m === m ? ' selected' : '') + '>' + esc(new Date(m + '-15T12:00:00').toLocaleDateString(undefined, { month:'long', year:'numeric' })) + '</option>'; }).join('');
+    var mon = Object.keys(months).sort().reverse().slice(0, 6).map(function(m){ var n = r.keys.filter(function(k2){ return k2.slice(0, 7) === m; }).length; return '<div><span style="color:var(--ink);text-align:left">' + esc(new Date(m + '-15T12:00:00').toLocaleDateString(undefined, { month:'short', year:'numeric' })) + '</span><div class="tr"><i style="width:' + Math.round(n / 31 * 100) + '%;background:' + esc(col) + '"></i></div><span>' + n + '</span></div>'; }).join('');
+    return head + kp
+      + '<div class="cols two"><div class="box"><h3>Last 26 weeks</h3><p class="hint">Darker means more boxes filled that day</p>' + heat(26, function(k2){ return r.cnt[k2] || 0; }, col, max) + '</div><div class="box"><h3>Days per week</h3><p class="hint">Last 12 weeks</p>' + wchart + '</div></div>'
+      + '<div class="cols eq"><div class="box"><h3>What you log most</h3><p class="hint">Days each box was filled</p><div class="use">' + (use || '<p class="hint">Nothing logged yet.</p>') + '</div></div><div class="box"><h3>Month by month</h3><p class="hint">Days logged</p><div class="use">' + (mon || '<p class="hint">Nothing logged yet.</p>') + '</div></div></div>'
+      + '<div class="box" style="margin-top:16px"><h3>Day by day</h3><p class="hint">Click a day to see exactly what was saved</p><div class="tools"><input type="search" id="fq" placeholder="Search a box or a date" value="' + esc(filt.q) + '" aria-label="Search"><select id="fm" aria-label="Month">' + mopts + '</select></div><div id="dtbl">' + dayTable(r) + '</div></div>';
+  }
+  function dayTable(r){
+    var q = filt.q.toLowerCase(), list = r.keys.slice().reverse().filter(function(k){
+      if(filt.m && k.slice(0, 7) !== filt.m) return false; if(!q) return true;
+      var names = touched(r.days[k]).map(function(p){ return pageName(p, r.data).toLowerCase(); }).join(' ');
+      return names.indexOf(q) > -1 || k.indexOf(q) > -1 || dayLabel(k).toLowerCase().indexOf(q) > -1; });
+    if(!list.length) return '<p class="hint" style="margin-top:14px">No days match.</p>';
+    return '<table class="tbl"><thead><tr><th>Day</th><th>Boxes</th><th style="text-align:right">Filled</th></tr></thead><tbody>' + list.slice(0, 120).map(function(k){
+      var t = touched(r.days[k]);
+      return '<tr class="dr" data-day="' + k + '"><td style="white-space:nowrap;font-weight:700">' + esc(dayLabel(k, { weekday:'short', month:'short', day:'numeric', year:'numeric' })) + '</td><td><div class="tg">' + t.map(function(p){ return '<i>' + esc(pageName(p, r.data)) + '</i>'; }).join('') + '</div></td><td style="text-align:right">' + t.length + '</td></tr>'; }).join('') + '</tbody></table>' + (list.length > 120 ? '<p class="hint" style="margin-top:10px">Showing the latest 120 of ' + list.length + '. Download the data for everything.</p>' : '');
+  }
+
+  function viewLibrary(inShell){
+    var have = {}; (rows || []).forEach(function(r){ have[r.app] = 1; });
+    var g = PRESETS.map(function(p){ return '<article class="card"><div class="art"><img src="logbook/shots/' + p.id + '/home.jpg" alt="' + esc(p.n) + ' home page" loading="lazy" width="520" height="1126"></div><div class="body"><div class="nm"><span class="dot" style="background:' + p.c + '"></span>' + esc(p.n) + (have[p.key] ? '<span class="badge">Synced</span>' : '') + '</div><p>' + esc(p.t) + '</p><div class="acts"><a class="btn sm" href="logbook/?l=' + p.id + '">Open</a><button class="btn ghost sm" type="button" data-act="inst" data-i="' + p.id + '">Install</button></div></div></article>'; }).join('')
+      + '<article class="card"><div class="art make"><b aria-hidden="true">+</b></div><div class="body"><div class="nm">Your own</div><p>Name it, colour it, choose the boxes.</p><div class="acts"><a class="btn sm" href="' + (inShell ? '#/create' : '#create') + '">Create</a></div></div></article>';
+    return '<div class="grid" id="presets">' + g + '</div>';
+  }
+  function viewCreate(){
+    var sw = SWATCH.map(function(c){ return '<button type="button" style="background:' + c + '" data-c="' + c + '" aria-label="Colour ' + c + '" aria-pressed="' + (cs.a.toLowerCase() === c.toLowerCase()) + '"></button>'; }).join('') + '<label title="Pick any colour" aria-label="Pick any colour">+<input type="color" id="ccol" value="' + cs.a + '"></label>';
+    var bx = BOXES.map(function(b){ return '<button type="button" data-b="' + b[0] + '" aria-pressed="' + (cs.b.indexOf(b[0]) > -1) + '">' + esc(b[1]) + '</button>'; }).join('');
+    return '<div class="build"><div class="panel"><label class="field"><span>Name</span><input type="text" id="cn" maxlength="22" placeholder="My Gym" autocomplete="off" value="' + esc(cs.n) + '"></label><div class="field"><span class="lab">Colour</span><div class="sw" id="csw">' + sw + '</div></div><div class="field"><span class="lab">What goes in it</span><div class="chips" id="cbx">' + bx + '</div></div><button class="btn" data-act="make" type="button">Create my logbook</button><p class="err" id="cerr" role="alert"></p></div>'
+      + '<div><div class="prev" id="cpv"><div><small>Your logbook</small><h3 id="cpn"></h3></div><div><div class="st"><div><b>6</b><span>Day streak</span></div><div><b>2/4</b><span>Today</span></div></div><div class="tags" id="cpt"></div></div></div>'
+      + '<div class="mine" id="mine">' + mineHtml() + '</div></div></div>';
+  }
+  function mineHtml(){ return saved.length ? '<h3>Your logbooks</h3>' + saved.map(function(o, i){ return '<div class="mrow"><span class="dot" style="background:' + esc(o.a) + '"></span><b>' + esc(o.n) + '</b><a class="btn sm" href="' + esc(urlFor(o)) + '">Open</a><button class="btn ghost sm" type="button" data-act="minst" data-i="' + i + '">Install</button><button class="x" type="button" data-act="mdel" data-i="' + i + '" aria-label="Remove ' + esc(o.n) + ' from this list">Remove</button></div>'; }).join('') : ''; }
+  function darken(hex){ var r = parseInt(hex.substr(1,2),16), g2 = parseInt(hex.substr(3,2),16), b = parseInt(hex.substr(5,2),16), l = (Math.max(r,g2,b) + Math.min(r,g2,b)) / 510, f = l > .34 ? .34 / l : 1; return 'rgb(' + Math.round(r*f) + ',' + Math.round(g2*f) + ',' + Math.round(b*f) + ')'; }
+  function pv(){ var p = $('cpv'); if(!p) return; p.style.background = darken(cs.a); $('cpn').textContent = cs.n || 'My Logbook'; $('cpt').innerHTML = cs.b.map(function(i){ return '<i>' + esc(BN[i]) + '</i>'; }).join(''); }
+
+  function viewAccount(){
+    var size = (rows || []).reduce(function(a, r){ return a + r.size; }, 0);
+    return '<div class="vh"><div><h1>Account</h1></div></div><div class="acct"><div class="box"><h3>Signed in</h3><dl><dt>Email</dt><dd>' + esc(sess.email || '') + '</dd><dt>Logbooks synced</dt><dd>' + (rows ? rows.length : 0) + '</dd><dt>Data stored</dt><dd>' + Math.max(1, Math.round(size / 1024)) + ' KB</dd><dt>Last checked</dt><dd>' + (lastLoad ? esc(ago(new Date(lastLoad))) : 'Not yet') + '</dd></dl><div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-act="refresh" type="button">Refresh</button><button class="btn" data-act="signout" type="button">Sign out</button></div></div>'
+      + '<div class="box"><h3>How your logbooks stay separate</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Every logbook has its own storage key, such as <b>readinggirl-logbook-v1</b>. On your phone that is its own private data, so one logbook never reads another. In your account each logbook is its own row, tied to you and locked so only you can read it. They share the same app and the same login, never the same data.</p></div>'
+      + '<div class="box"><h3>Turn sync on</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Open a logbook on your phone, sign in with this account, then go to Settings and switch Sync on. Changes upload in the background and appear here.</p></div></div>';
+  }
+
+  /* ================= landing (signed out) ================= */
+  function authForm(){
+    return '<form id="af" novalidate><h3 style="font-size:26px;margin-bottom:4px">' + (mode === 'in' ? 'Sign in' : 'Create an account') + '</h3><p class="sub" style="margin:0 0 18px;font-size:14.5px">' + (mode === 'in' ? 'See everything your logbooks have synced.' : 'One account for every logbook.') + '</p>'
+      + '<label class="field"><span>Email</span><input type="email" id="ae" autocomplete="email" inputmode="email"></label><label class="field"><span>Password</span><input type="password" id="ap" autocomplete="' + (mode === 'in' ? 'current-password' : 'new-password') + '"></label>'
+      + '<button class="btn" id="ab" type="submit" style="width:100%">' + (mode === 'in' ? 'Sign in' : 'Create account') + '</button><p class="err" id="aerr" role="alert"></p>'
+      + '<p class="tog">' + (mode === 'in' ? 'New here?' : 'Already have an account?') + ' <button type="button" data-act="mode">' + (mode === 'in' ? 'Create an account' : 'Sign in') + '</button></p><p class="note">Password reset by email is not switched on yet, so pick a password you will remember.</p></form>';
+  }
+  function landing(){
+    return '<header class="top"><div class="wrap"><a class="brand" href="#top"><i aria-hidden="true"></i>Logbooks</a><nav class="links" aria-label="Sections"><a href="#choose">Logbooks</a><a href="#create">Create your own</a><a href="#signin">Sign in</a></nav></div></header>'
+      + '<main id="top"><div class="wrap"><div class="hero"><div><h1>Pick a logbook. Make it yours.</h1><p class="lede">A daily logbook that lives on your phone, works with no signal, and backs up to your account. Sign in here and your whole routine is on one screen.</p><div class="row"><a class="btn" href="#choose">Choose a logbook</a><a class="btn ghost" href="#create">Create your own</a></div></div><div class="panel lift" id="signin">' + authForm() + '</div></div>'
+      + '<div class="feats"><div class="feat"><b>One dashboard</b><p>Streaks, heat maps and every day you logged, across all your logbooks.</p></div><div class="feat"><b>Works offline</b><p>Install it on your phone. No signal needed once it has opened.</p></div><div class="feat"><b>Your data stays yours</b><p>Each logbook is stored on its own, locked to your account, and you can download it any time.</p></div></div></div>'
+      + '<section class="sec" id="choose"><div class="wrap"><h2>Choose a logbook</h2><p class="sub">Same logbook underneath, a different look and a different starting set. Tap Install to get the link for your phone.</p>' + viewLibrary(false) + '</div></section>'
+      + '<section class="band" id="create"><div class="wrap"><h2 style="font-size:clamp(28px,4vw,42px)">Create your own</h2><p class="sub">Name it, pick a colour, choose what goes in it. You get a link to install on your phone.</p>' + viewCreate() + '</div></section></main>'
+      + '<footer class="ft"><div class="wrap"><span>&copy; 2026 Clean Routine Co. All rights reserved.</span><span>Made in Ho Chi Minh City</span></div></footer>';
+  }
+
+  /* ================= shell (signed in) ================= */
+  function route(){ var h = location.hash || ''; var m = /^#\/(lb\/(.+)|library|create|account)?$/.exec(h); if(!m) return { v:'dash' }; if(m[2]){ var a; try{ a = decodeURIComponent(m[2]); }catch(e){ a = m[2]; } return { v:'lb', app:a }; } return { v:m[1] || 'dash' }; }
+  function shell(){
+    var rt = route(), v = rt.v, body;
+    if(v === 'dash') body = viewDash();
+    else if(v === 'lb') body = viewLb(rt.app);
+    else if(v === 'library') body = '<div class="vh"><div><h1>Library</h1><p class="sub">Open one, or install it on your phone.</p></div></div>' + viewLibrary(true);
+    else if(v === 'create') body = '<div class="vh"><div><h1>Create your own</h1><p class="sub">Name it, pick a colour, choose what goes in it.</p></div></div>' + viewCreate();
+    else body = viewAccount();
+    var cur = function(x){ return v === x ? ' aria-current="page"' : ''; };
+    var side = '<aside class="side"><a class="brand" href="#/"><i aria-hidden="true"></i>Logbooks</a><nav aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create your own</a></nav>'
+      + '<div class="k">Your logbooks</div><div class="lbl">' + ((rows && rows.length) ? rows.map(function(r){ return '<a href="#/lb/' + encodeURIComponent(r.app) + '"' + (v === 'lb' && rt.app === r.app ? ' aria-current="page"' : '') + '><span class="dot" style="background:' + esc(r.name.acc) + '"></span>' + esc(r.name.n) + '<small>' + r.cur + '</small></a>'; }).join('') : '<span style="padding:6px 12px;font-size:13px;color:var(--mute)">' + (loading ? 'Loading…' : 'None synced yet') + '</span>') + '</div>'
+      + '<div class="me"><a href="#/account" style="text-decoration:none;font-weight:700;color:var(--ink);display:block">' + esc(sess.email || 'Account') + '</a><button type="button" data-act="signout">Sign out</button></div></aside>';
+    var tabs = '<nav class="tabbar" aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create</a><a href="#/account"' + cur('account') + '>' + IC.me + 'Account</a></nav>';
+    return '<div class="shell">' + side + '<main class="main"><div class="mtop"><a class="brand" href="#/"><i aria-hidden="true"></i>Logbooks</a></div>' + body + '</main></div>' + tabs;
+  }
+
+  /* ================= render + events ================= */
+  function render(){
+    var y = window.scrollY, el = document.activeElement, keep = el && el.id && /^(fq|cn)$/.test(el.id) ? { id:el.id, s:el.selectionStart } : null;
+    $('root').innerHTML = sess ? shell() : landing();
+    if($('cpv')) pv();
+    [].forEach.call(document.querySelectorAll('.hmw'), function(h){ h.scrollLeft = h.scrollWidth; });
+    if(keep && $(keep.id)){ $(keep.id).focus(); try{ $(keep.id).setSelectionRange(keep.s, keep.s); }catch(e){} }
+    if(sess) window.scrollTo(0, y);
+  }
+  window.addEventListener('hashchange', function(){ if(sess){ filt = { q:'', m:'' }; render(); window.scrollTo(0, 0); } });
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden && sess && lastLoad && Date.now() - lastLoad > 60000) load(false); });
+
+  function rid(){ return Math.random().toString(36).slice(2, 8); }
+  function appRow(a){ return (rows || []).filter(function(x){ return x.app === a; })[0]; }
+  document.addEventListener('click', function(e){
+    var b = e.target.closest('[data-act]');
+    if(b){
+      var a = b.dataset.act;
+      if(a === 'refresh'){ load(true); }
+      else if(a === 'signout'){ setSess(null); location.hash = ''; render(); toast('Signed out'); }
+      else if(a === 'mode'){ mode = mode === 'in' ? 'up' : 'in'; var f = $('signin'); if(f) f.innerHTML = authForm(); }
+      else if(a === 'inst'){ var p = PRESETS.filter(function(x){ return x.id === b.dataset.i; })[0]; install(p.n, urlFor({ preset:p.id })); }
+      else if(a === 'install'){ var r = appRow(b.dataset.app); if(r) install(r.name.n, r.url); }
+      else if(a === 'minst'){ var o = saved[+b.dataset.i]; install(o.n, urlFor(o)); }
+      else if(a === 'mdel'){ saved.splice(+b.dataset.i, 1); store('lbs-custom', saved); $('mine').innerHTML = mineHtml(); pushPrefs(); toast('Removed from this list. Data already synced stays in your account.'); }
+      else if(a === 'make'){
+        var n = (cs.n || '').replace(/[<>"&]/g, '').replace(/\s*logbook\s*$/i, '').trim();
+        if(!n){ $('cerr').textContent = 'Give it a name first.'; return; }
+        if(!cs.b.length){ $('cerr').textContent = 'Pick at least one thing to log.'; return; }
+        $('cerr').textContent = ''; var o2 = { k:rid(), n:n.slice(0, 22), a:cs.a.toUpperCase(), b:cs.b.slice() };
+        saved.unshift(o2); store('lbs-custom', saved); $('mine').innerHTML = mineHtml(); pushPrefs(); install(o2.n, urlFor(o2));
+      }
+      else if(a === 'dl'){ var rr = appRow(b.dataset.app); if(!rr) return; var l = document.createElement('a'); l.href = URL.createObjectURL(new Blob([JSON.stringify(rr.data, null, 2)], { type:'application/json' })); l.download = rr.app + '-' + ymd(new Date()) + '.json'; document.body.appendChild(l); l.click(); l.remove(); }
+      return;
+    }
+    var sw = e.target.closest('#csw [data-c]'); if(sw){ cs.a = sw.dataset.c; [].forEach.call($('csw').querySelectorAll('[data-c]'), function(x){ x.setAttribute('aria-pressed', x === sw); }); pv(); return; }
+    var cb = e.target.closest('#cbx [data-b]'); if(cb){ var i = cs.b.indexOf(cb.dataset.b); if(i > -1) cs.b.splice(i, 1); else cs.b.push(cb.dataset.b); cb.setAttribute('aria-pressed', i === -1); pv(); return; }
+    var dr = e.target.closest('tr.dr'); if(dr){
+      var nx = dr.nextElementSibling; if(nx && nx.classList.contains('dd')){ nx.remove(); return; }
+      var r2 = appRow(route().app); if(!r2) return; var tr = document.createElement('tr'); tr.className = 'dd'; tr.innerHTML = '<td colspan="3"><pre>' + esc(JSON.stringify(r2.days[dr.dataset.day], null, 2)) + '</pre></td>'; dr.parentNode.insertBefore(tr, dr.nextSibling);
+    }
   });
-  function show(){
-    var on = !!sess; $('authbox').classList.toggle('hide', on); $('dash').classList.toggle('hide', !on);
-    if(on){ $('who').textContent = 'Signed in as ' + (sess.email || 'your account'); load(); pushPrefs(); }
-  }
-  show();
+  document.addEventListener('input', function(e){
+    var t = e.target;
+    if(t.id === 'cn'){ cs.n = t.value.trim(); pv(); }
+    else if(t.id === 'ccol'){ cs.a = t.value.toUpperCase(); [].forEach.call($('csw').querySelectorAll('[data-c]'), function(x){ x.setAttribute('aria-pressed', 'false'); }); pv(); }
+    else if(t.id === 'fq'){ filt.q = t.value; var r = appRow(route().app); if(r) $('dtbl').innerHTML = dayTable(r); }
+    else if(t.id === 'fm'){ filt.m = t.value; var r3 = appRow(route().app); if(r3) $('dtbl').innerHTML = dayTable(r3); }
+  });
+  document.addEventListener('submit', function(e){
+    if(e.target.id !== 'af') return; e.preventDefault();
+    var em = $('ae').value.trim(), pw = $('ap').value; $('aerr').textContent = '';
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ $('aerr').textContent = 'Enter a valid email.'; return; }
+    if(pw.length < 8){ $('aerr').textContent = 'Use at least 8 characters for the password.'; return; }
+    if(navigator.onLine === false){ $('aerr').textContent = 'You are offline.'; return; }
+    $('ab').disabled = true;
+    fetch(mode === 'in' ? SB + '/auth/v1/token?grant_type=password' : SB + '/auth/v1/signup', { method:'POST', headers:hdr(), body:JSON.stringify({ email:em, password:pw }) }).then(j).then(function(r){
+      if(!r.ok){ $('ab').disabled = false; $('aerr').textContent = emsg(r); return; }
+      if(r.j && r.j.access_token){ setSess(r.j); location.hash = '#/'; render(); load(false); pushPrefs(); }
+      else { $('ab').disabled = false; $('aerr').textContent = 'Account created. Check your email to confirm it, then sign in.'; }
+    }, function(){ $('ab').disabled = false; $('aerr').textContent = 'Could not reach the server. Check your connection.'; });
+  });
+
+  render();
+  if(sess) load(false);
 })();
 </script>
 </body>
