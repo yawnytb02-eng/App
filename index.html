@@ -83,6 +83,36 @@ html[data-tone=night] .intro video{filter:invert(1);mix-blend-mode:screen;opacit
 #signin{scroll-margin-top:84px}
 @media(prefers-reduced-motion:reduce){.intro{height:auto}.intro .pin{position:relative;height:auto;min-height:90vh}.beat.b2,.beat.b3,.cue,.intro .prog{display:none}.beat.b1{position:relative;top:auto;transform:none;left:auto;right:auto;padding:0 28px}.intro .copy{position:relative;min-height:90vh}.intro .vid{transform:none!important}}
 
+
+/* ---------- walkthrough: real screens swipe past as you scroll ---------- */
+.walk{position:relative;height:480vh;height:480svh}
+.walk .pin2{position:sticky;top:0;height:100vh;height:100svh;overflow:hidden;display:flex;align-items:center;padding-top:60px}
+.wk{display:grid;grid-template-columns:1fr auto;gap:clamp(32px,7vw,120px);align-items:center;width:100%}
+.wk-kick{font-weight:600;font-size:15px;color:var(--soft);display:flex;align-items:center;gap:9px;margin-bottom:22px}
+.wk-kick i{width:11px;height:11px;border-radius:50%;background:var(--acc);display:inline-block;transition:background .5s}
+#wkl{list-style:none;padding:0;display:grid;gap:6px;max-width:520px;position:relative}
+#wkl li{padding:14px 0 14px 26px;border-left:2px solid var(--line);opacity:.38;transition:opacity .35s,border-color .35s}
+#wkl li b{display:block;font-size:clamp(26px,3.6vw,46px);letter-spacing:-.04em;line-height:1.04;font-weight:700}
+#wkl li p{margin-top:8px;color:var(--soft);font-size:clamp(15px,1.5vw,18px);max-width:34ch;display:none}
+#wkl li.on{opacity:1;border-color:var(--ink)}
+#wkl li.on p{display:block}
+.wk-ph{display:flex;justify-content:center;perspective:1200px}
+.phone{position:relative;box-sizing:border-box;height:min(74vh,740px);height:min(74svh,740px);aspect-ratio:520/1126;background:#0b0b0b;border-radius:15% / 7%;padding:2.4%;box-shadow:0 0 0 1px rgba(255,255,255,.12) inset,0 70px 90px -50px var(--acc),0 30px 60px -34px rgba(0,0,0,.55);will-change:transform;transition:box-shadow .6s}
+.phone:before{content:"";position:absolute;z-index:2;top:2.4%;left:50%;width:27%;height:2.1%;transform:translateX(-50%);background:#000;border-radius:99px}
+.phone .scr{width:100%;height:100%;overflow:hidden;border-radius:12.5% / 5.8%;background:#fff}
+.wkstrip{display:flex;width:400%;height:100%;will-change:transform}
+.wkstrip img{display:block;width:25%;height:100%;object-fit:cover;flex:none}
+@media(max-width:800px){
+  .walk{height:420vh;height:420svh}
+  .walk .pin2{padding-top:84px;align-items:flex-start}
+  .wk{grid-template-columns:1fr;gap:18px;justify-items:center;text-align:center}
+  .wk-ph{order:-1}.phone{height:min(55vh,500px);height:min(55svh,500px)}
+  .wk-kick{justify-content:center;margin-bottom:10px}
+  #wkl{max-width:none;gap:0}#wkl li{display:none;border-left:0;padding:0;opacity:1}#wkl li.on{display:block}
+  #wkl li b{font-size:28px}#wkl li p{margin:8px auto 0}
+}
+@media(prefers-reduced-motion:reduce){.walk{height:auto}.walk .pin2{position:relative;height:auto;padding:64px 0}#wkl li{opacity:1}#wkl li p{display:block}.wkstrip{width:100%;flex-wrap:wrap}.wkstrip img{width:50%;height:auto}.phone{height:auto;width:min(80vw,360px)}}
+
 /* ---------- signed-out landing ---------- */
 .top{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.4) blur(12px);-webkit-backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line)}
 .wrap{max-width:1180px;margin:0 auto;padding:0 28px}
@@ -407,11 +437,12 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   }
   function stName(p){ var w = p.n.split(' '); return w.length > 1 ? esc(w[0]) + '<br><em>' + esc(w.slice(1).join(' ')) + '</em>' : '<em>' + esc(p.n) + '</em>'; }
   function stPhones(p){ return ['home','food','time','stats'].map(function(s){ return '<div class="ph2"><img src="logbook/shots/' + p.id + '/' + s + '.jpg" alt="' + esc(p.n) + ' ' + ({home:'home',food:'box',time:'timetable',stats:'tracker'})[s] + ' screen" width="520" height="1126" decoding="async"></div>'; }).join(''); }
+  function walkSwap(){ var s = $('wks'); if(s){ s.innerHTML = walkImgs(); } var n = $('wkn'); if(n) n.textContent = PRESETS.filter(function(x){ return x.id === themeId; })[0].n; }
   function syncDots(){ [].forEach.call(document.querySelectorAll('.dots7 [data-st]'), function(b){ b.setAttribute('aria-pressed', b.dataset.st === themeId); }); }
   function setStage(id){
     var el = document.getElementById('choose'); if(!el || id === stageId) return; stageId = id;
     var th = stTh(id), p = PRESETS.filter(function(x){ return x.id === id; })[0];
-    themeId = id; store('lbs-theme', id); applyTheme(); syncDots();
+    themeId = id; store('lbs-theme', id); applyTheme(); syncDots(); walkSwap();
     el.classList.add('swp');
     setTimeout(function(){
       el.setAttribute('style', themeVars(th)); var old = el.querySelector('svg.mo'); if(old) old.outerHTML = motif(th.mo, th.acc);
@@ -636,6 +667,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
       + '<div class="beat b2" id="bt2"><h2>Made for your phone.</h2><p class="lede">Install it from a link. It opens in a blink, works with no signal, and keeps your streak.</p></div>'
       + '<div class="beat b3" id="bt3"><h2>All of it, in one place.</h2><p class="lede">Sign in and every logbook you have synced shows up on a single dashboard.</p><div class="row"><a class="btn" href="#signin">Sign in</a></div></div>'
       + '</div></div><div class="prog" aria-hidden="true"><i class="on"></i><i></i><i></i></div><div class="cue" id="cue" aria-hidden="true"><span>Scroll</span><i></i></div></div></section>'
+      + '<section class="walk" id="walk" aria-label="What the app looks like"><div class="pin2"><div class="wrap wk"><div class="wk-copy"><p class="wk-kick"><i></i><span id="wkn">' + esc(PRESETS.filter(function(x){ return x.id === themeId; })[0].n) + '</span></p><ol id="wkl">' + WALK.map(function(w, i){ return '<li' + (i === 0 ? ' class="on"' : '') + '><b>' + w[1] + '</b><p>' + w[2] + '</p></li>'; }).join('') + '</ol></div><div class="wk-ph"><div class="phone" id="wkp"><div class="scr"><div class="wkstrip" id="wks">' + walkImgs() + '</div></div></div></div></div></div></section>'
       + '<section class="signin-sec"><div class="wrap"><div class="si"><div><h2>Welcome back.</h2><p class="lede2">Sign in to see everything your logbooks have synced. New here? Create an account in a few seconds.</p>'
       + '<div class="feats"><div class="feat"><b>One dashboard</b><p>Streaks, heat maps and every day you logged, across all your logbooks.</p></div><div class="feat"><b>Works offline</b><p>Install it on your phone. No signal needed once it has opened.</p></div><div class="feat"><b>Your data stays yours</b><p>Each logbook is stored on its own, locked to your account, and you can download it any time.</p></div></div></div>'
       + '<div class="panel lift" id="signin">' + authForm() + '</div></div></div></section>'
@@ -646,6 +678,17 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   }
 
   /* ---- scroll-driven intro: the video is scrubbed by scroll position ---- */
+  var WALK = [['home', 'Today at a glance', 'Your day, your streak and your week on one screen.'], ['food', 'Log in a tap', 'Tap what you ate, did or read. Nothing to type.'], ['time', 'Plan your hours', 'Link hours to boxes, and Home shows what is open right now.'], ['stats', 'See the pattern', 'Heat maps and streaks build up the longer you keep going.']];
+  function walkImgs(){ return WALK.map(function(w, i){ return '<img src="logbook/shots/' + themeId + '/' + w[0] + '.jpg" alt="' + esc(w[1]) + '" width="520" height="1126" ' + (i ? 'loading="lazy"' : '') + '>'; }).join(''); }
+  function walkTick(){
+    var w = $('walk'); if(!w) return; if(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var r = w.getBoundingClientRect(), tot = Math.max(1, w.offsetHeight - window.innerHeight), p = Math.max(0, Math.min(1, -r.top / tot)), s = p * WALK.length, pos = 0, i;
+    for(i = 0; i < WALK.length - 1; i++) pos += sm((s - (i + .6)) / .4);
+    var st = $('wks'), ph = $('wkp'), items = $('wkl') ? $('wkl').children : [], act = Math.round(pos);
+    if(st) st.style.transform = 'translateX(' + (-pos * 25).toFixed(3) + '%)';
+    if(ph) ph.style.transform = 'rotateY(' + ((.5 - p) * 14).toFixed(2) + 'deg) rotateZ(' + ((p - .5) * -3).toFixed(2) + 'deg) translateY(' + ((.5 - p) * 26).toFixed(1) + 'px)';
+    [].forEach.call(items, function(li, k){ var on = k === act; if(li.classList.contains('on') !== on) li.classList.toggle('on', on); });
+  }
   var introT = 0, introCur = 0, introRaf = 0, introDur = 0;
   function sm(x){ x = Math.max(0, Math.min(1, x)); return x * x * (3 - 2 * x); }
   function introTick(){
@@ -666,7 +709,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
       if(v && Math.abs(introT - introCur) > .012){ introCur += (introT - introCur) * .22; try{ v.currentTime = introCur; }catch(e){} if(!introRaf) introRaf = requestAnimationFrame(introTick); }
     }
   }
-  function introKick(){ if(!introRaf) introRaf = requestAnimationFrame(introTick); }
+  function introKick(){ if(!introRaf) introRaf = requestAnimationFrame(introTick); walkTick(); }
   window.addEventListener('scroll', introKick, { passive:true }); window.addEventListener('resize', introKick);
 
   /* ================= shell (signed in) ================= */
