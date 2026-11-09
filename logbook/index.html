@@ -207,14 +207,25 @@
   function H(h,s,l){ s/=100; l/=100; var a=s*Math.min(l,1-l); function f(n){ var k=(n+h/30)%12, c=l-a*Math.max(-1,Math.min(k-3,9-k,1)); return ('0'+Math.round(255*c).toString(16)).slice(-2); } return ('#'+f(0)+f(8)+f(4)).toUpperCase(); }
   var P = PRE[slug];
   if(slug==='custom'){
-    var nm = String(q.n||'My Logbook').replace(/[<>"&]/g,'').replace(/\s*logbook\s*$/i,'').trim().slice(0,22) || 'My Logbook';
+    var nm = String(q.n||'My Logbook').replace(/[<>"&]/g,'').trim().slice(0,22) || 'My Logbook';
     var id = String(q.k||'x').replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,8) || 'x';
     var sg = nm.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,18) || 'logbook';
     P = { n:nm, key:'custom-'+id+'-'+sg+'-v1', a:hex(q.a)||'#835F1F', b:(q.b||'').split(',').filter(function(x){ return /^[a-z]+$/.test(x); }).slice(0,8) };
     if(!P.b.length) P.b = ['dashboard','workout','mindfocus','night'];
+    /* h = fields the owner switched off, written box.field-slug */
+    P.h = (q.h||'').split(',').filter(function(x){ return /^[a-z]+\.[a-z0-9-]+$/.test(x); }).slice(0,120);
+    /* r = renamed fields, written box.field-slug~New name */
+    P.r = (q.r||'').split(',').map(function(x){ var i = x.indexOf('~'); return i < 0 ? '' : x.slice(0,i) + '~' + decodeURIComponent(x.slice(i+1)).replace(/[<>"&]/g,'').trim().slice(0,70); }).filter(function(x){ return /^[a-z]+\.[a-z0-9-]+~.+/.test(x); }).slice(0,120);
+    if(q.pv){ P.key = 'pv-preview-v1'; }
   }
   if(P){
-    ed = { slug:slug, n:P.n, key:P.key, boxes:P.b||null, icon:P.icon||'flag', custom:slug==='custom' };
+    ed = { slug:slug, n:P.n, key:P.key, boxes:P.b||null, icon:P.icon||'flag', custom:slug==='custom', hide:P.h||[], ren:P.r||[], pv:!!(q.pv && slug==='custom') };
+    if(ed.pv){
+      /* Studio preview: a throwaway, signed-out copy of the real app (fresh every load, no account gate, no cloud). */
+      try{ localStorage.removeItem('lb-seeded-'+P.key); localStorage.setItem('cb-welcomed-'+P.key,'1'); localStorage.setItem(P.key, JSON.stringify({ onboarded:true, days:{} })); }catch(e){}
+      window.__CLOUD_OVERRIDE = { required:false, url:'', anonKey:'' };
+      window.__SUB_OVERRIDE = { provider:'none', gate:false };
+    }
     if(P.a){
       var hh = hsl(P.a), h = hh.h, s = Math.max(28, Math.min(62, hh.s)), aL = slug==='custom' ? H(h,s,30) : P.a, aD = P.d || H(h,Math.min(72,s+12),60);
       var bg = P.bg || H(h,30,95), bgd = P.bgd || H(h,22,8);
@@ -494,8 +505,10 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
     if(EDS && EDS.boxes && window.bxsAdd){
       var SK2 = 'lb-seeded-' + STORAGE_KEY;
       if(!localStorage.getItem(SK2)){
-        if(Object.keys(DB.days || {}).length || DB.onboarded){ localStorage.setItem(SK2, '1'); }
-        else { EDS.boxes.forEach(function(i){ try{ window.bxsAdd(i, true); }catch(e){} }); localStorage.setItem(SK2, '1'); try{ saveDB(); }catch(e){} }
+        if(!EDS.pv && (Object.keys(DB.days || {}).length || DB.onboarded)){ localStorage.setItem(SK2, '1'); }
+        else { EDS.boxes.forEach(function(i){ try{ window.bxsAdd(i, true); }catch(e){} }); localStorage.setItem(SK2, '1'); (EDS.hide || []).forEach(function(x){ var p = x.split('.'); try{ bxCfg(p[0], true).hidden[p[1]] = '2000-01-01'; }catch(e){} });
+          (EDS.ren || []).forEach(function(x){ var p = x.split('~'), k = p[0].split('.'); try{ if(p[1]) bxCfg(k[0], true).labels[k[1]] = p[1]; }catch(e){} });
+          try{ saveDB(); }catch(e){} if(EDS.pv){ try{ render(); }catch(e){} } }
       }
     }
   }catch(e){}
