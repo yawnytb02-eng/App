@@ -211,7 +211,7 @@
     var id = String(q.k||'x').replace(/[^a-z0-9]/gi,'').toLowerCase().slice(0,8) || 'x';
     var sg = nm.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,18) || 'logbook';
     P = { n:nm, key:'custom-'+id+'-'+sg+'-v1', a:hex(q.a)||'#835F1F', b:(q.b||'').split(',').filter(function(x){ return /^[a-z]+$/.test(x); }).slice(0,8) };
-    if(!P.b.length) P.b = ['dashboard','workout','mindfocus','night'];
+    if(!P.b.length && q.b === undefined) P.b = ['dashboard','workout','mindfocus','night'];
     /* h = fields the owner switched off, written box.field-slug */
     P.h = (q.h||'').split(',').filter(function(x){ return /^[a-z]+\.[a-z0-9-]+$/.test(x); }).slice(0,120);
     /* r = renamed fields, written box.field-slug~New name */
@@ -220,7 +220,7 @@
     P.x = [];
     try{
       var XT = ['short','long','number','scale','toggle','choice','photo'], XI = ['star','heart','shirt','camera','coffee','leaf','music','smile','sparkle','bag','phone','bed','pill','dumbbell','drop','flame','bolt','book','moon','sun','target','clock','flag','pen'];
-      var xr = JSON.parse(q.x || '[]'); if(Array.isArray(xr)) xr.slice(0,3).forEach(function(b){
+      var xr = JSON.parse(q.x || '[]'); if(Array.isArray(xr)) xr.slice(0,5).forEach(function(b){
         var n = String(b && b.n || '').replace(/[<>"&]/g,'').trim().slice(0,24), k = String(b && b.k || '').replace(/[^a-z0-9]/gi,'').slice(0,6);
         if(!n || !k || !Array.isArray(b.f)) return;
         var f = []; b.f.slice(0,12).forEach(function(x){
@@ -233,10 +233,12 @@
         P.x.push({ k:k, n:n, i:XI.indexOf(b.i) > -1 ? b.i : 'star', f:f });
       });
     }catch(e){}
-    if(q.pv){ P.key = 'pv-preview-v1'; }
+    /* o = the order the owner arranged the boxes in: ready-made ids and cx_<k> for their own */
+    P.o = (q.o||'').split(',').filter(function(x){ return /^(cx_[a-z0-9]{1,6}|[a-z]+)$/.test(x); }).slice(0,14);
+    if(q.pv){ P.key = 'pv-'+id+'-v1'; }
   }
   if(P){
-    ed = { slug:slug, n:P.n, key:P.key, boxes:P.b||null, icon:P.icon||'flag', custom:slug==='custom', hide:P.h||[], ren:P.r||[], x:P.x||[], pv:!!(q.pv && slug==='custom') };
+    ed = { slug:slug, n:P.n, key:P.key, boxes:P.b||null, icon:P.icon||'flag', custom:slug==='custom', hide:P.h||[], ren:P.r||[], x:P.x||[], ord:P.o||[], pv:!!(q.pv && slug==='custom') };
     if(ed.pv){
       /* Studio preview: a throwaway, signed-out copy of the real app (fresh every load, no account gate, no cloud). */
       try{ localStorage.removeItem('lb-seeded-'+P.key); localStorage.setItem('cb-welcomed-'+P.key,'1'); localStorage.setItem(P.key, JSON.stringify({ onboarded:true, days:{} })); }catch(e){}
@@ -533,6 +535,8 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
       }
     }
   }catch(e){}
+  /*ORDER*/
+  try{ var EDO = window.__ED; if(EDO && EDO.ord && EDO.ord.length && typeof pagesList === 'function'){ var pl0 = pagesList; pagesList = function(){ var l = pl0.apply(this, arguments), o = EDO.ord; return l.map(function(p, i){ return [p, i]; }).sort(function(a, b){ var x = o.indexOf(a[0].id), y = o.indexOf(b[0].id); if(x < 0) x = 99; if(y < 0) y = 99; return (x - y) || (a[1] - b[1]); }).map(function(z){ return z[0]; }); }; } }catch(e){}
   var r0 = window.render;
   window.render = function(){ var out = r0.apply(this, arguments); check(); return out; };
   check();
