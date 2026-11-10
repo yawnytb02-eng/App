@@ -454,6 +454,16 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
 [data-anim="1"] .bars i{transform-origin:bottom;animation:grow .7s cubic-bezier(.2,.8,.2,1) both}
 [data-anim="1"] .bars div:nth-child(2) i{animation-delay:.04s}[data-anim="1"] .bars div:nth-child(3) i{animation-delay:.08s}[data-anim="1"] .bars div:nth-child(4) i{animation-delay:.12s}[data-anim="1"] .bars div:nth-child(5) i{animation-delay:.16s}[data-anim="1"] .bars div:nth-child(6) i{animation-delay:.2s}[data-anim="1"] .bars div:nth-child(7) i{animation-delay:.24s}
 @keyframes grow{from{transform:scaleY(0)}to{transform:none}}
+
+.studio .lk{display:grid;gap:20px;margin-top:18px;padding-top:20px;border-top:1.5px solid var(--line)}
+.studio .lk h4{margin:0 0 8px;font-size:13.5px;font-weight:700}
+.studio .lk .seg{display:flex;flex-wrap:wrap;gap:8px}
+.studio .lk .seg button{min-height:44px;padding:8px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink);font:inherit;font-size:14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.studio .lk .seg button.rich{min-width:82px;padding:10px 8px}
+.studio .lk .seg button small{font-size:12px;color:var(--soft)}
+.studio .lk .seg button[aria-pressed=true]{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.studio .lk .seg .cn{width:34px;height:26px;border:2px solid var(--ink);border-right:0;border-bottom:0;display:block}
+.studio .lk .seg button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -524,12 +534,14 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
     if(o.x && o.x.length) u += '&x=' + encodeURIComponent(JSON.stringify(xPack(o.x)));
     if(hh.length) u += '&h=' + hh.join(',');
     if(rr.length) u += '&r=' + rr.join(',');
-    return u;
+    return u + lookQ(o);
   }
   /* The same design as plain data, for the short link saved to the account */
   function cfgOf(o){
     var hh = (o.h || []).filter(function(f){ return o.b.indexOf(f.split('.')[0]) > -1; }), rr = Object.keys(o.r || {}).filter(function(f){ return o.b.indexOf(f.split('.')[0]) > -1 && o.r[f]; }).map(function(f){ return f + '~' + o.r[f]; });
     var c = { n:o.n, a:o.a, k:o.k, b:o.b.join(',') }; if(o.o && o.o.length) c.o = o.o.join(','); if(hh.length) c.h = hh.join(','); if(rr.length) c.r = rr.join(','); if(o.x && o.x.length) c.x = xPack(o.x);
+    if(o.f && o.f !== 'sans') c.f = o.f; if(o.c && o.c !== 'soft') c.c = o.c; if(o.th && o.th !== 'light') c.th = o.th; if(o.m && o.m !== 'reticle') c.m = o.m; if(String(o.g || '').trim()) c.g = String(o.g).replace(/[<>"&]/g, '').trim().slice(0, 90);
+    var bt = Object.keys(o.bt || {}).filter(function(k){ return o.b.indexOf(k) > -1 && o.bt[k]; }).map(function(k){ return k + '~' + o.bt[k]; }); if(bt.length) c.bt = bt.join(',');
     return c;
   }
   var noBk = false, edCache = {};
@@ -650,7 +662,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   var saved = store('lbs-custom') || [];
   var sess = store('lbs-sess');
   var rows = null, loadErr = '', loading = false, lastLoad = 0;
-  var cs = { n:'My Routine', a:SWATCH[0], ord:['dashboard','workout','mindfocus','night'], b:['dashboard','workout','mindfocus','night'], h:[], r:{}, x:[], sel:'home', pg:'home' };
+  var cs = { f:'sans', c:'soft', th:'light', m:'reticle', g:'', bt:{}, n:'My Routine', a:SWATCH[0], ord:['dashboard','workout','mindfocus','night'], b:['dashboard','workout','mindfocus','night'], h:[], r:{}, x:[], sel:'home', pg:'home' };
   var mode = 'in', filt = { q:'', m:'' };
 
   /* ================= install sheet ================= */
@@ -927,9 +939,31 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
       + '<article class="card"><div class="art make" style="aspect-ratio:4/5;height:auto"><b aria-hidden="true">+</b></div><div class="body"><div class="nm">Your own</div><p>Build it box by box.</p><div class="acts"><a class="btn sm" href="' + (inShell ? '#/create' : '#create') + '">Create</a></div></div></article>';
     return '<div class="grid" id="presets">' + g + '</div>';
   }
-  var FTYPES = [['short','Short text'],['long','Long text'],['number','Number'],['scale5','Rating 1 to 5'],['scale10','Rating 1 to 10'],['toggle','Yes or no'],['choice','Pick one'],['photo','Photo']];
+  var FTYPES = [['short','Short text','Words'],['long','Long text','Words'],['number','Number (with a unit)','Numbers'],['duration','Minutes','Numbers'],['money','Money','Numbers'],['percent','Percent','Numbers'],['scale5','Rating 1 to 5','Ratings'],['scale10','Rating 1 to 10','Ratings'],['mood','Mood faces','Ratings'],['toggle','Yes or no','Choices'],['choice','Pick one','Choices'],['multi','Pick several','Choices'],['time','Time of day','Time'],['todo','To-do list','Lists'],['list','Free list','Lists'],['photo','Photo','Media']];
+  var OPT = { choice:1, multi:1 };
+  function ftypeOpts(sel){ var g = '', cur = ''; FTYPES.forEach(function(o){ if(o[2] !== cur){ if(cur) g += '</optgroup>'; cur = o[2]; g += '<optgroup label="' + cur + '">'; } g += '<option value="' + o[0] + '"' + (o[0] === sel ? ' selected' : '') + '>' + o[1] + '</option>'; }); return g + '</optgroup>'; }
+  /* Typeface, corners, mode, home-screen mark, a line under the date: carried in the link */
+  var LOOKF = [['sans','Aa','Clean','Manrope, system-ui, sans-serif'],['serif','Aa','Classic','Georgia, serif'],['edit','Aa','Editorial','Georgia, serif'],['round','Aa','Soft','ui-rounded, Nunito, system-ui, sans-serif'],['mono','Aa','Typed','ui-monospace, Menlo, monospace']];
+  var LOOKC = [['sharp','Square','6px'],['soft','Soft','14px'],['round','Round','24px']];
+  var LOOKT = [['light','Light'],['dark','Dark'],['auto','Match phone']];
+  var LOOKM = [['reticle','Reticle'],['ring','Rings'],['letter','Initial'],['dots','Dots'],['bars','Bars']];
+  function markSvg(st, col, ch){
+    var s = '<svg viewBox="0 0 64 64" width="52" height="52" fill="none" stroke="' + col + '" stroke-width="1.6"><rect x=".8" y=".8" width="62.4" height="62.4" rx="14" stroke="none" fill="' + col + '" fill-opacity=".09"/>';
+    if(st === 'ring') s += '<circle cx="32" cy="32" r="19.6"/><circle cx="32" cy="32" r="13" stroke-width="1.3"/><circle cx="32" cy="32" r="1.9" fill="' + col + '" stroke="none"/>';
+    else if(st === 'letter') s += '<circle cx="32" cy="32" r="19.6"/><text x="32" y="38.4" text-anchor="middle" font-size="19" font-weight="300" fill="' + col + '" stroke="none" font-family="system-ui,sans-serif">' + esc((ch || 'L').charAt(0).toUpperCase()) + '</text>';
+    else if(st === 'dots'){ var d = ''; for(var i = -1; i <= 1; i++) for(var j = -1; j <= 1; j++) d += '<circle cx="' + (32 + i * 10) + '" cy="' + (32 + j * 10) + '" r="1.7" fill="' + col + '" stroke="none"/>'; s += d; }
+    else if(st === 'bars') s += '<g fill="' + col + '" stroke="none"><rect x="17" y="35" width="3.2" height="10"/><rect x="25" y="28" width="3.2" height="17"/><rect x="33" y="21" width="3.2" height="24"/><rect x="41" y="32" width="3.2" height="13"/><rect x="15" y="45" width="34" height="1.6"/></g>';
+    else s += '<circle cx="32" cy="32" r="19.6"/><path d="M32 26.8v-5.6M37.2 32h5.6M32 37.2v5.6M26.8 32h-5.6"/><circle cx="32" cy="32" r="1.9" fill="' + col + '" stroke="none"/>';
+    return s + '</svg>';
+  }
+  function lookQ(o){
+    var u = ''; if(o.f && o.f !== 'sans') u += '&f=' + o.f; if(o.c && o.c !== 'soft') u += '&c=' + o.c; if(o.th && o.th !== 'light') u += '&th=' + o.th; if(o.m && o.m !== 'reticle') u += '&m=' + o.m;
+    var g = String(o.g || '').replace(/[<>"&]/g, '').trim(); if(g) u += '&g=' + encodeURIComponent(g.slice(0, 90));
+    var bt = Object.keys(o.bt || {}).filter(function(k){ return o.b.indexOf(k) > -1 && o.bt[k]; }).map(function(k){ return k + '~' + encodeURIComponent(o.bt[k]); }); if(bt.length) u += '&bt=' + bt.join(',');
+    return u;
+  }
   var XICONS = [['star','Star'],['heart','Heart'],['leaf','Leaf'],['drop','Drop'],['flame','Flame'],['dumbbell','Dumbbell'],['book','Book'],['pen','Pen'],['smile','Smile'],['sparkle','Sparkle'],['moon','Moon'],['sun','Sun'],['coffee','Coffee'],['music','Music'],['shirt','Shirt'],['bed','Bed'],['pill','Pill'],['camera','Camera'],['bag','Bag'],['phone','Phone'],['bolt','Bolt'],['target','Target'],['clock','Clock'],['flag','Flag']];
-  function xFields(b){ return b.f.map(function(f){ var o = { l:f.l, t:f.t === 'scale5' || f.t === 'scale10' ? 'scale' : f.t }; if(o.t === 'scale') o.m = f.t === 'scale10' ? 10 : 5; if(f.t === 'number' && f.e) o.u = f.e; if(f.t === 'choice') o.o = String(f.e || '').split(',').map(function(v){ return v.trim(); }).filter(Boolean); return o; }); }
+  function xFields(b){ return b.f.map(function(f){ var o = { l:f.l, t:f.t === 'scale5' || f.t === 'scale10' ? 'scale' : f.t }; if(o.t === 'scale') o.m = f.t === 'scale10' ? 10 : 5; if(f.t === 'number' && f.e) o.u = f.e; if(OPT[f.t]) o.o = String(f.e || '').split(',').map(function(v){ return v.trim(); }).filter(Boolean); return o; }); }
   function xPack(list){ return list.map(function(b){ return { k:b.k, n:b.n, i:b.i, f:xFields(b) }; }); }
   function lum(hex){ var c = [1,3,5].map(function(i){ var v = parseInt(hex.substr(i, 2), 16) / 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
   var ARR = { up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>', dn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>' };
@@ -948,7 +982,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   function itemMeta(id){
     if(/^cx_/.test(id)){ var b = xFind(id.slice(3)); if(!b) return null; var n = b.f.filter(function(f){ return f.l.trim(); }).length; return { name:b.n || 'New box', sub:'Yours · ' + n + (n === 1 ? ' field' : ' fields'), mine:true }; }
     var fl = FIELDS[id] || [], off = fl.filter(function(f){ return cs.h.indexOf(id + '.' + f[0]) > -1; }).length;
-    return { name:BN[id], sub:'Ready-made · ' + (fl.length - off) + ' of ' + fl.length + ' fields', mine:false };
+    return { name:cs.bt[id] || BN[id], sub:'Ready-made · ' + (fl.length - off) + ' of ' + fl.length + ' fields', mine:false };
   }
   function listHtml(){
     var last = cs.ord.length - 1;
@@ -964,9 +998,9 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   }
   function xEditor(b){
     var last = b.f.length - 1, rows = b.f.map(function(f, j){
-      var needs = f.t === 'number' || f.t === 'choice', ph = f.t === 'number' ? 'Unit, such as kg' : 'Options, separated by commas', id = b.k + '.' + j;
+      var needs = f.t === 'number' || !!OPT[f.t], ph = f.t === 'number' ? 'Unit, such as kg' : 'Options, separated by commas', id = b.k + '.' + j;
       return '<div class="xf"><input type="text" class="xl" data-xl="' + id + '" maxlength="60" placeholder="Field name" value="' + esc(f.l) + '" aria-label="Field name">'
-        + '<select data-xt="' + id + '" aria-label="Field type">' + FTYPES.map(function(o){ return '<option value="' + o[0] + '"' + (o[0] === f.t ? ' selected' : '') + '>' + o[1] + '</option>'; }).join('') + '</select>'
+        + '<select data-xt="' + id + '" aria-label="Field type">' + ftypeOpts(f.t) + '</select>'
         + '<span class="mvs"><button type="button" data-fmv="' + id + ':-1" aria-label="Move field up"' + (j === 0 ? ' disabled' : '') + '>' + ARR.up + '</button><button type="button" data-fmv="' + id + ':1" aria-label="Move field down"' + (j === last ? ' disabled' : '') + '>' + ARR.dn + '</button><button type="button" class="xrm" data-fdel="' + id + '" aria-label="Remove field">&times;</button></span>'
         + (needs ? '<input type="text" class="xe" data-xe="' + id + '" maxlength="80" placeholder="' + ph + '" value="' + esc(f.e || '') + '" aria-label="' + ph + '">' : '') + '</div>';
     }).join('');
@@ -976,14 +1010,27 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   }
   function coreEditor(id){
     var rows = (FIELDS[id] || []).map(function(f){ var k = id + '.' + f[0], off = cs.h.indexOf(k) > -1; return '<div class="fr"><input type="checkbox" id="f_' + k + '" data-f="' + k + '"' + (off ? '' : ' checked') + ' aria-label="Show ' + esc(f[1]) + '"><input type="text" class="fn" data-fr="' + k + '" maxlength="60" value="' + esc(cs.r[k] || f[1]) + '" aria-label="Name of ' + esc(f[1]) + '"' + (off ? ' disabled' : '') + '></div>'; }).join('');
-    return '<div class="xb core" data-box="' + id + '"><h3 class="xt2">' + esc(BN[id]) + '</h3><p class="hint">A ready-made box. Untick a field to hide it, or type over a name to rename it.</p><div class="xfs">' + rows + '</div><div class="xa"><span></span><button type="button" class="xdel" data-rm="' + id + '">Remove from my page</button></div></div>';
+    return '<div class="xb core" data-box="' + id + '"><h3 class="xt2">' + esc(cs.bt[id] || BN[id]) + '</h3><label class="field"><span>Box name</span><input type="text" data-bt="' + id + '" maxlength="24" value="' + esc(cs.bt[id] || BN[id]) + '" aria-label="Box name"></label><p class="hint">A ready-made box. Untick a field to hide it, or type over a name to rename it.</p><div class="xfs">' + rows + '</div><div class="xa"><span></span><button type="button" class="xdel" data-rm="' + id + '">Remove from my page</button></div></div>';
   }
   function homeEditor(){
     var o = { b:cs.b, h:cs.h, x:cs.x }, nf = fieldCount(o);
     return '<div class="xb ov"><h3 class="xt2">Build your page</h3><p class="hint">Every box is a page in your logbook. Make your own from scratch, or add a ready-made one, then drag them into the order you want. The phone shows exactly what you get.</p>'
       + '<div class="ovs"><div><b>' + cs.ord.length + '</b><span>' + (cs.ord.length === 1 ? 'box' : 'boxes') + '</span></div><div><b>' + nf + '</b><span>' + (nf === 1 ? 'field' : 'fields') + '</span></div></div>'
-      + (cs.x.length < 5 ? '<button type="button" class="btn" data-xnew="1">New box</button>' : '<p class="hint">You have made the most boxes of your own (5).</p>') + '</div>';
+      + (cs.x.length < 5 ? '<button type="button" class="btn" data-xnew="1">New box</button>' : '<p class="hint">You have made the most boxes of your own (5).</p>') + '</div>' + lookHtml();
   }
+  function seg(key, list, render){ return '<div class="seg" role="group">' + list.map(function(o){ var on = cs[key] === o[0]; return '<button type="button" data-lk="' + key + ':' + o[0] + '" aria-pressed="' + on + '"' + (render ? ' class="rich"' : '') + '>' + (render ? render(o) : o[1]) + '</button>'; }).join('') + '</div>'; }
+  function lookHtml(){
+    var col = cs.a || '#835F1F';
+    return '<div class="xb lk"><h3 class="xt2">Look and feel</h3><p class="hint">Make it yours. The phone on the right changes as you choose.</p>'
+      + '<div><h4>Typeface</h4>' + seg('f', LOOKF, function(o){ return '<span style="font:600 20px/1 ' + o[3] + '">' + o[1] + '</span><small>' + o[2] + '</small>'; }) + '</div>'
+      + '<div><h4>Corners</h4>' + seg('c', LOOKC, function(o){ return '<span class="cn" style="border-top-left-radius:' + o[2] + '"></span><small>' + o[1] + '</small>'; }) + '</div>'
+      + '<div><h4>When it opens</h4>' + seg('th', LOOKT) + '</div>'
+      + '<div><h4>Home-screen icon</h4>' + seg('m', LOOKM, function(o){ return markSvg(o[0], col, cs.n) + '<small>' + o[1] + '</small>'; }) + '</div>'
+      + '<label class="field"><span>A line under the date</span><input type="text" id="ctag" maxlength="90" placeholder="Show up. Log it." value="' + esc(cs.g) + '" autocomplete="off"></label></div>';
+  }
+  document.addEventListener('click', function(e){
+    var lk = e.target.closest && e.target.closest('[data-lk]'); if(!lk) return; var pr = lk.getAttribute('data-lk').split(':'); cs[pr[0]] = pr[1]; xSync(); pvRefresh(150);
+  });
   function editorHtml(){
     var s = cs.sel; if(!s || s === 'home') return homeEditor();
     if(/^cx_/.test(s)){ var b = xFind(s.slice(3)); return b ? xEditor(b) : homeEditor(); }
@@ -1005,9 +1052,9 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   var pvT = 0, pvLast = '';
   function pvUrlO(o, k){
     var inb = function(f){ return o.b.indexOf(f.split('.')[0]) > -1; }, h = (o.h || []).filter(inb), r = Object.keys(o.r || {}).filter(function(f){ return inb(f) && o.r[f]; }).map(function(f){ return f + '~' + encodeURIComponent(o.r[f]); });
-    return 'logbook/?l=custom&pv=1&k=' + k + '&n=' + encodeURIComponent(o.n || 'My Logbook') + '&a=' + encodeURIComponent(o.a) + '&b=' + o.b.join(',') + '&o=' + ordOf(o).join(',') + (h.length ? '&h=' + h.join(',') : '') + (r.length ? '&r=' + r.join(',') : '') + (o.x && o.x.length ? '&x=' + encodeURIComponent(JSON.stringify(xPack(o.x))) : '');
+    return 'logbook/?l=custom&pv=1&k=' + k + '&n=' + encodeURIComponent(o.n || 'My Logbook') + '&a=' + encodeURIComponent(o.a) + '&b=' + o.b.join(',') + '&o=' + ordOf(o).join(',') + (h.length ? '&h=' + h.join(',') : '') + (r.length ? '&r=' + r.join(',') : '') + (o.x && o.x.length ? '&x=' + encodeURIComponent(JSON.stringify(xPack(o.x))) : '') + lookQ(o);
   }
-  function pvUrl(){ return pvUrlO({ n:cs.n, a:cs.a, b:cs.b, h:cs.h, r:cs.r, x:cs.x, o:cs.ord }, 'pvx'); }
+  function pvUrl(){ return pvUrlO({ n:cs.n, a:cs.a, b:cs.b, h:cs.h, r:cs.r, x:cs.x, o:cs.ord, f:cs.f, c:cs.c, th:cs.th, m:cs.m, g:cs.g, bt:cs.bt }, 'pvx'); }
   function pvGo(){ var f = $('pvf'); try{ if(f && f.contentWindow && f.contentWindow.nav){ if(cs.pg === 'home' || (cs.b.indexOf(cs.pg) < 0 && !(/^cx_/.test(cs.pg) && xFind(cs.pg.slice(3))))) f.contentWindow.nav('home'); else f.contentWindow.nav('page', cs.pg); } }catch(e){} }
   function pvRefresh(delay){
     clearTimeout(pvT);
@@ -1135,14 +1182,14 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
       if(bad) return; var named = bx.f.filter(function(f){ return f.l.trim(); });
       if(!bx.n.trim()){ bad = bx; why = 'Give your new box a name, or delete it.'; }
       else if(!named.length){ bad = bx; why = 'Add at least one field to \u201c' + bx.n + '\u201d, or delete that box.'; }
-      else { named.forEach(function(f){ if(!bad && f.t === 'choice' && String(f.e || '').split(',').filter(function(o){ return o.trim(); }).length < 2){ bad = bx; why = 'Add at least two options (separated by commas) to \u201c' + f.l + '\u201d in \u201c' + bx.n + '\u201d.'; } }); }
+      else { named.forEach(function(f){ if(!bad && OPT[f.t] && String(f.e || '').split(',').filter(function(o){ return o.trim(); }).length < 2){ bad = bx; why = 'Add at least two options (separated by commas) to \u201c' + f.l + '\u201d in \u201c' + bx.n + '\u201d.'; } }); }
     });
     if(bad){ err.textContent = why; selectItem('cx_' + bad.k); return; }
     if(!cs.ord.length){ err.textContent = 'Add at least one box to your page first.'; return; }
     err.textContent = '';
     if(needAuth({ t:'make' }, 'Sign in to package ' + n + '. Your boxes and their order are kept.')) return;
     var inb = function(f){ return cs.b.indexOf(f.split('.')[0]) > -1; }, rn = {}; Object.keys(cs.r).forEach(function(f){ if(inb(f) && cs.r[f]) rn[f] = cs.r[f]; });
-    var o2 = { k:rid(), n:n.slice(0, 22), a:cs.a.toUpperCase(), b:cs.b.slice(), o:cs.ord.slice(), h:cs.h.filter(inb), r:rn, x:JSON.parse(JSON.stringify(cs.x)).map(function(bx){ bx.f = bx.f.filter(function(f){ return f.l.trim(); }); return bx; }) };
+    var o2 = { f:cs.f, c:cs.c, th:cs.th, m:cs.m, g:cs.g, bt:JSON.parse(JSON.stringify(cs.bt)), k:rid(), n:n.slice(0, 22), a:cs.a.toUpperCase(), b:cs.b.slice(), o:cs.ord.slice(), h:cs.h.filter(inb), r:rn, x:JSON.parse(JSON.stringify(cs.x)).map(function(bx){ bx.f = bx.f.filter(function(f){ return f.l.trim(); }); return bx; }) };
     saved.unshift(o2); store('lbs-custom', saved); $('mine').innerHTML = mineHtml(); pushPrefs(); finish(o2, btn, true);
   }
   function rid(){ return Math.random().toString(36).slice(2, 8); }
@@ -1187,7 +1234,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   });
   document.addEventListener('change', function(e){
     var t0 = e.target; if(t0 && t0.dataset && (t0.dataset.xt !== undefined || t0.dataset.xi !== undefined)){
-      if(t0.dataset.xt !== undefined){ var pr = t0.dataset.xt.split('.'), b = xFind(pr[0]); if(b && b.f[+pr[1]]){ b.f[+pr[1]].t = t0.value; if(t0.value !== 'number' && t0.value !== 'choice') b.f[+pr[1]].e = ''; cs.pg = 'cx_' + b.k; xSync(); pvRefresh(250); } }
+      if(t0.dataset.xt !== undefined){ var pr = t0.dataset.xt.split('.'), b = xFind(pr[0]); if(b && b.f[+pr[1]]){ b.f[+pr[1]].t = t0.value; if(t0.value !== 'number' && !OPT[t0.value]) b.f[+pr[1]].e = ''; cs.pg = 'cx_' + b.k; xSync(); pvRefresh(250); } }
       else { var b2 = xFind(t0.dataset.xi); if(b2){ b2.i = t0.value; cs.pg = 'cx_' + b2.k; pvRefresh(250); } }
       return;
     }
@@ -1196,6 +1243,8 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   document.addEventListener('input', function(e){
     var t = e.target;
     if(t.id === 'cn'){ cs.n = t.value.trim(); pvRefresh(); }
+    else if(t.dataset && t.dataset.bt){ var bk = t.dataset.bt, bv = t.value.trim(); if(!bv || bv === BN[bk]) delete cs.bt[bk]; else cs.bt[bk] = bv; xSoft(); pvRefresh(700); }
+    else if(t.id === 'ctag'){ cs.g = t.value; pvRefresh(700); }
     else if(t.dataset && t.dataset.fr){ var dk = t.dataset.fr, dd = (FIELDS[dk.split('.')[0]] || []).filter(function(f){ return dk.split('.')[1] === f[0]; })[0]; var nv = t.value.trim(); if(!nv || (dd && nv === dd[1])) delete cs.r[dk]; else cs.r[dk] = nv; pvRefresh(700); }
     else if(t.id === 'ccol'){ cs.a = t.value.toUpperCase(); [].forEach.call($('csw').querySelectorAll('[data-c]'), function(x){ x.setAttribute('aria-pressed', 'false'); }); pvRefresh(250); }
     else if(t.id === 'fq'){ filt.q = t.value; var r = appRow(route().app); if(r) $('dtbl').innerHTML = dayTable(r); }

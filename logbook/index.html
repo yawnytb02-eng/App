@@ -215,7 +215,7 @@
         if(xh.status === 200){ cfg = JSON.parse(xh.responseText); if(cfg && typeof cfg === 'object') try{ localStorage.setItem('lbe-' + eid, JSON.stringify(cfg)); }catch(e){} else cfg = null; }
       }catch(e){}
     }
-    if(cfg){ q.l = 'custom'; ['n','a','k','b','o','h','r'].forEach(function(k){ if(cfg[k] != null) q[k] = String(cfg[k]); }); if(cfg.x != null) q.x = typeof cfg.x === 'string' ? cfg.x : JSON.stringify(cfg.x); }
+    if(cfg){ q.l = 'custom'; ['n','a','k','b','o','h','r','f','c','th','m','g','bt'].forEach(function(k){ if(cfg[k] != null) q[k] = String(cfg[k]); }); if(cfg.x != null) q.x = typeof cfg.x === 'string' ? cfg.x : JSON.stringify(cfg.x); }
     else edFail = true;
   }
   /* Install code: ?i=<10 chars> signs the installed app in once. iPhone keeps a home-screen app's storage apart from Safari, so Safari must not spend the code. */
@@ -248,7 +248,7 @@
     /* x = boxes the owner made from scratch: [{k,n,i,f:[{l,t,m?,u?,o?}]}] */
     P.x = [];
     try{
-      var XT = ['short','long','number','scale','toggle','choice','photo'], XI = ['star','heart','shirt','camera','coffee','leaf','music','smile','sparkle','bag','phone','bed','pill','dumbbell','drop','flame','bolt','book','moon','sun','target','clock','flag','pen'];
+      var XT = ['short','long','number','scale','toggle','choice','photo','duration','money','percent','time','mood','multi','todo','list'], XI = ['star','heart','shirt','camera','coffee','leaf','music','smile','sparkle','bag','phone','bed','pill','dumbbell','drop','flame','bolt','book','moon','sun','target','clock','flag','pen'];
       var xr = JSON.parse(q.x || '[]'); if(Array.isArray(xr)) xr.slice(0,5).forEach(function(b){
         var n = String(b && b.n || '').replace(/[<>"&]/g,'').trim().slice(0,24), k = String(b && b.k || '').replace(/[^a-z0-9]/gi,'').slice(0,6);
         if(!n || !k || !Array.isArray(b.f)) return;
@@ -256,7 +256,7 @@
           var l = String(x && x.l || '').replace(/[<>"&]/g,'').trim().slice(0,60); if(!l || XT.indexOf(x.t) < 0) return;
           var o = { l:l, t:x.t }; if(x.t === 'scale') o.m = x.m === 10 ? 10 : 5;
           if(x.t === 'number' && x.u) o.u = String(x.u).replace(/[<>"&]/g,'').trim().slice(0,10);
-          if(x.t === 'choice'){ o.o = (Array.isArray(x.o) ? x.o : []).map(function(v){ return String(v).replace(/[<>"&]/g,'').trim().slice(0,24); }).filter(Boolean).slice(0,8); if(o.o.length < 2) return; }
+          if(x.t === 'choice' || x.t === 'multi'){ o.o = (Array.isArray(x.o) ? x.o : []).map(function(v){ return String(v).replace(/[<>"&]/g,'').trim().slice(0,24); }).filter(Boolean).slice(0,8); if(o.o.length < 2) return; }
           f.push(o);
         });
         P.x.push({ k:k, n:n, i:XI.indexOf(b.i) > -1 ? b.i : 'star', f:f });
@@ -264,10 +264,17 @@
     }catch(e){}
     /* o = the order the owner arranged the boxes in: ready-made ids and cx_<k> for their own */
     P.o = (q.o||'').split(',').filter(function(x){ return /^(cx_[a-z0-9]{1,6}|[a-z]+)$/.test(x); }).slice(0,14);
+    /* Look and feel: typeface (f), corners (c), default mode (th), home-screen mark (m), the line under the date (g), renamed ready-made boxes (bt) */
+    P.f = ['serif','round','mono','edit'].indexOf(q.f) > -1 ? q.f : 'sans';
+    P.c = ['sharp','round'].indexOf(q.c) > -1 ? q.c : 'soft';
+    P.th = ['dark','auto'].indexOf(q.th) > -1 ? q.th : 'light';
+    P.m = ['ring','letter','dots','bars'].indexOf(q.m) > -1 ? q.m : 'reticle';
+    P.g = String(q.g || '').replace(/[<>"&]/g,'').replace(/\s+/g,' ').trim().slice(0,90);
+    P.bt = (q.bt||'').split(',').map(function(x){ var i = x.indexOf('~'); return i < 0 ? '' : x.slice(0,i) + '~' + decodeURIComponent(x.slice(i+1)).replace(/[<>"&]/g,'').trim().slice(0,24); }).filter(function(x){ return /^[a-z]+~.+/.test(x); }).slice(0,10);
     if(q.pv){ P.key = 'pv-'+id+'-v1'; }
   }
   if(P && !edFail){
-    ed = { slug:slug, n:P.n, key:P.key, boxes:P.b||null, icon:P.icon||'flag', custom:slug==='custom', hide:P.h||[], ren:P.r||[], x:P.x||[], ord:P.o||[], pv:!!(q.pv && slug==='custom') };
+    ed = { slug:slug, n:P.n, key:P.key, boxes:P.b||null, icon:P.icon||'flag', custom:slug==='custom', hide:P.h||[], ren:P.r||[], x:P.x||[], ord:P.o||[], pv:!!(q.pv && slug==='custom'), font:P.f||'sans', corner:P.c||'soft', theme:P.th||'light', mk:P.m||'reticle', tag:P.g||'', bt:P.bt||[] };
     if(ed.pv){
       /* Studio preview: a throwaway, signed-out copy of the real app (fresh every load, no account gate, no cloud). */
       try{ localStorage.removeItem('lb-seeded-'+P.key); localStorage.setItem('cb-welcomed-'+P.key,'1'); localStorage.setItem(P.key, JSON.stringify({ onboarded:true, days:{} })); }catch(e){}
@@ -293,11 +300,17 @@
     if(ed.pal){ b.themeColorLight = ed.light; b.themeColorDark = ed.dark; ['light','dark'].forEach(function(m){ for(var k in ed.pal[m]) cfg.palette[m][k] = ed.pal[m][k]; }); }
     return cfg;
   };
-  function mark(sz, bg, fg){
+  function mark(sz, bg, fg, style, letter){
     var c = document.createElement('canvas'); c.width = c.height = sz; var x = c.getContext('2d'); x.fillStyle = bg; x.fillRect(0,0,sz,sz);
-    var m = sz/2, r = sz*.27; x.strokeStyle = fg; x.fillStyle = fg; x.lineWidth = sz*.055; x.lineCap = 'round';
-    x.beginPath(); x.arc(m,m,r,0,7); x.stroke(); [[0,-1],[1,0],[0,1],[-1,0]].forEach(function(v){ x.beginPath(); x.moveTo(m+v[0]*r*.78,m+v[1]*r*.78); x.lineTo(m+v[0]*r*1.28,m+v[1]*r*1.28); x.stroke(); });
-    x.beginPath(); x.arc(m,m,sz*.045,0,7); x.fill(); return c.toDataURL('image/png');
+    var m = sz/2, r = sz*.307, w = sz*.026; x.strokeStyle = fg; x.fillStyle = fg; x.lineWidth = w; x.lineCap = 'butt';
+    function ring(){ x.beginPath(); x.arc(m,m,r,0,7); x.stroke(); }
+    function dot(px,py,d){ x.beginPath(); x.arc(px,py,d,0,7); x.fill(); }
+    if(style === 'ring'){ ring(); x.lineWidth = w*.8; x.beginPath(); x.arc(m,m,r*.66,0,7); x.stroke(); dot(m,m,sz*.03); }
+    else if(style === 'letter'){ ring(); x.font = '300 ' + Math.round(sz*.34) + 'px system-ui,-apple-system,"Segoe UI",sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(String(letter || 'L').charAt(0).toUpperCase(), m, m + sz*.014); }
+    else if(style === 'dots'){ var g = sz*.105; for(var i = -1; i <= 1; i++) for(var j = -1; j <= 1; j++) dot(m + i*g*1.55, m + j*g*1.55, sz*.026); }
+    else if(style === 'bars'){ var bw = sz*.05, gap = sz*.075, hs = [.16,.27,.38,.21]; hs.forEach(function(h,i){ var bx = m + (i - 1.5)*(bw + gap) - bw/2, hh = sz*h; x.fillRect(bx, m + sz*.19 - hh, bw, hh); }); x.fillRect(m - sz*.27, m + sz*.19, sz*.54, w); }
+    else { ring(); [[0,-1],[1,0],[0,1],[-1,0]].forEach(function(v){ x.beginPath(); x.moveTo(m+v[0]*(r-sz*.044),m+v[1]*(r-sz*.044)); x.lineTo(m+v[0]*(r+sz*.044),m+v[1]*(r+sz*.044)); x.stroke(); }); dot(m,m,sz*.03); }
+    return c.toDataURL('image/png');
   }
   /* Everything a home-screen install reads: title, app title, colour, icon, manifest. Set immediately (before the engine boots) and again once the page is parsed. */
   function meta(name, val){ var m = document.querySelector('meta[name="' + name + '"]'); if(!m){ m = document.createElement('meta'); m.name = name; document.head.appendChild(m); } m.setAttribute('content', val); }
@@ -307,7 +320,7 @@
       var bgc = ed.light || '#F7F2E7', fg = ed.accL || '#835F1F', nm = ed.n + ' Logbook';
       document.title = nm; meta('apple-mobile-web-app-title', ed.n.slice(0, 20)); meta('application-name', ed.n); meta('theme-color', bgc);
       if(ed.pal && !ed.icon512){
-        var i180 = mark(180,bgc,fg); ed.icon512 = mark(512,bgc,fg);
+        var i180 = mark(180,bgc,fg,ed.mk,ed.n), i512 = mark(512,bgc,fg,ed.mk,ed.n); ed.icon512 = i512;
         document.querySelectorAll('link[rel~="icon"],link[rel="apple-touch-icon"]').forEach(function(l){ l.parentNode.removeChild(l); });
         [['apple-touch-icon',i180],['icon',i180]].forEach(function(p){ var l = document.createElement('link'); l.rel = p[0]; if(p[0]==='icon') l.type='image/png'; l.href = p[1]; document.head.appendChild(l); });
       }
@@ -321,6 +334,23 @@
       }
     }catch(e){}
   }
+  /* Look and feel: a few lines of CSS on top of the engine's own tokens */
+  function look(){
+    if(!ed || !ed.custom || ed.looked) return; ed.looked = true;
+    var F = { serif:["Georgia,'Iowan Old Style','Times New Roman',serif","Georgia,'Iowan Old Style','Times New Roman',serif"], round:["ui-rounded,'SF Pro Rounded','Nunito','Varela Round','Segoe UI',system-ui,sans-serif","ui-rounded,'SF Pro Rounded','Nunito','Varela Round','Segoe UI',system-ui,sans-serif"], mono:["ui-monospace,'SF Mono',Menlo,Consolas,monospace","ui-monospace,'SF Mono',Menlo,Consolas,monospace"], edit:["Georgia,'Iowan Old Style','Times New Roman',serif","'Manrope',-apple-system,'Segoe UI',sans-serif"] };
+    var R = { sharp:['6px','4px','3px'], round:['36px','28px','22px'] }, css = '';
+    if(F[ed.font]) css += '--font-display:' + F[ed.font][0] + ';--font-body:' + F[ed.font][1] + ';';
+    if(R[ed.corner]) css += '--r-lg:' + R[ed.corner][0] + ';--r-md:' + R[ed.corner][1] + ';--r-sm:' + R[ed.corner][2] + ';';
+    if(css){ var s = document.createElement('style'); s.id = 'ed-look'; s.textContent = ':root{' + css + '}' + (ed.corner === 'sharp' ? '.scale-dot,.pill,.checkbox,.bx-iconbtn{border-radius:4px!important}' : ''); document.head.appendChild(s); }
+    if(ed.theme !== 'light'){
+      try{
+        var dk = ed.theme === 'dark' || (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches), TK = 'cleanboy-logbook-theme', SF = 'lb-theme-set-' + ed.key;
+        if(!localStorage.getItem(SF)){ localStorage.setItem(SF, '1'); if(!ed.pv) localStorage.setItem(TK, dk ? 'dark' : 'light'); }
+        if(!localStorage.getItem(TK) || ed.pv) document.documentElement.setAttribute('data-theme', dk ? 'dark' : 'light'); else document.documentElement.setAttribute('data-theme', localStorage.getItem(TK));
+      }catch(e){}
+    }
+  }
+  look();
   window.__EDHEAD = head;
   head();
   document.addEventListener('DOMContentLoaded', head);
@@ -472,7 +502,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
         else { EDS.boxes.forEach(function(i){ try{ window.bxsAdd(i, true); }catch(e){} }); localStorage.setItem(SK2, '1'); (EDS.hide || []).forEach(function(x){ var p = x.split('.'); try{ bxCfg(p[0], true).hidden[p[1]] = '2000-01-01'; }catch(e){} });
           (EDS.ren || []).forEach(function(x){ var p = x.split('~'), k = p[0].split('.'); try{ if(p[1]) bxCfg(k[0], true).labels[k[1]] = p[1]; }catch(e){} });
           (EDS.x || []).forEach(function(bx, bi){ try{
-            var IB = { short:'pen', long:'pen', number:'chart', scale:'star', toggle:'check', choice:'target', photo:'camera' }, id = 'cx_' + bx.k;
+            var IB = { short:'pen', long:'pen', number:'chart', scale:'star', toggle:'check', choice:'target', photo:'camera', duration:'clock', money:'dollar', percent:'chart', time:'clock', mood:'smile', multi:'listcheck', todo:'check', list:'lines' }, id = 'cx_' + bx.k;
             bxDB().boxes[id] = { id:id, custom:true, name:bx.n, icon:bx.i, from:todayStr(), until:null, order:bi + 2, labels:{}, hidden:{}, fields:bx.f.map(function(f, j){ var o = { id:'f' + j, label:f.l, type:f.t, icon:IB[f.t], created:todayStr(), deleted:null }; if(f.t === 'scale') o.max = f.m; if(f.u) o.unit = f.u; if(f.o) o.options = f.o; return o; }) };
           }catch(e){} });
           try{ saveDB(); }catch(e){} if(EDS.pv){ try{ render(); }catch(e){} } }
@@ -484,6 +514,8 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   /* No welcome tour and no setup wizard: a signed-in person lands on this logbook's own Today page. */
   var wideQ = window.matchMedia ? matchMedia('(min-width:900px)') : { matches:false };
   function skipSetup(){ try{ if(!DB.onboarded) DB.onboarded = true; if(wideQ.matches && typeof HOME_REST_OPEN !== 'undefined' && !HOME_REST_OPEN) HOME_REST_OPEN = true; }catch(e){} }
+  /* Look and feel from the studio: the line under the date, and renamed ready-made boxes */
+  try{ if(ED && ED.tag){ QUOTES.length = 0; QUOTES.push(ED.tag); } (ED && ED.bt || []).forEach(function(x){ var p = x.split('~'); CORE_PAGES.forEach(function(pg){ if(pg.id === p[0] && p[1]) pg.name = p[1]; }); }); }catch(e){}
   skipSetup();
   /* Install code from the short link: spend it once to sign this device in. On iPhone the Safari tab leaves it alone (the home-screen app has its own storage), and says how to add it. */
   var INST = window.__INST || {}, tried = false, sheet = null;
