@@ -464,7 +464,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   <p class="sub" id="dsub">Open this link on your phone, then add it to your home screen.</p>
   <div class="urlbox"><input type="text" id="du" readonly aria-label="Link"><button class="btn" id="dc" type="button">Copy</button></div>
   <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><a class="btn ghost sm" id="do" href="#">Open it</a><button class="btn ghost sm hide" id="dsh" type="button">Share</button></div>
-  <div class="qrrow"><div id="dq" role="img" aria-label="QR code for the link"></div><p><b style="color:var(--ink)">On a computer?</b><br>Scan this with your phone camera to open the logbook on your phone.</p></div>
+  <div class="qrrow"><div id="dq" role="img" aria-label="QR code for the link"></div><p><b style="color:var(--ink)">On a computer?</b><br>Scan this with your phone camera. It opens already signed in, so keep it to yourself.</p></div>
   <div class="tabs" role="tablist"><button role="tab" aria-selected="true" id="ti">iPhone</button><button role="tab" aria-selected="false" id="ta">Android</button></div>
   <ol class="steps" id="dsteps"></ol>
   <p class="note">It works offline once it has opened once. To see it on this site, open the logbook, sign in, then turn Sync on in Settings.</p>
@@ -485,7 +485,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
       <div class="pk-acts"><a class="btn ghost sm" id="fo" href="#">Open it</a><button class="btn ghost sm hide" id="fsh" type="button">Share</button><button class="btn ghost sm" id="pkre" type="button">Watch the screens again</button><button class="btn sm pkdone" id="pkdone" type="button">Done</button></div>
     </div>
     <div class="pk-r">
-      <div class="qrrow"><div id="fq" role="img" aria-label="QR code for the link"></div><p><b>On a computer?</b><br>Scan this with your phone camera to open it on your phone.</p></div>
+      <div class="qrrow"><div id="fq" role="img" aria-label="QR code for the link"></div><p><b>On a computer?</b><br>Scan this with your phone camera. It opens already signed in, so keep it to yourself.</p></div>
       <div class="tabs" role="tablist"><button role="tab" aria-selected="true" id="fti">iPhone</button><button role="tab" aria-selected="false" id="fta">Android</button></div>
       <ol class="steps" id="fsteps"></ol>
     </div>
@@ -526,6 +526,38 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
     if(rr.length) u += '&r=' + rr.join(',');
     return u;
   }
+  /* The same design as plain data, for the short link saved to the account */
+  function cfgOf(o){
+    var hh = (o.h || []).filter(function(f){ return o.b.indexOf(f.split('.')[0]) > -1; }), rr = Object.keys(o.r || {}).filter(function(f){ return o.b.indexOf(f.split('.')[0]) > -1 && o.r[f]; }).map(function(f){ return f + '~' + o.r[f]; });
+    var c = { n:o.n, a:o.a, k:o.k, b:o.b.join(',') }; if(o.o && o.o.length) c.o = o.o.join(','); if(hh.length) c.h = hh.join(','); if(rr.length) c.r = rr.join(','); if(o.x && o.x.length) c.x = xPack(o.x);
+    return c;
+  }
+  var noBk = false, edCache = {};
+  function rpc(name, body){
+    if(noBk || !sess) return Promise.reject(new Error('out'));
+    return fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/' + name, { method:'POST', headers:hdr(tk), body:JSON.stringify(body || {}) }); }).then(function(r){
+      if(r.status === 404) noBk = true;
+      if(!r.ok) throw new Error('rpc ' + r.status); return r.json(); });
+  }
+  /* A short address for a logbook. withCode adds a one-time sign-in code, so the phone or computer that opens it is already signed in.
+     If the account service cannot make one, it falls back to the long address (the person then signs in once inside the logbook). */
+  function linkFor(o, withCode){
+    var base = new URL('logbook/', location.href.split('#')[0].split('?')[0]).href, job;
+    if(o.preset) job = Promise.resolve(base + '?l=' + o.preset);
+    else { var key = JSON.stringify(cfgOf(o)); job = edCache[key] ? Promise.resolve(edCache[key]) : rpc('make_edition', { p_cfg:cfgOf(o) }).then(function(id){ if(typeof id !== 'string' || !/^[a-z0-9]{6}$/.test(id)) throw new Error('id'); return (edCache[key] = base + '?e=' + id); }).catch(function(){ return urlFor(o); }); }
+    return job.then(function(u){
+      if(!withCode || !sess) return u;
+      return rpc('make_handoff').then(function(c){ return typeof c === 'string' && /^[a-z0-9]{10}$/.test(c) ? u + (u.indexOf('?') > -1 ? '&' : '?') + 'i=' + c : u; }).catch(function(){ return u; });
+    });
+  }
+  /* Open buttons: mint a fresh one-time code, then open the logbook in a new tab already signed in. */
+  function edOf(s){ var m = String(s || '').split(':'); if(m[0] === 'p'){ var p = PRESETS.filter(function(x){ return x.id === m[1]; })[0]; return p ? { preset:p.id, n:p.n, a:p.c } : null; } if(m[0] === 'm') return saved[+m[1]] || null; if(m[0] === 'a'){ var r = appRow(m[1]); return r && r.ed || null; } return m[0] === 'cur' ? curEd : null; }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('[data-open]'); if(!a) return;
+    var o = edOf(a.getAttribute('data-open')); if(!o) return; e.preventDefault();
+    var w = null; try{ w = window.open('', '_blank'); }catch(x){}
+    linkFor(o, true).then(function(u){ if(w && !w.closed){ try{ w.opener = null; }catch(x){} w.location.href = u; } else location.href = u; });
+  });
   var IC = {
     home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>',
     lib:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg>',
@@ -593,7 +625,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
     var th = stTh(stageId), p = PRESETS.filter(function(x){ return x.id === stageId; })[0];
     var pills = PRESETS.map(function(x){ return '<button type="button" data-st="' + x.id + '" aria-pressed="' + (x.id === stageId) + '">' + esc(x.n) + '</button>'; }).join('');
     return '<section class="stage" id="choose" style="' + themeVars(th) + '">' + motif(th.mo, th.acc) + '<div class="wrap"><h2 style="font-size:clamp(28px,4vw,42px)">Choose a logbook</h2><p class="sub" style="color:inherit;opacity:.8">Seven starting points. Same engine, its own look and its own set of boxes. These are the real screens.</p><div class="st-pick" role="group" aria-label="Logbooks">' + pills + '</div>'
-      + '<div class="st-row"><div class="st-name" id="stn">' + stName(p) + '</div><div class="st-side"><p id="stt">' + esc(p.t) + '</p><div class="acts"><a class="btn" id="sto" href="logbook/?l=' + p.id + '">Open ' + esc(p.n) + '</a><button class="btn ghost" id="sti" type="button" data-act="inst" data-i="' + p.id + '">Install</button></div></div></div>'
+      + '<div class="st-row"><div class="st-name" id="stn">' + stName(p) + '</div><div class="st-side"><p id="stt">' + esc(p.t) + '</p><div class="acts"><a class="btn" id="sto" data-open="p:' + p.id + '" href="logbook/?l=' + p.id + '">Open ' + esc(p.n) + '</a><button class="btn ghost" id="sti" type="button" data-act="inst" data-i="' + p.id + '">Install</button></div></div></div>'
       + '<div class="st-ph" id="stp">' + stPhones(p) + '</div></div></section>';
   }
   function stName(p){ var w = p.n.split(' '); return w.length > 1 ? esc(w[0]) + '<br><em>' + esc(w.slice(1).join(' ')) + '</em>' : '<em>' + esc(p.n) + '</em>'; }
@@ -607,7 +639,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
     el.classList.add('swp');
     setTimeout(function(){
       el.setAttribute('style', themeVars(th)); var old = el.querySelector('svg.mo'); if(old) old.outerHTML = motif(th.mo, th.acc);
-      $('stn').innerHTML = stName(p); $('stt').textContent = p.t; $('sto').href = 'logbook/?l=' + p.id; $('sto').textContent = 'Open ' + p.n; $('sti').dataset.i = p.id; $('stp').innerHTML = stPhones(p);
+      $('stn').innerHTML = stName(p); $('stt').textContent = p.t; $('sto').href = 'logbook/?l=' + p.id; $('sto').setAttribute('data-open', 'p:' + p.id); $('sto').textContent = 'Open ' + p.n; $('sti').dataset.i = p.id; $('stp').innerHTML = stPhones(p);
       [].forEach.call(el.querySelectorAll('[data-st]'), function(b){ b.setAttribute('aria-pressed', b.dataset.st === id); });
       var imgs = [].slice.call($('stp').querySelectorAll('img')), n = 0, go = function(){ if(++n >= imgs.length) el.classList.remove('swp'); };
       imgs.forEach(function(im){ if(im.complete) go(); else { im.onload = go; im.onerror = go; } }); setTimeout(function(){ el.classList.remove('swp'); }, 900);
@@ -622,7 +654,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   var mode = 'in', filt = { q:'', m:'' };
 
   /* ================= install sheet ================= */
-  var dlg = $('dlg'), curUrl = '';
+  var dlg = $('dlg'), curUrl = '', curEd = null;
   function qrSvg(text){
     try{
       var q = qrcode(0, 'M'); q.addData(text); q.make(); var n = q.getModuleCount(), d = '';
@@ -633,9 +665,10 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   var STEPS = { i:['Open the link in <b>Safari</b> (not inside another app).','Tap the <b>Share</b> button at the bottom.','Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.','Open it from your home screen. It runs full screen and works offline.'],
                 a:['Open the link in <b>Chrome</b>.','Tap the <b>menu</b> (three dots) at the top right.','Tap <b>Install app</b> or <b>Add to Home screen</b>.','Open it from your home screen.'] };
   function steps(k){ $('dsteps').innerHTML = STEPS[k].map(function(s){ return '<li><span>' + s + '</span></li>'; }).join(''); $('ti').setAttribute('aria-selected', k === 'i'); $('ta').setAttribute('aria-selected', k === 'a'); }
-  function install(name, url){
-    if(needAuth({ t:'inst', name:name, url:url }, 'Sign in to get the install link for ' + name + '.')) return;
-    curUrl = url; $('dt').textContent = 'Install ' + name; $('du').value = url; $('do').href = url; $('dq').innerHTML = qrSvg(url);
+  function install(name, ed){
+    if(needAuth({ t:'inst', name:name, ed:ed }, 'Sign in to get the install link for ' + name + '.')) return;
+    curUrl = ''; curEd = ed; $('dt').textContent = 'Install ' + name; $('du').value = 'Making your link…'; $('do').href = typeof ed === 'string' ? ed : urlFor(ed); $('do').setAttribute('data-open', 'cur'); $('dq').innerHTML = '';
+    linkFor(ed, true).then(function(url){ if(curEd !== ed) return; curUrl = url; $('du').value = url; $('dq').innerHTML = qrSvg(url); });
     steps(/android/i.test(navigator.userAgent) ? 'a' : 'i'); $('dsh').classList.toggle('hide', !navigator.share);
     if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
   }
@@ -644,6 +677,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   $('ti').onclick = function(){ steps('i'); }; $('ta').onclick = function(){ steps('a'); };
   $('du').addEventListener('focus', function(){ this.select(); });
   $('dc').onclick = function(){
+    if(!curUrl) return toast('One moment, the link is being made');
     var done = function(){ toast('Link copied'); };
     if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(curUrl).then(done, function(){ $('du').select(); try{ document.execCommand('copy'); }catch(e){} done(); });
     else { $('du').select(); try{ document.execCommand('copy'); }catch(e){} done(); }
@@ -662,7 +696,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   function resume(){
     var p = pending; pending = null; authNote = ''; if(!p) return;
     setTimeout(function(){
-      if(p.t === 'inst') install(p.name, p.url); else if(p.t === 'fin') finish(p.o, null, false);
+      if(p.t === 'inst') install(p.name, p.ed); else if(p.t === 'fin') finish(p.o, null, false);
       else if(p.t === 'make'){ location.hash = '#/create'; render(); setTimeout(function(){ makeLogbook(document.querySelector('[data-act="make"]')); }, 500); }
     }, 400);
   }
@@ -696,10 +730,11 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
     });
   }
   function pkCard(o){
-    var url = urlFor(o), nb = pkItemsL.length - 1, nf = o.preset ? 0 : fieldCount(o), q = qrSvg(url); curUrl = url;
+    var nb = pkItemsL.length - 1, nf = o.preset ? 0 : fieldCount(o); curUrl = ''; curEd = o;
     $('fh2').textContent = o.n + ' is ready to ship'; $('pksum').textContent = o.preset ? (o.t || 'Ready-made') + ' Works offline.' : nb + (nb === 1 ? ' box' : ' boxes') + ' · ' + nf + (nf === 1 ? ' field' : ' fields') + ' · works offline';
     $('pkl').innerHTML = pkItemsL.map(function(it){ return '<li>' + esc(it[1]) + '</li>'; }).join('');
-    $('fu').value = url; $('fo').href = url; $('fq').innerHTML = q || '<p class="qrno">This link is too long for a QR code. Copy the link and send it to your phone instead.</p>';
+    $('fu').value = 'Making your link…'; $('fo').href = urlFor(o); $('fo').setAttribute('data-open', 'cur'); $('fq').innerHTML = '';
+    linkFor(o, true).then(function(url){ if(pkO !== o) return; curUrl = url; $('fu').value = url; var q = qrSvg(url); $('fq').innerHTML = q || '<p class="qrno">This link is too long for a QR code. Copy the link and send it to your phone instead.</p>'; });
     $('fic').innerHTML = iconSvg(o.a); fsteps(/android/i.test(navigator.userAgent) ? 'a' : 'i'); $('fsh').classList.toggle('hide', !navigator.share);
   }
   function pkLock(on){
@@ -744,7 +779,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   window.addEventListener('resize', function(){ if(!$('fin').hidden) pkLayout(); });
   $('fti').onclick = function(){ fsteps('i'); }; $('fta').onclick = function(){ fsteps('a'); };
   $('fu').addEventListener('focus', function(){ this.select(); });
-  $('fc').onclick = function(){ var done = function(){ toast('Link copied'); }; if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(curUrl).then(done, function(){ $('fu').select(); try{ document.execCommand('copy'); }catch(e){} done(); }); else { $('fu').select(); try{ document.execCommand('copy'); }catch(e){} done(); } };
+  $('fc').onclick = function(){ if(!curUrl) return toast('One moment, the link is being made'); var done = function(){ toast('Link copied'); }; if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(curUrl).then(done, function(){ $('fu').select(); try{ document.execCommand('copy'); }catch(e){} done(); }); else { $('fu').select(); try{ document.execCommand('copy'); }catch(e){} done(); } };
   $('fsh').onclick = function(){ try{ navigator.share({ title:$('fh2').textContent, url:curUrl }); }catch(e){} };
 
   /* ================= account (same Supabase account the logbooks use) ================= */
@@ -811,7 +846,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
     var set = {}; keys.forEach(function(k){ set[k] = 1; });
     var nm = nameOf(r.app), mo = ymd(new Date()).slice(0, 7), inMonth = keys.filter(function(k){ return k.slice(0, 7) === mo; }).length;
     return { app:r.app, data:data, days:days, keys:keys, cnt:cnt, set:set, use:use, name:nm, cur:streakOf(set), best:bestOf(keys), total:tot, avg:keys.length ? tot / keys.length : 0, month:inMonth, updated:r.updated_at, device:r.device, size:JSON.stringify(data).length,
-             url: nm.preset ? urlFor({ preset:nm.preset }) : (nm.custom ? urlFor(nm.custom) : '') };
+             url: nm.preset ? urlFor({ preset:nm.preset }) : (nm.custom ? urlFor(nm.custom) : ''), ed: nm.preset ? { preset:nm.preset, n:nm.n, a:nm.a } : (nm.custom || null) };
   }
   function ago(t){ var s = Math.max(0, (Date.now() - new Date(t).getTime()) / 1000); if(s < 90) return 'just now'; if(s < 3600) return Math.round(s / 60) + ' min ago'; if(s < 86400) return Math.round(s / 3600) + ' h ago'; return Math.round(s / 86400) + ' days ago'; }
   function rgba(hex, a){ var h = /^#[0-9a-f]{6}$/i.test(hex) ? hex : '#111111'; return 'rgba(' + parseInt(h.substr(1,2),16) + ',' + parseInt(h.substr(3,2),16) + ',' + parseInt(h.substr(5,2),16) + ',' + a + ')'; }
@@ -858,7 +893,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
     if(!r) return '<div class="vh"><div><h1>Not found</h1></div></div><div class="empty"><h3>That logbook has not synced yet.</h3><a class="btn" href="#/">Back to dashboard</a></div>';
     var col = r.name.acc, max = 1; Object.keys(r.cnt).forEach(function(k){ if(r.cnt[k] > max) max = r.cnt[k]; });
     var th = themeOf(r.name);
-    var head = '<div class="hdr" style="' + themeVars(th) + '">' + motif(th.mo, th.acc, 'meet') + '<p class="k"><a href="#/">Dashboard</a> / ' + esc(th.kick) + '</p><h1>' + esc(r.name.n) + '</h1><p class="sub" style="margin-top:10px">Last synced ' + esc(ago(r.updated)) + (r.device ? ' from device ' + esc(String(r.device).slice(0, 8)) : '') + '</p><div class="acts">' + (r.url ? '<a class="btn ghost sm" href="' + esc(r.url) + '">Open logbook</a><button class="btn ghost sm" data-act="install" data-app="' + esc(r.app) + '" type="button">Install</button>' : '') + '<button class="btn sm" data-act="dl" data-app="' + esc(r.app) + '" type="button">Download data</button></div></div>';
+    var head = '<div class="hdr" style="' + themeVars(th) + '">' + motif(th.mo, th.acc, 'meet') + '<p class="k"><a href="#/">Dashboard</a> / ' + esc(th.kick) + '</p><h1>' + esc(r.name.n) + '</h1><p class="sub" style="margin-top:10px">Last synced ' + esc(ago(r.updated)) + (r.device ? ' from device ' + esc(String(r.device).slice(0, 8)) : '') + '</p><div class="acts">' + (r.url ? '<a class="btn ghost sm" data-open="a:' + esc(r.app) + '" href="' + esc(r.url) + '">Open logbook</a><button class="btn ghost sm" data-act="install" data-app="' + esc(r.app) + '" type="button">Install</button>' : '') + '<button class="btn sm" data-act="dl" data-app="' + esc(r.app) + '" type="button">Download data</button></div></div>';
     var kp = '<div class="kpis five"><div class="kpi"><span class="k">Streak</span><b>' + r.cur + '</b></div><div class="kpi"><span class="k">Best run</span><b>' + r.best + '</b></div><div class="kpi"><span class="k">Days logged</span><b>' + r.keys.length + '</b></div><div class="kpi"><span class="k">This month</span><b>' + r.month + '</b></div><div class="kpi"><span class="k">Boxes per day</span><b>' + (r.avg ? r.avg.toFixed(1) : '0') + '</b></div></div>';
     var wc = [], i, w, d, t; for(i = 11; i >= 0; i--){ t = 0; for(w = 0; w < 7; w++){ d = new Date(); d.setDate(d.getDate() - i * 7 - w); if(r.set[ymd(d)]) t++; } wc.push(t); }
     var wmax = Math.max.apply(null, wc.concat([1]));
@@ -965,7 +1000,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
       + '<aside class="s-p" aria-label="Live preview"><div class="s-sticky"><div class="phone big"><div class="scr" id="pvs"><iframe id="pvf" title="Live preview of your logbook" loading="lazy" tabindex="-1"></iframe><div class="pvld" aria-hidden="true"><i></i></div></div></div></div></aside>'
       + '<div class="mine s-d" id="mine">' + mineHtml() + '</div></div></div>';
   }
-  function mineHtml(){ return sess && saved.length ? '<h3>Your logbooks</h3>' + saved.map(function(o, i){ return '<div class="mrow"><span class="dot" style="background:' + esc(o.a) + '"></span><b>' + esc(o.n) + '</b><a class="btn sm" href="' + esc(urlFor(o)) + '">Open</a><button class="btn ghost sm" type="button" data-act="minst" data-i="' + i + '">Install</button><button class="x" type="button" data-act="mdel" data-i="' + i + '" aria-label="Remove ' + esc(o.n) + ' from this list">Remove</button></div>'; }).join('') : ''; }
+  function mineHtml(){ return sess && saved.length ? '<h3>Your logbooks</h3>' + saved.map(function(o, i){ return '<div class="mrow"><span class="dot" style="background:' + esc(o.a) + '"></span><b>' + esc(o.n) + '</b><a class="btn sm" data-open="m:' + i + '" href="' + esc(urlFor(o)) + '">Open</a><button class="btn ghost sm" type="button" data-act="minst" data-i="' + i + '">Install</button><button class="x" type="button" data-act="mdel" data-i="' + i + '" aria-label="Remove ' + esc(o.n) + ' from this list">Remove</button></div>'; }).join('') : ''; }
   function darken(hex){ var r = parseInt(hex.substr(1,2),16), g2 = parseInt(hex.substr(3,2),16), b = parseInt(hex.substr(5,2),16), l = (Math.max(r,g2,b) + Math.min(r,g2,b)) / 510, f = l > .34 ? .34 / l : 1; return 'rgb(' + Math.round(r*f) + ',' + Math.round(g2*f) + ',' + Math.round(b*f) + ')'; }
   var pvT = 0, pvLast = '';
   function pvUrlO(o, k){
@@ -1121,7 +1156,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
       else if(a === 'signout'){ setSess(null); location.hash = ''; render(); toast('Signed out'); }
       else if(a === 'mode'){ mode = mode === 'in' ? 'up' : 'in'; var f = $('signin'); if(f) f.innerHTML = authForm(); }
       else if(a === 'inst'){ var p = PRESETS.filter(function(x){ return x.id === b.dataset.i; })[0], po = { preset:p.id, n:p.n, a:p.c, t:p.t }; if(needAuth({ t:'fin', o:po }, 'Sign in to see the welcome screen and get the install link for ' + p.n + '.')) return; finish(po, b, false); }
-      else if(a === 'install'){ var r = appRow(b.dataset.app); if(r) install(r.name.n, r.url); }
+      else if(a === 'install'){ var r = appRow(b.dataset.app); if(r && r.ed) install(r.name.n, r.ed); }
       else if(a === 'minst'){ var o = saved[+b.dataset.i]; if(o) finish(o, b, false); }
       else if(a === 'mdel'){ saved.splice(+b.dataset.i, 1); store('lbs-custom', saved); $('mine').innerHTML = mineHtml(); pushPrefs(); toast('Removed from this list. Data already synced stays in your account.'); }
       else if(a === 'make'){ makeLogbook(b); }
