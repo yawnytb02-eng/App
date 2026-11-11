@@ -158,6 +158,8 @@ html[data-tone=night] .intro video{filter:invert(1);mix-blend-mode:screen;opacit
   .studio .s-l{position:sticky;top:78px}
 }
 .studio-c{container:studio / inline-size}
+.agree{display:flex;gap:10px;align-items:flex-start;margin:4px 0 14px;font-size:14px;line-height:1.45;cursor:pointer}.agree input{margin-top:3px;width:18px;height:18px;flex:none;accent-color:var(--acc)}.agree a{text-decoration:underline}.err.ok{color:var(--ink)}
+.mailhelp{margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;font-size:14px;line-height:1.5}.mailhelp ol{margin:8px 0 0;padding-left:20px}.mailhelp li{margin:5px 0}.mailhelp button{background:none;border:0;padding:0;font:inherit;font-weight:700;text-decoration:underline;color:inherit;cursor:pointer}.ft a{color:inherit}
 @container studio (min-width:860px){.studio .s-d{margin-top:20px}}
 
 /* ---------- the package: welcome, every screen, one link ---------- */
@@ -1081,7 +1083,8 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   function authForm(){
     return '<form id="af" novalidate><h3 style="font-size:26px;margin-bottom:4px">' + (mode === 'in' ? 'Sign in' : 'Create an account') + '</h3><p class="sub" style="margin:0 0 18px;font-size:14.5px">' + (mode === 'in' ? 'See everything your logbooks have synced.' : 'One account for every logbook.') + '</p>' + (authNote ? '<p class="anote" role="status">' + esc(authNote) + '</p>' : '')
       + '<label class="field"><span>Email</span><input type="email" id="ae" autocomplete="email" inputmode="email"></label><label class="field"><span>Password</span><input type="password" id="ap" autocomplete="' + (mode === 'in' ? 'current-password' : 'new-password') + '"></label>'
-      + '<button class="btn" id="ab" type="submit" style="width:100%">' + (mode === 'in' ? 'Sign in' : 'Create account') + '</button><p class="err" id="aerr" role="alert"></p>'
+      + (mode === 'in' ? '' : '<label class="agree"><input type="checkbox" id="aag"><span>I am 13 or older and I agree to the <a href="legal.html#terms" target="_blank" rel="noopener">Terms of Use</a> and <a href="legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>')
+      + '<button class="btn" id="ab" type="submit" style="width:100%">' + (mode === 'in' ? 'Sign in' : 'Create account') + '</button><p class="err" id="aerr" role="alert"></p><div id="ahelp"></div>'
       + '<p class="tog">' + (mode === 'in' ? 'New here?' : 'Already have an account?') + ' <button type="button" data-act="mode">' + (mode === 'in' ? 'Create an account' : 'Sign in') + '</button></p><p class="note">Password reset by email is not switched on yet, so pick a password you will remember.</p></form>';
   }
   function landing(){
@@ -1100,7 +1103,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
       + stageHtml()
       + '<section class="sec" id="all"><div class="wrap"><h2>All seven</h2><p class="sub">Open one to try it, or install it on your phone.</p>' + viewLibrary(false) + '</div></section>'
       + '<section class="band" id="create"><div class="wrap wide"><h2 style="font-size:clamp(28px,4vw,42px)">Create your own</h2><p class="sub">Make your own boxes and fields, put them in the order you want, and watch your phone update. Then package it into one link.</p>' + viewCreate() + '</div></section></main>'
-      + '<footer class="ft"><div class="wrap"><span>&copy; 2026 Clean Routine Co. All rights reserved.</span><span>Made in Ho Chi Minh City</span><a href="mailto:hello@cleanroutineco.app">hello@cleanroutineco.app</a></div></footer>';
+      + '<footer class="ft"><div class="wrap"><span>&copy; 2026 Clean Routine Co. All rights reserved.</span><span>Made in Ho Chi Minh City</span><a href="legal.html#terms">Terms</a><a href="legal.html#privacy">Privacy</a><a href="mailto:hello@cleanroutineco.app">hello@cleanroutineco.app</a></div></footer>';
   }
 
   /* ---- scroll-driven intro: the video is scrubbed by scroll position ---- */
@@ -1255,16 +1258,27 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   });
   document.addEventListener('submit', function(e){
     if(e.target.id !== 'af') return; e.preventDefault();
-    var em = $('ae').value.trim(), pw = $('ap').value; $('aerr').textContent = '';
+    var em = $('ae').value.trim(), pw = $('ap').value; $('aerr').className = 'err'; $('aerr').textContent = '';
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ $('aerr').textContent = 'Enter a valid email.'; return; }
     if(pw.length < 8){ $('aerr').textContent = 'Use at least 8 characters for the password.'; return; }
     if(navigator.onLine === false){ $('aerr').textContent = 'You are offline.'; return; }
-    $('ab').disabled = true;
-    fetch(mode === 'in' ? SB + '/auth/v1/token?grant_type=password' : SB + '/auth/v1/signup', { method:'POST', headers:hdr(), body:JSON.stringify({ email:em, password:pw }) }).then(j).then(function(r){
-      if(!r.ok){ $('ab').disabled = false; $('aerr').textContent = emsg(r); return; }
+    if(mode !== 'in' && !$('aag').checked){ $('aerr').textContent = 'Please confirm you are 13 or older and agree to the Terms and Privacy Policy.'; return; }
+    $('ab').disabled = true; lastEmail = em;
+    fetch(mode === 'in' ? SB + '/auth/v1/token?grant_type=password' : SB + '/auth/v1/signup', { method:'POST', headers:hdr(), body:JSON.stringify(mode === 'in' ? { email:em, password:pw } : { email:em, password:pw, data:{ agreed_terms:2, agreed_at:new Date().toISOString(), min_age:13 } }) }).then(j).then(function(r){
+      if(!r.ok){ $('ab').disabled = false; $('aerr').textContent = emsg(r); if(/confirm/i.test($('aerr').textContent)) mailHelp(); return; }
       if(r.j && r.j.access_token){ setSess(r.j); location.hash = '#/'; render(); load(false); pushPrefs(); resume(); }
-      else { $('ab').disabled = false; $('aerr').textContent = 'Account created. Check your email to confirm it, then sign in.'; }
+      else { $('ab').disabled = false; $('aerr').className = 'err ok'; $('aerr').textContent = 'Account created. Check your email to confirm it, then sign in.'; mailHelp(); }
     }, function(){ $('ab').disabled = false; $('aerr').textContent = 'Could not reach the server. Check your connection.'; });
+  });
+
+  /* Email did not arrive: what to check, and a resend that waits 60 seconds between tries. */
+  var lastEmail = '', resendAt = 0;
+  function mailHelp(){ var h = $('ahelp'); if(!h) return; h.innerHTML = '<div class="mailhelp"><b>No email yet?</b><ol><li>Wait two minutes, then check Spam, Junk and Promotions.</li><li>Make sure <b>' + esc(lastEmail) + '</b> is spelled right.</li><li><button type="button" id="rsb">Send the email again</button> <span id="rsm" role="status"></span></li><li>Still nothing? Write to <a href="mailto:hello@cleanroutineco.app">hello@cleanroutineco.app</a> from the same address and we will sort it out.</li></ol></div>'; }
+  document.addEventListener('click', function(e){
+    if(!e.target || e.target.id !== 'rsb') return; var m = $('rsm'), w = Math.ceil((resendAt - Date.now()) / 1000);
+    if(w > 0){ m.textContent = 'Please wait ' + w + ' seconds.'; return; }
+    resendAt = Date.now() + 60000; m.textContent = 'Sending...';
+    fetch(SB + '/auth/v1/resend', { method:'POST', headers:hdr(), body:JSON.stringify({ type:'signup', email:lastEmail }) }).then(j).then(function(r){ m.textContent = r.ok ? 'Sent. It can take a minute to arrive.' : 'Could not send it just now. Try again in a minute.'; }, function(){ m.textContent = 'Could not reach the server.'; });
   });
 
   /* drag to arrange the boxes */
