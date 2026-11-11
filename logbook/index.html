@@ -399,8 +399,8 @@
   html body #app:has(>.home-hero)>.app-bar{grid-row:1}
   html body #app:has(>.home-hero)>.home-hero{grid-column:1;grid-row:2;min-height:168px}
   html body #app:has(>.home-hero)>.week-strip-row{grid-column:1;grid-row:3}
-  html body #app:has(>.home-hero)>.focus-card{grid-column:1;grid-row:4}
-  html body #app:has(>.home-hero)>.week-summary-card{grid-column:2;grid-row:2/5;align-self:start;margin-top:0}
+  html body #app:has(>.home-hero)>.focus-card,html body #app:has(>.home-hero)>.lb-nudge{grid-column:1;grid-row:auto}
+  html body #app:has(>.home-hero)>.week-summary-card{grid-column:2;grid-row:2/span 4;align-self:start;margin-top:0}
   html body #app:has(>.home-hero) .home-hero .headline{font-size:clamp(22px,2vw,30px);white-space:nowrap}
 }
 @media (min-width:1500px){
@@ -489,6 +489,21 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
 .lb-inst button{font:700 14px/1 inherit;min-height:44px;padding:0 18px;border-radius:13px;border:1px solid var(--line,#ddd);background:none;color:var(--ink,#1b1712)}
 .lb-inst button.p{background:var(--accent,#835f1f);color:var(--accent-ink,#fff);border-color:transparent}
 </style>
+<style id="lb-ux">
+.lb-nudge{margin:12px 16px 4px;padding:14px 16px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg,18px);font-size:14px;color:var(--ink-soft)}
+.lb-nudge b{color:var(--ink);font-weight:700}
+.lb-nudge .lb-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.lb-nudge .lb-chip{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 14px/1 inherit;display:inline-flex;flex-direction:column;justify-content:center;text-align:left;cursor:pointer}
+.lb-nudge .lb-chip small{font:500 11.5px/1.2 inherit;color:var(--muted);margin-top:2px;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-nudge .lb-chip:active{transform:scale(.97)}
+.lb-nudge .lb-link{background:none;border:0;padding:6px 0 0;margin-top:6px;color:var(--accent);font:600 13px/1.2 inherit;min-height:32px;cursor:pointer}
+.lb-saved{display:flex;align-items:center;gap:7px;margin:10px 0 0;font-size:12.5px;color:inherit;opacity:.82}
+.lb-saved i{width:7px;height:7px;border-radius:50%;background:#7be0a0;flex:none}
+.lb-saved.w i{background:#ffd479}
+@keyframes lbpop{0%{transform:scale(1)}40%{transform:scale(1.09)}100%{transform:scale(1)}}
+.lb-pop{animation:lbpop .45s ease-out}
+@media (prefers-reduced-motion:reduce){.lb-pop{animation:none}}
+</style>
 <script id="lb-glue">
 (function(){
   var ED = window.__ED || null, NAME = (ED && ED.n) || 'Clean Boy';
@@ -539,6 +554,111 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
   var r0 = window.render;
   window.render = function(){ skipSetup(); var out = r0.apply(this, arguments); try{ var h1 = document.querySelector('.au2-h'), bk = document.querySelector('.au2-top .onboard-back'); if(bk) bk.style.visibility = (h1 && /^Sign in$/.test(h1.textContent) && !CLOUD.signedIn()) ? 'hidden' : ''; }catch(e){} install(); return out; };
   try{ wideQ.addEventListener('change', function(){ try{ render(); }catch(e){} }); }catch(e){}
+  /* ---- Small daily niceties: log-again chips, saved dot, reminder, pick up where you left off, a little haptic ---- */
+  var UXK = (ED && ED.key) || (typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'lb'), K_WH = 'lb-where-' + UXK, K_RM = 'lb-rem-' + UXK, K_NF = 'lb-notified-' + UXK;
+  function jget(k){ try{ return JSON.parse(localStorage.getItem(k) || 'null'); }catch(e){ return null; } }
+  function jset(k, v){ try{ if(v == null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+  function buzz(p){ try{ if(navigator.vibrate) navigator.vibrate(p); }catch(e){} }
+  function esc2(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+  function ids(){ var t = todayStr(), a = pagesList(t).map(function(p){ return p.id; }); bxCustomBoxes().forEach(function(b){ if(a.indexOf(b.id) < 0) a.push(b.id); }); return a; }
+  /* The most recent earlier day this box was logged, as plain values only (numbers, yes/no, short words). Notes, lists and photos are never copied. */
+  function lastVals(id){
+    var d = new Date(), out = null;
+    for(var i = 0; i < 14 && !out; i++){
+      d.setDate(d.getDate() - 1); var day = DB.days[localDateStr(d)], p = day && day.pages[id];
+      if(p && p._touched){ out = {}; Object.keys(p).forEach(function(k){ var v = p[k]; if(k.charAt(0) === '_' || v === '' || v == null) return; if((typeof v === 'number' && Math.abs(v) < 1e9) || typeof v === 'boolean' || (typeof v === 'string' && v.length <= 32 && v.indexOf('data:') !== 0)) out[k] = v; }); if(!Object.keys(out).length) out = null; }
+    }
+    return out;
+  }
+  function again(){
+    var t = todayStr(), r = [];
+    ids().forEach(function(id){
+      if(pageIsDone(t, id)) return; var c = bxCfg(id); if(c && c.until && t >= c.until) return;
+      var v = lastVals(id); if(!v) return;
+      var shown = Object.keys(v).slice(0, 2).map(function(k){ var f = c && (c.fields || []).filter(function(f){ return 'cf_' + f.id === k; })[0]; if(f) return bxDisplay(f, v[k]); var x = v[k]; return typeof x === 'boolean' ? '' : typeof x === 'number' ? k.replace(/([A-Z])/g, ' $1').toLowerCase() + ' ' + x : String(x); }).filter(Boolean);
+      r.push({ id:id, name:bxBoxName(id), sub:shown.join(' · ') });
+    });
+    return r.slice(0, 3);
+  }
+  function usualMin(){
+    var m = [], d = new Date();
+    for(var i = 1; i <= 14; i++){ d.setDate(d.getDate() - 1); var day = DB.days[localDateStr(d)]; if(!day) continue; var f = 0; Object.keys(day.pages).forEach(function(k){ var a = day.pages[k]._touchedAt; if(a && (!f || a < f)) f = a; }); if(f){ var x = new Date(f); m.push(x.getHours() * 60 + x.getMinutes()); } }
+    if(m.length < 3) return 20 * 60;
+    m.sort(function(a, b){ return a - b; }); return Math.min(22 * 60, Math.max(9 * 60, m[m.length >> 1] + 15));
+  }
+  function clock(min){ var h = Math.floor(min / 60), x = new Date(2000, 0, 1, h, min % 60); return x.toLocaleTimeString([], { hour:'numeric', minute:'2-digit' }); }
+  function remOn(){ var r = jget(K_RM); return !!(r && r.on && window.Notification && Notification.permission === 'granted'); }
+  function nowMin(){ var n = new Date(); return n.getHours() * 60 + n.getMinutes(); }
+  function lateAndEmpty(){ return !dayHasAny(todayStr()) && nowMin() >= usualMin(); }
+  function canAsk(){ return window.Notification && Notification.permission !== 'denied' && !remOn() && !(jget(K_RM) || {}).no; }
+  function nudgeHtml(){
+    var a = again(), late = lateAndEmpty(), ask = canAsk() && Object.keys(DB.days).filter(dayHasAny).length >= 3, h = '';
+    if(!a.length && !late && !ask) return '';
+    if(late) h += '<div><b>Nothing logged yet today.</b> It takes a minute.</div>';
+    if(a.length) h += (late ? '' : '<div><b>Same as last time?</b></div>') + '<div class="lb-row">' + a.map(function(x){ return '<button type="button" class="lb-chip" data-again="' + esc2(x.id) + '">' + esc2(x.name) + (x.sub ? '<small>' + esc2(x.sub) + '</small>' : '') + '</button>'; }).join('') + '</div>';
+    if(ask) h += '<button type="button" class="lb-link" data-remind="1">Remind me around ' + clock(usualMin()) + ' when I forget</button>';
+    return '<section class="lb-nudge" aria-label="Quick log">' + h + '</section>';
+  }
+  function savedText(){
+    var s = null; try{ s = window.SYNC && SYNC.state(); }catch(e){}
+    var here = wideQ.matches ? 'this computer' : 'this phone';
+    if(!s || !s.on) return ['Saved on ' + here, 0];
+    if(s.busy) return ['Syncing…', 1];
+    if(s.err) return ['Saved on ' + here + '. Sync paused', 1];
+    if(s.dirty) return ['Saved on ' + here + '. Syncing soon', 1];
+    var m = s.last ? Math.max(0, Math.round((Date.now() - s.last) / 60000)) : -1;
+    return [m < 0 ? 'Saved on ' + here : m < 1 ? 'Saved · synced just now' : m < 60 ? 'Saved · synced ' + m + ' min ago' : 'Saved · synced ' + Math.round(m / 60) + ' h ago', 0];
+  }
+  function paintSaved(){ var el = document.querySelector('.lb-saved'); if(!el) return; var s = savedText(); el.className = 'lb-saved' + (s[1] ? ' w' : ''); el.lastChild.textContent = s[0]; }
+  var UXOFF = !!(ED && ED.pv), lastDone = -1, lastKey = '';
+  var r1 = window.render;
+  window.render = function(){
+    var out = r1.apply(this, arguments);
+    if(UXOFF) return out;
+    try{
+      if(ROUTE.view === 'page' && ROUTE.pageId) jset(K_WH, { p:ROUTE.pageId, d:SELECTED_DATE, t:Date.now() }); else if(ROUTE.view === 'home') jset(K_WH, null);
+      var hero = document.querySelector('.home-hero');
+      if(hero && ROUTE.view === 'home'){
+        var q = hero.querySelector('.day-quote') || hero.lastElementChild;
+        q.insertAdjacentHTML('afterend', '<p class="lb-saved" role="status"><i></i><span></span></p>'); paintSaved();
+        var card = document.querySelector('.week-strip-row'), n = nudgeHtml();
+        if(card && n && SELECTED_DATE === todayStr()) card.insertAdjacentHTML('afterend', n);
+        var c = bxDayCounts(), key = todayStr();
+        if(key === lastKey && c.done > lastDone && lastDone >= 0){ document.querySelectorAll('.ring-wrap-sm,.bx-wring').forEach(function(r){ r.classList.add('lb-pop'); }); }
+        lastDone = c.done; lastKey = key;
+      }
+      var row = document.querySelector('[data-cloud-row]');
+      if(row && ROUTE.view === 'settings' && window.Notification && !document.querySelector('[data-rem-row]')){
+        var on = remOn(), denied = Notification.permission === 'denied';
+        (document.querySelector('[data-sync-row]') || row).insertAdjacentHTML('afterend', '<button class="settings-row" data-rem-row="1" onclick="LBUX.toggle()"><div><div class="sr-name">Daily reminder</div><div class="sr-desc">' + (denied ? 'Blocked in your browser settings.' : on ? 'On, around ' + clock(usualMin()) + ' when nothing is logged. Works while the app is open or in the background.' : 'Off. Tap to get a nudge when you forget.') + '</div></div><div class="sr-ico">' + icon(on ? 'check' : 'chevright', 16) + '</div></button>');
+      }
+    }catch(e){}
+    return out;
+  };
+  document.addEventListener('click', function(e){
+    var b = e.target.closest && e.target.closest('[data-again],[data-remind]'); if(!b) return;
+    if(b.hasAttribute('data-remind')) return void LBUX.toggle(true);
+    var id = b.getAttribute('data-again'), v = lastVals(id), t = todayStr(); if(!v) return;
+    var p = getPage(t, id); Object.keys(v).forEach(function(k){ if(p[k] === undefined) p[k] = v[k]; });
+    markTouched(t, id); buzz(12); try{ flashSaved('Logged'); }catch(x){} render();
+  });
+  window.LBUX = { toggle:function(on){
+    if(!window.Notification) return;
+    if(remOn() && !on){ jset(K_RM, { on:0 }); try{ render(); }catch(e){} return; }
+    Notification.requestPermission().then(function(p){ jset(K_RM, p === 'granted' ? { on:1 } : { on:0, no:1 }); try{ render(); }catch(e){} });
+  } };
+  /* A quiet local reminder while the app is open or in the background; it never fires once today has an entry. */
+  function tick(){
+    try{
+      paintSaved(); if(!remOn() || !lateAndEmpty() || jget(K_NF) === todayStr()) return;
+      jset(K_NF, todayStr());
+      var o = { body:'Nothing logged yet today. It takes a minute.', tag:'lb-daily', icon:'./apple-touch-icon.png', data:{ url:location.pathname + location.search } };
+      if(navigator.serviceWorker && navigator.serviceWorker.ready) navigator.serviceWorker.ready.then(function(r){ r.showNotification(NAME, o); }); else new Notification(NAME, o);
+    }catch(e){}
+  }
+  if(!UXOFF){ setInterval(tick, 60000); } document.addEventListener('visibilitychange', function(){ if(!document.hidden) tick(); });
+  /* Pick up where you left off: a half-finished entry reopens within 3 hours (typing saves on every keystroke). */
+  try{ var wh = UXOFF ? null : jget(K_WH); if(wh && Date.now() - wh.t < 3 * 3600e3 && wh.d === todayStr() && ROUTE.view === 'home' && ids().indexOf(wh.p) >= 0){ SELECTED_DATE = wh.d; ROUTE = { view:'page', pageId:wh.p, date:wh.d }; } }catch(e){}
   render();
 })();
 </script>

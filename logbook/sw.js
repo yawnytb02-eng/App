@@ -1,5 +1,5 @@
 /* logbook engine service worker — build 0666ee3c */
-const CACHE = 'lb-4';
+const CACHE = 'lb-5';
 const SHELL = ["./", "index.html", "shots/clean-boy/home.jpg", "shots/clean-boy/food.jpg", "shots/clean-boy/time.jpg", "shots/clean-boy/stats.jpg", "manifest.webmanifest", "fonts.css", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-192.png", "icons/icon-maskable-512.png", "icons/apple-touch-icon.png", "fonts/manrope-latin-400-normal.woff2", "fonts/manrope-latin-500-normal.woff2", "fonts/manrope-latin-600-normal.woff2", "fonts/manrope-latin-700-normal.woff2", "fonts/manrope-latin-ext-400-normal.woff2", "fonts/manrope-latin-ext-500-normal.woff2", "fonts/manrope-latin-ext-600-normal.woff2", "fonts/manrope-vietnamese-400-normal.woff2", "fonts/manrope-vietnamese-500-normal.woff2", "fonts/manrope-vietnamese-600-normal.woff2"];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
@@ -31,4 +31,13 @@ self.addEventListener('fetch', e => {
     if (r && r.ok) { const copy = r.clone(); caches.open(CACHE).then(c => c.put(req, copy)); }
     return r;
   })));
+});
+
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  const to = new URL((e.notification.data && e.notification.data.url) || './', self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({ type:'window', includeUncontrolled:true }).then(list => {
+    const c = list.find(x => x.url.startsWith(self.registration.scope));
+    return c ? c.focus() : self.clients.openWindow(to);
+  }));
 });
