@@ -159,7 +159,7 @@ html[data-tone=night] .intro video{filter:invert(1);mix-blend-mode:screen;opacit
 }
 .studio-c{container:studio / inline-size}
 .agree{display:flex;gap:10px;align-items:flex-start;margin:4px 0 14px;font-size:14px;line-height:1.45;cursor:pointer}.agree input{margin-top:3px;width:18px;height:18px;flex:none;accent-color:var(--acc)}.agree a{text-decoration:underline}.err.ok{color:var(--ink)}
-.mailhelp{margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;font-size:14px;line-height:1.5}.mailhelp ol{margin:8px 0 0;padding-left:20px}.mailhelp li{margin:5px 0}.mailhelp button{background:none;border:0;padding:0;font:inherit;font-weight:700;text-decoration:underline;color:inherit;cursor:pointer}.ft a{color:inherit}
+.vbox{text-align:center}.vbox .vic{width:52px;height:52px;margin:0 auto 12px;border-radius:50%;display:grid;place-items:center;background:var(--tint)}.vbox h3{font-size:26px;margin:0 0 6px}.vbox .sub{font-size:14.5px;margin:0 0 14px}.vbox ol{text-align:left;margin:0 0 18px;padding-left:20px;font-size:14px;line-height:1.5}.vbox li{margin:6px 0}.vbox li button,.vbox li a{font:inherit;font-weight:700;text-decoration:underline;color:inherit;background:none;border:0;padding:0;cursor:pointer}.mailhelp{margin-top:14px;padding:14px 16px;border:1px solid var(--line);border-radius:14px;font-size:14px;line-height:1.5}.mailhelp ol{margin:8px 0 0;padding-left:20px}.mailhelp li{margin:5px 0}.mailhelp button{background:none;border:0;padding:0;font:inherit;font-weight:700;text-decoration:underline;color:inherit;cursor:pointer}.ft a{color:inherit}
 @container studio (min-width:860px){.studio .s-d{margin-top:20px}}
 
 /* ---------- the package: welcome, every screen, one link ---------- */
@@ -1080,11 +1080,18 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   }
 
   /* ================= landing (signed out) ================= */
+  var verifyFor = '';
+  function verifyBox(){
+    return '<div id="vb" class="vbox" role="status"><div class="vic" aria-hidden="true"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="m4 8 8 6 8-6"/></svg></div><h3>Confirm your email</h3><p class="sub">We sent a link to <b>' + esc(verifyFor) + '</b>. Open it to finish creating your account, then come back here and sign in.</p>'
+      + '<ol><li>Wait a minute or two, then check Spam, Junk and Promotions.</li><li>Not the right address? <button type="button" data-act="vchange">Use a different email</button></li><li><button type="button" id="rsb">Send the email again</button> <span id="rsm" role="status"></span></li><li>Still nothing? Write to <a href="mailto:hello@cleanroutineco.app">hello@cleanroutineco.app</a> from the same address.</li></ol>'
+      + '<button class="btn" type="button" data-act="vdone" style="width:100%">I have confirmed it, sign in</button></div>';
+  }
   function authForm(){
+    if(verifyFor) return verifyBox();
     return '<form id="af" novalidate><h3 style="font-size:26px;margin-bottom:4px">' + (mode === 'in' ? 'Sign in' : 'Create an account') + '</h3><p class="sub" style="margin:0 0 18px;font-size:14.5px">' + (mode === 'in' ? 'See everything your logbooks have synced.' : 'One account for every logbook.') + '</p>' + (authNote ? '<p class="anote" role="status">' + esc(authNote) + '</p>' : '')
       + '<label class="field"><span>Email</span><input type="email" id="ae" autocomplete="email" inputmode="email"></label><label class="field"><span>Password</span><input type="password" id="ap" autocomplete="' + (mode === 'in' ? 'current-password' : 'new-password') + '"></label>'
       + (mode === 'in' ? '' : '<label class="agree"><input type="checkbox" id="aag"><span>I am 13 or older and I agree to the <a href="legal.html#terms" target="_blank" rel="noopener">Terms of Use</a> and <a href="legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>')
-      + '<button class="btn" id="ab" type="submit" style="width:100%">' + (mode === 'in' ? 'Sign in' : 'Create account') + '</button><p class="err" id="aerr" role="alert"></p><div id="ahelp"></div>'
+      + '<button class="btn" id="ab" type="submit" style="width:100%">' + (mode === 'in' ? 'Sign in' : 'Create account') + '</button><p class="err" id="aerr" role="alert"></p>'
       + '<p class="tog">' + (mode === 'in' ? 'New here?' : 'Already have an account?') + ' <button type="button" data-act="mode">' + (mode === 'in' ? 'Create an account' : 'Sign in') + '</button></p><p class="note">Password reset by email is not switched on yet, so pick a password you will remember.</p></form>';
   }
   function landing(){
@@ -1207,6 +1214,8 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
       if(a === 'tone'){ tone = tone === 'night' ? 'day' : 'night'; store('lbs-tone', tone); applyTheme(); var sg = $('choose'); if(sg){ sg.setAttribute('style', themeVars(stTh(stageId))); var om = sg.querySelector('svg.mo'); if(om) om.outerHTML = motif(TH[stageId].mo, stTh(stageId).acc); } else render(); }
       else if(a === 'refresh'){ load(true); }
       else if(a === 'signout'){ setSess(null); location.hash = ''; render(); toast('Signed out'); }
+      else if(a === 'vchange'){ verifyFor = ''; mode = 'up'; var f1 = $('signin'); if(f1) f1.innerHTML = authForm(); }
+      else if(a === 'vdone'){ verifyFor = ''; mode = 'in'; var f2 = $('signin'); if(f2){ f2.innerHTML = authForm(); var ae = $('ae'); if(ae) ae.value = lastEmail; var ap = $('ap'); if(ap) ap.focus(); } }
       else if(a === 'mode'){ mode = mode === 'in' ? 'up' : 'in'; var f = $('signin'); if(f) f.innerHTML = authForm(); }
       else if(a === 'inst'){ var p = PRESETS.filter(function(x){ return x.id === b.dataset.i; })[0], po = { preset:p.id, n:p.n, a:p.c, t:p.t }; if(needAuth({ t:'fin', o:po }, 'Sign in to see the welcome screen and get the install link for ' + p.n + '.')) return; finish(po, b, false); }
       else if(a === 'install'){ var r = appRow(b.dataset.app); if(r && r.ed) install(r.name.n, r.ed); }
@@ -1265,15 +1274,15 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
     if(mode !== 'in' && !$('aag').checked){ $('aerr').textContent = 'Please confirm you are 13 or older and agree to the Terms and Privacy Policy.'; return; }
     $('ab').disabled = true; lastEmail = em;
     fetch(mode === 'in' ? SB + '/auth/v1/token?grant_type=password' : SB + '/auth/v1/signup', { method:'POST', headers:hdr(), body:JSON.stringify(mode === 'in' ? { email:em, password:pw } : { email:em, password:pw, data:{ agreed_terms:2, agreed_at:new Date().toISOString(), min_age:13 } }) }).then(j).then(function(r){
-      if(!r.ok){ $('ab').disabled = false; $('aerr').textContent = emsg(r); if(/confirm/i.test($('aerr').textContent)) mailHelp(); return; }
+      if(!r.ok){ $('ab').disabled = false; $('aerr').textContent = emsg(r); if(/confirm/i.test($('aerr').textContent)){ showVerify(em); } return; }
       if(r.j && r.j.access_token){ setSess(r.j); location.hash = '#/'; render(); load(false); pushPrefs(); resume(); }
-      else { $('ab').disabled = false; $('aerr').className = 'err ok'; $('aerr').textContent = 'Account created. Check your email to confirm it, then sign in.'; mailHelp(); }
+      else { showVerify(em); }
     }, function(){ $('ab').disabled = false; $('aerr').textContent = 'Could not reach the server. Check your connection.'; });
   });
 
   /* Email did not arrive: what to check, and a resend that waits 60 seconds between tries. */
   var lastEmail = '', resendAt = 0;
-  function mailHelp(){ var h = $('ahelp'); if(!h) return; h.innerHTML = '<div class="mailhelp"><b>No email yet?</b><ol><li>Wait two minutes, then check Spam, Junk and Promotions.</li><li>Make sure <b>' + esc(lastEmail) + '</b> is spelled right.</li><li><button type="button" id="rsb">Send the email again</button> <span id="rsm" role="status"></span></li><li>Still nothing? Write to <a href="mailto:hello@cleanroutineco.app">hello@cleanroutineco.app</a> from the same address and we will sort it out.</li></ol></div>'; }
+  function showVerify(em){ verifyFor = em; lastEmail = em; var f = $('signin'); if(f) f.innerHTML = authForm(); var v = $('vb'); if(v && v.scrollIntoView) v.scrollIntoView({ block:'nearest', behavior:'smooth' }); }
   document.addEventListener('click', function(e){
     if(!e.target || e.target.id !== 'rsb') return; var m = $('rsm'), w = Math.ceil((resendAt - Date.now()) / 1000);
     if(w > 0){ m.textContent = 'Please wait ' + w + ' seconds.'; return; }
