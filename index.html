@@ -700,6 +700,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   $('dsh').onclick = function(){ try{ navigator.share({ title:$('dt').textContent, url:curUrl }); }catch(e){} };
 
   /* ---------- finish: welcome, every screen, then one link ---------- */
+  var lastEmail = '', resendAt = 0, recTok = '';
   var pkT = [], pkO = null, pkNew = false, pkItemsL = [], pkInert = [], authNote = '', pending = null;
   var PSH = [['home', 'Home'], ['food', 'Box'], ['time', 'Timetable'], ['stats', 'Tracker']];
   /* the welcome screen and every install link need an account */
@@ -1088,11 +1089,13 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   }
   function authForm(){
     if(verifyFor) return verifyBox();
+    if(mode === 'forgot') return '<form id="af" novalidate><h3 style="font-size:26px;margin-bottom:4px">Reset your password</h3><p class="sub" style="margin:0 0 18px;font-size:14.5px">Enter your email and we will send you a link to choose a new one.</p>' + (authNote ? '<p class="anote" role="status">' + esc(authNote) + '</p>' : '') + '<label class="field"><span>Email</span><input type="email" id="ae" autocomplete="email" inputmode="email" value="' + esc(lastEmail) + '"></label><button class="btn" id="ab" type="submit" style="width:100%">Send reset link</button><p class="err" id="aerr" role="alert"></p><p class="tog"><button type="button" data-act="back">Back to sign in</button></p></form>';
+    if(mode === 'reset') return '<form id="af" novalidate><h3 style="font-size:26px;margin-bottom:4px">Choose a new password</h3><p class="sub" style="margin:0 0 18px;font-size:14.5px">Use at least 8 characters.</p><label class="field"><span>New password</span><input type="password" id="ap" autocomplete="new-password"></label><button class="btn" id="ab" type="submit" style="width:100%">Save new password</button><p class="err" id="aerr" role="alert"></p></form>';
     return '<form id="af" novalidate><h3 style="font-size:26px;margin-bottom:4px">' + (mode === 'in' ? 'Sign in' : 'Create an account') + '</h3><p class="sub" style="margin:0 0 18px;font-size:14.5px">' + (mode === 'in' ? 'See everything your logbooks have synced.' : 'One account for every logbook.') + '</p>' + (authNote ? '<p class="anote" role="status">' + esc(authNote) + '</p>' : '')
-      + '<label class="field"><span>Email</span><input type="email" id="ae" autocomplete="email" inputmode="email"></label><label class="field"><span>Password</span><input type="password" id="ap" autocomplete="' + (mode === 'in' ? 'current-password' : 'new-password') + '"></label>'
+      + '<label class="field"><span>Email</span><input type="email" id="ae" autocomplete="email" inputmode="email"></label><label class="field"><span>Password</span><input type="password" id="ap" autocomplete="' + (mode === 'in' ? 'current-password' : 'new-password') + '"></label>' + (mode === 'in' ? '<p class="tog" style="text-align:right;margin:-6px 0 14px"><button type="button" data-act="forgot">Forgot password?</button></p>' : '')
       + (mode === 'in' ? '' : '<label class="agree"><input type="checkbox" id="aga"><span>I am 16 or older (18 for the Sober logbooks).</span></label><label class="agree"><input type="checkbox" id="aag"><span>I agree to the <a href="legal.html#terms" target="_blank" rel="noopener">Terms of Use</a> and <a href="legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>')
       + '<button class="btn" id="ab" type="submit" style="width:100%">' + (mode === 'in' ? 'Sign in' : 'Create account') + '</button><p class="err" id="aerr" role="alert"></p>'
-      + '<p class="tog">' + (mode === 'in' ? 'New here?' : 'Already have an account?') + ' <button type="button" data-act="mode">' + (mode === 'in' ? 'Create an account' : 'Sign in') + '</button></p><p class="note">Password reset by email is not switched on yet, so pick a password you will remember.</p></form>';
+      + '<p class="tog">' + (mode === 'in' ? 'New here?' : 'Already have an account?') + ' <button type="button" data-act="mode">' + (mode === 'in' ? 'Create an account' : 'Sign in') + '</button></p></form>';
   }
   function landing(){
     var dots = PRESETS.map(function(x){ return '<button type="button" data-st="' + x.id + '" aria-label="' + esc(x.n) + ' colours" aria-pressed="' + (x.id === themeId) + '" style="background:' + PAL[x.id].d[3] + '"></button>'; }).join('');
@@ -1216,6 +1219,8 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
       else if(a === 'signout'){ setSess(null); location.hash = ''; render(); toast('Signed out'); }
       else if(a === 'vchange'){ verifyFor = ''; mode = 'up'; var f1 = $('signin'); if(f1) f1.innerHTML = authForm(); }
       else if(a === 'vdone'){ verifyFor = ''; mode = 'in'; var f2 = $('signin'); if(f2){ f2.innerHTML = authForm(); var ae = $('ae'); if(ae) ae.value = lastEmail; var ap = $('ap'); if(ap) ap.focus(); } }
+      else if(a === 'forgot'){ mode = 'forgot'; authNote = ''; var f3 = $('signin'); if(f3) f3.innerHTML = authForm(); }
+      else if(a === 'back'){ mode = 'in'; authNote = ''; var f4 = $('signin'); if(f4) f4.innerHTML = authForm(); }
       else if(a === 'mode'){ mode = mode === 'in' ? 'up' : 'in'; var f = $('signin'); if(f) f.innerHTML = authForm(); }
       else if(a === 'inst'){ var p = PRESETS.filter(function(x){ return x.id === b.dataset.i; })[0], po = { preset:p.id, n:p.n, a:p.c, t:p.t }; if(needAuth({ t:'fin', o:po }, 'Sign in to see the welcome screen and get the install link for ' + p.n + '.')) return; finish(po, b, false); }
       else if(a === 'install'){ var r = appRow(b.dataset.app); if(r && r.ed) install(r.name.n, r.ed); }
@@ -1267,6 +1272,22 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   });
   document.addEventListener('submit', function(e){
     if(e.target.id !== 'af') return; e.preventDefault();
+    if(mode === 'forgot'){
+      var fe = $('ae').value.trim(); $('aerr').className = 'err'; $('aerr').textContent = '';
+      if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(fe)){ $('aerr').textContent = 'Enter a valid email.'; return; }
+      if(navigator.onLine === false){ $('aerr').textContent = 'You are offline.'; return; }
+      var w0 = Math.ceil((resendAt - Date.now()) / 1000); if(w0 > 0){ $('aerr').textContent = 'Please wait ' + w0 + ' seconds before asking again.'; return; }
+      $('ab').disabled = true; lastEmail = fe; resendAt = Date.now() + 60000;
+      fetch(SB + '/auth/v1/recover', { method:'POST', headers:hdr(), body:JSON.stringify({ email:fe }) }).then(j).then(function(r){ $('ab').disabled = false; if(!r.ok && r.status !== 200){ $('aerr').textContent = emsg(r); return; } $('aerr').className = 'err ok'; $('aerr').textContent = 'If that email has an account, a reset link is on its way. It can take a minute. Check Spam and Junk too.'; }, function(){ $('ab').disabled = false; $('aerr').textContent = 'Could not reach the server. Check your connection.'; });
+      return;
+    }
+    if(mode === 'reset'){
+      var np = $('ap').value; $('aerr').className = 'err'; $('aerr').textContent = '';
+      if(np.length < 8){ $('aerr').textContent = 'Use at least 8 characters for the password.'; return; }
+      $('ab').disabled = true;
+      fetch(SB + '/auth/v1/user', { method:'PUT', headers:hdr(recTok), body:JSON.stringify({ password:np }) }).then(j).then(function(r){ $('ab').disabled = false; if(!r.ok){ $('aerr').textContent = /expired|invalid|jwt/i.test(JSON.stringify(r.j || '')) ? 'This link has expired. Ask for a new one.' : emsg(r); return; } recTok = ''; mode = 'in'; authNote = 'Password changed. Sign in with the new one.'; var f5 = $('signin'); if(f5) f5.innerHTML = authForm(); authNote = ''; }, function(){ $('ab').disabled = false; $('aerr').textContent = 'Could not reach the server. Check your connection.'; });
+      return;
+    }
     var em = $('ae').value.trim(), pw = $('ap').value; $('aerr').className = 'err'; $('aerr').textContent = '';
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ $('aerr').textContent = 'Enter a valid email.'; return; }
     if(pw.length < 8){ $('aerr').textContent = 'Use at least 8 characters for the password.'; return; }
@@ -1281,7 +1302,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   });
 
   /* Email did not arrive: what to check, and a resend that waits 60 seconds between tries. */
-  var lastEmail = '', resendAt = 0;
+  
   function showVerify(em){ verifyFor = em; lastEmail = em; var f = $('signin'); if(f) f.innerHTML = authForm(); var v = $('vb'); if(v && v.scrollIntoView) v.scrollIntoView({ block:'nearest', behavior:'smooth' }); }
   document.addEventListener('click', function(e){
     if(!e.target || e.target.id !== 'rsb') return; var m = $('rsm'), w = Math.ceil((resendAt - Date.now()) / 1000);
@@ -1298,6 +1319,17 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
   document.addEventListener('drop', function(e){ if(!dragId) return; var r = e.target.closest && e.target.closest('.ir[data-it]'); if(!r) return; e.preventDefault(); var bb = r.getBoundingClientRect(), after = e.clientY > bb.top + bb.height / 2, to = r.dataset.it, from = dragId; dragId = null; dClear(); if(to !== from){ cs.ord.splice(cs.ord.indexOf(from), 1); var ti = cs.ord.indexOf(to); cs.ord.splice(after ? ti + 1 : ti, 0, from); xSync(); pvRefresh(150); } });
   document.addEventListener('dragend', function(){ dragId = null; dClear(); });
 
+  /* links from emails: reset-password, expired link, confirmed address */
+  (function(){
+    var h = location.hash || ''; if(h.indexOf('access_token=') < 0 && h.indexOf('error=') < 0) return;
+    var q = {}; h.replace(/^#/, '').split('&').forEach(function(p){ var i = p.indexOf('='); if(i > 0){ try{ q[p.slice(0, i)] = decodeURIComponent(p.slice(i + 1).replace(/\+/g, ' ')); }catch(e){} } });
+    try{ history.replaceState(null, '', location.pathname + location.search + '#/'); }catch(e){}
+    if(q.type === 'recovery' && q.access_token){ recTok = q.access_token; setSess(null); mode = 'reset'; }
+    else if(q.error){ mode = 'forgot'; authNote = 'That link has expired or was already used. Send a new one.'; }
+    else if(q.type === 'signup' || q.type === 'email_change'){ mode = 'in'; authNote = 'Email confirmed. Sign in to continue.'; }
+    else return;
+    setTimeout(function(){ var f = $('signin'); if(f && f.scrollIntoView) f.scrollIntoView({ block:'center' }); }, 400);
+  })();
   render();
   if(sess) load(false);
 })();
