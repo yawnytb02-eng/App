@@ -1090,7 +1090,7 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
     if(verifyFor) return verifyBox();
     return '<form id="af" novalidate><h3 style="font-size:26px;margin-bottom:4px">' + (mode === 'in' ? 'Sign in' : 'Create an account') + '</h3><p class="sub" style="margin:0 0 18px;font-size:14.5px">' + (mode === 'in' ? 'See everything your logbooks have synced.' : 'One account for every logbook.') + '</p>' + (authNote ? '<p class="anote" role="status">' + esc(authNote) + '</p>' : '')
       + '<label class="field"><span>Email</span><input type="email" id="ae" autocomplete="email" inputmode="email"></label><label class="field"><span>Password</span><input type="password" id="ap" autocomplete="' + (mode === 'in' ? 'current-password' : 'new-password') + '"></label>'
-      + (mode === 'in' ? '' : '<label class="agree"><input type="checkbox" id="aag"><span>I am 13 or older and I agree to the <a href="legal.html#terms" target="_blank" rel="noopener">Terms of Use</a> and <a href="legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>')
+      + (mode === 'in' ? '' : '<label class="agree"><input type="checkbox" id="aga"><span>I am 16 or older (18 for the Sober logbooks).</span></label><label class="agree"><input type="checkbox" id="aag"><span>I agree to the <a href="legal.html#terms" target="_blank" rel="noopener">Terms of Use</a> and <a href="legal.html#privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span></label>')
       + '<button class="btn" id="ab" type="submit" style="width:100%">' + (mode === 'in' ? 'Sign in' : 'Create account') + '</button><p class="err" id="aerr" role="alert"></p>'
       + '<p class="tog">' + (mode === 'in' ? 'New here?' : 'Already have an account?') + ' <button type="button" data-act="mode">' + (mode === 'in' ? 'Create an account' : 'Sign in') + '</button></p><p class="note">Password reset by email is not switched on yet, so pick a password you will remember.</p></form>';
   }
@@ -1271,9 +1271,9 @@ footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute)
     if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)){ $('aerr').textContent = 'Enter a valid email.'; return; }
     if(pw.length < 8){ $('aerr').textContent = 'Use at least 8 characters for the password.'; return; }
     if(navigator.onLine === false){ $('aerr').textContent = 'You are offline.'; return; }
-    if(mode !== 'in' && !$('aag').checked){ $('aerr').textContent = 'Please confirm you are 13 or older and agree to the Terms and Privacy Policy.'; return; }
+    if(mode !== 'in' && (!$('aag').checked || !$('aga').checked)){ $('aerr').textContent = 'Please confirm your age and agree to the Terms and Privacy Policy.'; return; }
     $('ab').disabled = true; lastEmail = em;
-    fetch(mode === 'in' ? SB + '/auth/v1/token?grant_type=password' : SB + '/auth/v1/signup', { method:'POST', headers:hdr(), body:JSON.stringify(mode === 'in' ? { email:em, password:pw } : { email:em, password:pw, data:{ agreed_terms:2, agreed_at:new Date().toISOString(), min_age:13 } }) }).then(j).then(function(r){
+    fetch(mode === 'in' ? SB + '/auth/v1/token?grant_type=password' : SB + '/auth/v1/signup', { method:'POST', headers:hdr(), body:JSON.stringify(mode === 'in' ? { email:em, password:pw } : { email:em, password:pw, data:{ agreed_terms:3, agreed_at:new Date().toISOString(), min_age:16 } }) }).then(j).then(function(r){
       if(!r.ok){ $('ab').disabled = false; $('aerr').textContent = emsg(r); if(/confirm/i.test($('aerr').textContent)){ showVerify(em); } return; }
       if(r.j && r.j.access_token){ setSess(r.j); location.hash = '#/'; render(); load(false); pushPrefs(); resume(); }
       else { showVerify(em); }
