@@ -839,7 +839,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   }
   function setSess(o){
     if(o && o.access_token){ sess = { at:o.access_token, rt:o.refresh_token, exp:(o.expires_at ? o.expires_at * 1000 : Date.now() + (o.expires_in || 3600) * 1000), id:o.user && o.user.id, email:o.user && o.user.email }; store('lbs-sess', sess); }
-    else { sess = null; rows = null; store('lbs-sess', null); }
+    else { sess = null; rows = null; ent = null; store('lbs-sess', null); }
   }
   function fresh(){
     if(!sess) return Promise.reject(new Error('out'));
@@ -859,7 +859,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     if(add) store('lbs-custom', saved);
   }
   function load(force){
-    if(!sess || loading) return; loading = true; if(!rows) loadErr = ''; if(force || !rows) render();
+    if(!sess || loading) return; loading = true; if(!ent) loadEnt(); if(!rows) loadErr = ''; if(force || !rows) render();
     api('logbook_sync?select=app,data,rev,updated_at,device&order=updated_at.desc').then(function(r){
       loading = false;
       if(r.status === 401){ setSess(null); render(); return; }
@@ -922,13 +922,13 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var kp = '<div class="kpis"><div class="kpi"><span class="k">Streak, any logbook</span><b>' + streak + '</b><small>Best single run: ' + bestAny + '</small></div><div class="kpi"><span class="k">Days logged</span><b>' + days + '</b><small>Across ' + rows.length + ' logbook' + (rows.length === 1 ? '' : 's') + '</small></div><div class="kpi"><span class="k">Boxes this week</span><b>' + week + '</b><small>' + wkNote + '</small></div><div class="kpi"><span class="k">Last sync</span><b style="font-size:24px;margin-top:10px">' + esc(ago(newest)) + '</b><small>From your phone</small></div></div>';
     var wmx = Math.max.apply(null, wk.map(function(x){ return x.n; }).concat([1]));
     var chart = '<div class="bars">' + wk.map(function(x){ return '<div><em>' + (x.n || '') + '</em><i style="height:' + Math.max(4, Math.round(x.n / wmx * 118)) + 'px;' + (x.n ? '' : 'background:var(--line)') + '"></i><span>' + dayLabel(x.k, { weekday:'short' }).slice(0, 3) + '</span></div>'; }).join('') + '</div>';
-    var hm = heat(26, function(k2){ return ppd[k2] || 0; }, inkHex(), Math.max(4, mx));
+    var hm = heat(freeWeeks(), function(k2){ return ppd[k2] || 0; }, inkHex(), Math.max(4, mx));
     var cards = rows.map(function(r){ return '<a class="lbc" style="--acc2:' + esc(r.name.acc) + '" href="#/lb/' + encodeURIComponent(r.app) + '"><div class="t"><span class="dot" style="background:' + esc(r.name.acc) + '"></span><h3>' + esc(r.name.n) + '</h3><span class="k">' + esc(ago(r.updated)) + '</span></div><div class="m"><div><b>' + r.cur + '</b><span>Streak</span></div><div><b>' + r.keys.length + '</b><span>Days</span></div><div><b>' + r.best + '</b><span>Best</span></div></div>' + strip(r, 21) + '</a>'; }).join('');
     var feed = []; rows.forEach(function(r){ r.keys.slice(-8).forEach(function(k2){ feed.push({ k:k2, r:r }); }); });
     feed.sort(function(a, b){ return a.k < b.k ? 1 : a.k > b.k ? -1 : 0; });
     var fl = feed.slice(0, 9).map(function(f){ var dd = new Date(f.k + 'T12:00:00'); return '<li><div class="d"><b>' + dd.getDate() + '</b><span>' + dd.toLocaleDateString(undefined, { month:'short' }) + '</span></div><div class="w"><b><span class="dot" style="background:' + esc(f.r.name.acc) + '"></span>' + esc(f.r.name.n) + '</b><p>' + esc(touched(f.r.days[f.k]).map(function(p){ return pageName(p, f.r.data); }).join(', ')) + '</p></div></li>'; }).join('');
     return head + kp
-      + '<div class="cols two"><div class="box"><h3>Last 26 weeks</h3><p class="hint">Boxes filled per day, all logbooks together</p>' + hm + '</div><div class="box"><h3>This week</h3><p class="hint">' + (top && top.n ? 'Busiest day: ' + dayLabel(top.k, { weekday:'long' }) + ' (' + top.n + ')' : 'Boxes filled each day') + '</p>' + chart + '</div></div>'
+      + '<div class="cols two"><div class="box"><h3>Last ' + freeWeeks() + ' weeks</h3><p class="hint">Boxes filled per day, all logbooks together' + weeksNote() + '</p>' + hm + '</div><div class="box"><h3>This week</h3><p class="hint">' + (top && top.n ? 'Busiest day: ' + dayLabel(top.k, { weekday:'long' }) + ' (' + top.n + ')' : 'Boxes filled each day') + '</p>' + chart + '</div></div>'
       + '<div class="vh" style="margin:30px 0 0"><div><h2 style="font-size:24px">Your logbooks</h2></div></div><div class="lbgrid">' + cards + '</div>'
       + '<div class="cols eq"><div class="box"><h3>Recent activity</h3><p class="hint">Latest days, newest first</p><ul class="feed">' + fl + '</ul></div><div class="box"><h3>Where it lives</h3><p class="hint">Every logbook has its own storage on your phone and its own copy in your account. They never mix.</p><ul class="feed">' + rows.map(function(r){ return '<li><div class="w" style="flex:1"><b><span class="dot" style="background:' + esc(r.name.acc) + '"></span>' + esc(r.name.n) + '</b><p style="word-break:break-all">' + esc(r.app) + ' · ' + Math.max(1, Math.round(r.size / 1024)) + ' KB</p></div></li>'; }).join('') + '</ul></div></div>';
   }
@@ -949,7 +949,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var mopts = '<option value="">All months</option>' + Object.keys(months).sort().reverse().map(function(m){ return '<option value="' + m + '"' + (filt.m === m ? ' selected' : '') + '>' + esc(new Date(m + '-15T12:00:00').toLocaleDateString(undefined, { month:'long', year:'numeric' })) + '</option>'; }).join('');
     var mon = Object.keys(months).sort().reverse().slice(0, 6).map(function(m){ var n = r.keys.filter(function(k2){ return k2.slice(0, 7) === m; }).length; return '<div><span style="color:var(--ink);text-align:left">' + esc(new Date(m + '-15T12:00:00').toLocaleDateString(undefined, { month:'short', year:'numeric' })) + '</span><div class="tr"><i style="width:' + Math.round(n / 31 * 100) + '%;background:' + esc(col) + '"></i></div><span>' + n + '</span></div>'; }).join('');
     return head + kp + insightsHtml(r, col) + linksSection(r, col)
-      + '<div class="cols two"><div class="box"><h3>Last 26 weeks</h3><p class="hint">Darker means more boxes filled that day</p>' + heat(26, function(k2){ return r.cnt[k2] || 0; }, col, max) + '</div><div class="box"><h3>Days per week</h3><p class="hint">Last 12 weeks</p>' + wchart + '</div></div>'
+      + '<div class="cols two"><div class="box"><h3>Last ' + freeWeeks() + ' weeks</h3><p class="hint">Darker means more boxes filled that day' + weeksNote() + '</p>' + heat(freeWeeks(), function(k2){ return r.cnt[k2] || 0; }, col, max) + '</div><div class="box"><h3>Days per week</h3><p class="hint">Last 12 weeks</p>' + wchart + '</div></div>'
       + '<div class="cols eq"><div class="box"><h3>What you log most</h3><p class="hint">Days each box was filled</p><div class="use">' + (use || '<p class="hint">Nothing logged yet.</p>') + '</div></div><div class="box"><h3>Month by month</h3><p class="hint">Days logged</p><div class="use">' + (mon || '<p class="hint">Nothing logged yet.</p>') + '</div></div></div>'
       + '<div class="box" style="margin-top:16px"><h3>Day by day</h3><p class="hint">Click a day to see exactly what was saved</p><div class="tools"><input type="search" id="fq" placeholder="Search a box or a date" value="' + esc(filt.q) + '" aria-label="Search"><select id="fm" aria-label="Month">' + mopts + '</select></div><div id="dtbl">' + dayTable(r) + '</div></div>';
   }
@@ -1358,7 +1358,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var size = (rows || []).reduce(function(a, r){ return a + r.size; }, 0);
     return '<div class="vh"><div><h1>Account</h1></div></div><div class="acct"><div class="box"><h3>Signed in</h3><dl><dt>Email</dt><dd>' + esc(sess.email || '') + '</dd><dt>Logbooks synced</dt><dd>' + (rows ? rows.length : 0) + '</dd><dt>Data stored</dt><dd>' + Math.max(1, Math.round(size / 1024)) + ' KB</dd><dt>Last checked</dt><dd>' + (lastLoad ? esc(ago(new Date(lastLoad))) : 'Not yet') + '</dd></dl><div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-act="refresh" type="button">Refresh</button><button class="btn" data-act="signout" type="button">Sign out</button></div></div>'
       + '<div class="box"><h3>How your logbooks stay separate</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Every logbook has its own storage key, such as <b>readinggirl-logbook-v1</b>. On your phone that is its own private data, so one logbook never reads another. In your account each logbook is its own row, tied to you and locked so only you can read it. They share the same app and the same login, never the same data.</p></div>'
-      + '<div class="box"><h3>Steady</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Sync, cloud backup, full-year charts and unlimited custom logbooks. Opens soon.</p><a class="btn ghost sm" href="#/steady" style="margin-top:10px;display:inline-block">See Steady</a></div>'
+      + '<div class="box"><h3>Steady</h3><dl><dt>Your plan</dt><dd>' + esc(planLine()) + '</dd></dl><a class="btn ghost sm" href="#/steady" style="margin-top:10px;display:inline-block">' + (ent && ent.steady ? 'See Steady' : 'About Steady') + '</a></div>'
       + '<div class="box"><h3>Turn sync on</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Open a logbook on your phone, sign in with this account, then go to Settings and switch Sync on. Changes upload in the background and appear here.</p></div></div>';
   }
 
@@ -1437,6 +1437,25 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   /* ================= shell (signed in) ================= */
   function route(){ var h = location.hash || ''; var m = /^#\/(lb\/(.+)|library|create|account|steady)?$/.exec(h); if(!m) return { v:'dash' }; if(m[2]){ var a; try{ a = decodeURIComponent(m[2]); }catch(e){ a = m[2]; } return { v:'lb', app:a }; } return { v:m[1] || 'dash' }; }
 
+
+  /* ================= Steady entitlement and free limits ================= */
+  var BILLING_LIVE = false;   /* flip to true at launch: turns on free limits and the Pay button */
+  try{ var lm = /[?&]limits=(on|off)/.exec(location.search); if(lm) localStorage.setItem('dev-limits', lm[1]); }catch(e){}
+  function limitsOn(){ var d = null; try{ d = localStorage.getItem('dev-limits'); }catch(e){} return d === 'on' ? true : d === 'off' ? false : BILLING_LIVE; }
+  var ent = null;
+  function isSteady(){ return !limitsOn() || !!(ent && ent.steady); }
+  function loadEnt(){
+    if(!sess) return Promise.resolve();
+    return rpc('get_entitlement').then(function(a){ ent = Array.isArray(a) && a[0] ? a[0] : { steady:false }; render(); }).catch(function(){});
+  }
+  function planLine(){
+    var nm = { yearly:'Yearly', monthly:'Monthly', lifetime:'Lifetime', trial:'Trial' };
+    if(ent && ent.steady) return 'Steady (' + (nm[ent.plan] || ent.plan) + ')' + (ent.current_period_end ? ', ' + (ent.status === 'active' ? 'paid until ' : 'ends ') + new Date(ent.current_period_end).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' }) : ', no end date');
+    return limitsOn() ? 'Free' : 'Free (limits are switched off for now)';
+  }
+  function freeWeeks(){ return isSteady() ? 26 : 5; }
+  function weeksNote(){ return isSteady() ? '' : ' <a href="#/steady" style="color:inherit;font-weight:700">See 26 weeks with Steady</a>'; }
+
   /* ================= Steady: the paid tier. Opens soon; for now people join the list. ================= */
   var stPlan = 'yearly';
   var STP = [['yearly', '$29', 'a year', 'About $2.42 a month. The best fit for most people.'], ['lifetime', '$49', 'once', 'Founding price for the first 200 people. Pay once, keep Steady for good.'], ['monthly', '$4.99', 'a month', 'Cancel any time.']];
@@ -1447,7 +1466,11 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var paid = ['Sync across your phone and computer', 'Cloud backup, so a lost phone does not lose your streak', 'Full-year charts, trends and comparisons', 'As many custom logbooks as you want'];
     var li = function(a){ return '<ul class="stl">' + a.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; };
     var cards = STP.map(function(p){ return '<button type="button" class="stp' + (stPlan === p[0] ? ' on' : '') + '" data-act="splan" data-p="' + p[0] + '" aria-pressed="' + (stPlan === p[0]) + '"><b>' + p[1] + '</b><span>' + p[2] + '</span><small>' + esc(p[3]) + '</small></button>'; }).join('');
-    var cta = joined.length
+    var cta = (ent && ent.steady)
+      ? '<div class="stok" role="status"><b>You have Steady.</b> ' + esc(planLine()) + '. Thank you.</div>'
+      : BILLING_LIVE
+      ? '<label class="au-check" style="display:flex;gap:8px;align-items:flex-start;margin:0 0 12px;font-size:14px"><input type="checkbox" id="st18"> <span>I am 18 or older and I agree to the <a href="legal.html#terms" target="_blank" rel="noopener" style="color:inherit">Terms</a>. Yearly and monthly plans renew until I cancel.</span></label><button class="btn stgo" type="button" data-act="spay">Pay and get Steady</button><p class="hint" id="sterr" style="margin-top:10px">You pay on Polar, our payment partner. We never see your card.</p><button class="btn ghost sm" type="button" data-act="sref" style="margin-top:8px">Already paid? Refresh</button>'
+      : joined.length
       ? '<div class="stok" role="status"><b>You are on the list.</b> We will email you once when Steady opens, with the founding price for ' + esc(pn[joined[0]] || 'your plan') + '. Nothing was charged.</div>'
       : '<button class="btn stgo" type="button" data-act="sjoin">Get Steady</button><p class="hint" style="margin-top:10px">Steady opens soon. Choose a plan and you join the list, so you hear first. Nothing is charged today.</p>';
     return '<div class="vh"><div><h1>Steady</h1><p class="sub">Keep every device up to date, and your streak safe. Your data is always yours: export it any time.</p></div></div>'
@@ -1504,6 +1527,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     });
     if(bad){ err.textContent = why; selectItem('cx_' + bad.k); return; }
     if(!cs.ord.length){ err.textContent = 'Add at least one box to your page first.'; return; }
+    if(!cs.edit && !isSteady() && saved.length >= 1){ err.innerHTML = 'Free accounts keep one custom logbook. <a href="#/steady" style="color:inherit;font-weight:700">Steady</a> removes the limit.'; return; }
     err.textContent = '';
     if(needAuth({ t:'make' }, 'Sign in to package ' + n + '. Your boxes and their order are kept.')) return;
     var inb = function(f){ return cs.b.indexOf(f.split('.')[0]) > -1; }, rn = {}; Object.keys(cs.r).forEach(function(f){ if(inb(f) && cs.r[f]) rn[f] = cs.r[f]; });
@@ -1525,6 +1549,13 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
         cs = { f:eo.f || 'sans', c:eo.c || 'soft', th:eo.th || 'light', m:eo.m || 'reticle', g:eo.g || '', bt:cp(eo.bt || {}), n:eo.n, a:eo.a, ord:(eo.o && eo.o.length ? eo.o.slice() : (eo.b || []).concat((eo.x || []).map(function(q){ return 'cx_' + q.k; }))), b:(eo.b || []).slice(), h:(eo.h || []).slice(), r:cp(eo.r || {}), x:cp(eo.x || []), lk:cp(eo.lk || []), edit:eo.k, sel:'home', pg:'home' };
         location.hash = '#/create'; render(); }
       else if(a === 'splan'){ stPlan = b.dataset.p; render(); }
+      else if(a === 'spay'){
+        var ck = $('st18'), ee = $('sterr'); if(!ck || !ck.checked){ if(ee) ee.textContent = 'Please confirm you are 18 or older and agree to the Terms.'; return; }
+        b.disabled = true; if(ee) ee.textContent = 'Opening checkout...';
+        fresh().then(function(tk){ return fetch(SB + '/functions/v1/start-checkout', { method:'POST', headers:hdr(tk), body:JSON.stringify({ plan:stPlan }) }); }).then(j).then(function(r){
+          if(r.ok && r.j && r.j.url){ location.href = r.j.url; return; } throw new Error('x'); }).catch(function(){ b.disabled = false; if(ee) ee.textContent = 'Could not open checkout. Try again in a moment.'; });
+      }
+      else if(a === 'sref'){ loadEnt().then(function(){ toast(ent && ent.steady ? 'Steady is on. Thank you.' : 'No payment found yet. It can take a minute.'); }); }
       else if(a === 'sjoin'){ b.disabled = true; fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/log_steady_interest', { method:'POST', headers:hdr(tk), body:JSON.stringify({ p_plan:stPlan, p_source:'site' }) }); }).then(function(r){ if(!r.ok) throw new Error('rpc'); var d = steadyDone(); d[stPlan] = 1; store('steady-int', d); render(); }).catch(function(){ b.disabled = false; toast('Could not save that. Try again in a moment.'); }); }
       else if(a === 'forgot'){ mode = 'forgot'; authNote = ''; var f3 = $('signin'); if(f3) f3.innerHTML = authForm(); }
       else if(a === 'back'){ mode = 'in'; authNote = ''; var f4 = $('signin'); if(f4) f4.innerHTML = authForm(); }
