@@ -492,6 +492,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 .stcols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}.stl{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:10px}.stl li{padding-left:24px;position:relative;font-size:14.5px;line-height:1.45;color:var(--soft)}.stl li:before{content:"\2713";position:absolute;left:0;font-weight:800;color:var(--ink)}.stpaid{border-color:var(--ink)}
 .stps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}.stp{text-align:left;border:1.5px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:16px;padding:16px;cursor:pointer;font:inherit;display:block}.stp b{font-size:30px;letter-spacing:-.04em}.stp span{font-size:14px;color:var(--soft);margin-left:6px;font-weight:600}.stp small{display:block;margin-top:8px;font-size:13px;line-height:1.45;color:var(--mute)}.stp.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink) inset}.stgo{width:100%;max-width:360px}.stok{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14.5px;line-height:1.5}
 @media(max-width:760px){.stcols,.stps{grid-template-columns:1fr}}
+.lkh{margin:16px 0 8px;font-size:13px;font-weight:700;color:var(--soft)}.lkpick{display:block;text-align:left;width:100%;border:1.5px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:14px;padding:12px 14px;cursor:pointer;font:inherit}.lkpick b{display:block;font-size:15px}.lkpick small{display:block;margin-top:3px;font-size:13px;color:var(--mute);line-height:1.4}.lkpick:hover{border-color:var(--ink)}.lkpick:disabled{opacity:.5;cursor:not-allowed}.lkx .lkadd{display:grid;gap:8px;margin-top:10px}
 </style>
 </head>
 <body>
@@ -1139,7 +1140,8 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   })();
 
   /* ================= Links: connect fields, boxes and days (Studio) ================= */
-  var LKT = { calc:'Combine two numbers', roll:'Add up over days', goal:'Set a goal', since:'Count days since', rule:'Connect two boxes', carry:'Start from yesterday' };
+  var LKT = { roll:'Total over several days', goal:'A daily or weekly goal', calc:'Compare two numbers', since:'Days since something', rule:'Log two things together', carry:'Start from yesterday' };
+  var LKX = { roll:'e.g. steps this week, or money spent this month', goal:'e.g. work out 4 times a week', calc:'e.g. money in minus money out', since:'e.g. days since your last drink', rule:'e.g. when you log a meal, also log water', carry:'e.g. start today\'s weight from yesterday\'s' };
   var LKNUM = ['number','money','percent','duration','scale5','scale10','mood','toggle'];
   function validFields(b){ return b.f.filter(function(f){ return String(f.l || '').trim() && (!OPT[f.t] || String(f.e || '').split(',').filter(function(v){ return v.trim(); }).length >= 2); }); }
   function fieldOpts(){
@@ -1163,11 +1165,11 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function lkSel(id, key, val, opts, ph){ return '<select data-lkk="' + id + ':' + key + '" aria-label="' + esc(ph || key) + '">' + (ph ? '<option value="">' + esc(ph) + '</option>' : '') + opts.map(function(o){ return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(val) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
   function lkSentence(L, F){
     var a = lkRefName(L.a, F), b = lkRefName(L.b, F);
-    if(L.t === 'calc') return 'Shows <b>' + esc(a) + '</b> ' + ({ '+':'plus', '-':'minus', '*':'times', '/':'divided by' })[L.o || '-'] + ' <b>' + esc(b) + '</b>, day by day, with a trend.';
+    if(L.t === 'calc') return 'Works out <b>' + esc(a) + '</b> ' + ({ '+':'plus', '-':'minus', '*':'times', '/':'divided by' })[L.o || '-'] + ' <b>' + esc(b) + '</b> for each day and shows the trend.';
     if(L.t === 'roll') return (L.g === 'avg' ? 'Averages ' : 'Adds up ') + '<b>' + esc(a) + '</b> over the last <b>' + (L.d || 7) + ' days</b>, updated every day.';
     if(L.t === 'goal') return 'Aims for <b>' + esc(L.v || '?') + '</b> of <b>' + esc(a) + '</b> each <b>' + (L.p === 'week' ? 'week' : 'day') + '</b>, and counts how often you hit it.';
     if(L.t === 'since') return 'Counts the days since <b>' + esc(a) + '</b> was last marked or above zero.';
-    if(L.t === 'rule') return 'Checks that on days you log <b>' + esc(boxNameOf(L.a)) + '</b>, you also log <b>' + esc(boxNameOf(L.b)) + '</b>, and nudges you when one is missing.';
+    if(L.t === 'rule') return 'Checks that on days you log <b>' + esc(boxNameOf(L.a)) + '</b>, you also log <b>' + esc(boxNameOf(L.b)) + '</b>, and reminds you when one is missing.';
     return 'Offers yesterday’s <b>' + esc(a) + '</b> as a one-tap start for today.';
   }
   function lkCard(L){
@@ -1194,11 +1196,12 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   }
   function linksEditor(){
     var F = fieldOpts(), sg = lkSuggest(), full = cs.lk.length >= 12;
-    return '<div class="xb lkx"><h3 class="xt2">Links</h3><p class="hint">Turn what you log into totals, goals and streaks. Tap a suggestion to add it.</p>'
-      + (F.length ? '' : '<p class="hint lkwarn">Add a number or yes/no field to one of your boxes first.</p>')
-      + (sg.length ? '<div class="lksg">' + sg.map(function(x, i){ return '<button type="button" data-lksug="' + i + '"' + (full ? ' disabled' : '') + '>' + esc(x.label) + '</button>'; }).join('') + '</div>' : '')
-      + (cs.lk.length ? '<div class="lkl">' + cs.lk.map(lkCard).join('') + '</div>' : '')
-      + '<details class="lkmore"><summary>Add your own</summary><div class="lkadd">' + Object.keys(LKT).map(function(t){ return '<button type="button" class="btn ghost sm" data-lkadd="' + t + '"' + (full ? ' disabled' : '') + '>' + LKT[t] + '</button>'; }).join('') + '</div></details></div>';
+    return '<div class="xb lkx"><h3 class="xt2">Links</h3>'
+      + '<p class="hint">A link lets your logbook do the maths for you. You fill in your boxes as usual, and each link turns those numbers into a total, a goal or a reminder on your Home screen. Example: a "Workouts" yes/no box plus a goal of 4 a week shows how many you have done this week.</p>'
+      + (F.length ? '' : '<p class="hint lkwarn">To use links, first add a number or yes/no field to one of your boxes (go back and pick a box).</p>')
+      + (sg.length ? '<h4 class="lkh">Quick ideas for your boxes</h4><div class="lksg">' + sg.map(function(x, i){ return '<button type="button" data-lksug="' + i + '"' + (full ? ' disabled' : '') + '>' + esc(x.label) + '</button>'; }).join('') + '</div>' : '')
+      + (cs.lk.length ? '<h4 class="lkh">Your links</h4><div class="lkl">' + cs.lk.map(lkCard).join('') + '</div>' : '')
+      + '<details class="lkmore"' + (!cs.lk.length && !sg.length ? ' open' : '') + '><summary>Make your own link</summary><div class="lkadd">' + Object.keys(LKT).map(function(t){ return '<button type="button" class="lkpick" data-lkadd="' + t + '"' + (full ? ' disabled' : '') + '><b>' + LKT[t] + '</b><small>' + LKX[t] + '</small></button>'; }).join('') + '</div></details></div>';
   }
   function lkRefresh(){ var e = $('sed'); if(e && cs.sel === 'links') e.innerHTML = editorHtml(); var l = $('sl'); if(l) l.innerHTML = listHtml(); pvRefresh(500); }
   document.addEventListener('click', function(e){
