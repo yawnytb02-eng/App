@@ -483,6 +483,10 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 .lnk{margin-top:16px}.lnk .lrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}.lnk select{flex:1;min-width:180px;height:44px}.lq{display:flex;gap:22px;align-items:center;flex-wrap:wrap;margin-top:16px}.lnk .lq>svg{width:176px;height:176px;max-width:176px;flex:none;background:#fff;padding:10px;border-radius:14px;border:1px solid var(--line);box-sizing:border-box}.lq ol{margin:0;padding-left:18px;font-size:14px;line-height:1.6;color:var(--soft);flex:1;min-width:200px}.lq .urlbox{margin-top:10px}
 .what{padding:72px 0 40px}.what h2{font-size:clamp(28px,4.2vw,44px);letter-spacing:-.035em;margin:0 0 12px}.what .big{font-size:clamp(17px,2.1vw,21px);line-height:1.55;max-width:44em;color:var(--soft);margin:0 0 30px}.how{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.how>div{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:20px 22px}.how b.n{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--bg);font-size:14px;margin-bottom:12px}.how h3{font-size:19px;margin:0 0 6px}.how p{margin:0;font-size:14.5px;line-height:1.55;color:var(--soft)}.facts{display:flex;gap:10px 22px;flex-wrap:wrap;margin-top:26px;font-size:14.5px;font-weight:600}.facts span:before{content:"\2713";margin-right:7px}
 @media(max-width:760px){.pat{grid-template-columns:1fr;padding:22px 20px;gap:12px}.pat .ring svg{max-width:150px}.how{grid-template-columns:1fr}}
+.lks{margin-top:16px}.lh2{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.lkg{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:14px}
+.lkg .lkc{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px 16px}.lkc .lkh{font-size:13px;font-weight:700;color:var(--soft)}.lkc b{display:block;font-size:30px;letter-spacing:-.04em;margin:4px 0 2px}.lkc small{display:block;font-size:13px;color:var(--mute);line-height:1.4}.lkc .lkspk{width:100%;height:auto;display:block;margin:4px 0}.lkc .lktr{height:7px;background:var(--line);border-radius:6px;overflow:hidden;margin:8px 0}.lkc .lktr i{display:block;height:100%;border-radius:6px}.lkc.due b{color:var(--accent,inherit)}
+.lkx .lkl{display:grid;gap:12px;margin:14px 0}.lcard{border:1px solid var(--line);border-radius:16px;padding:14px 16px;background:var(--panel)}.lkt{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.lkr{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.lkr select,.lkr input{min-height:44px;flex:1 1 190px;min-width:0}.lkr input{border:1px solid var(--line2);border-radius:12px;background:var(--bg);color:var(--ink);padding:0 12px;font:inherit}.lkr .lku{flex:0 1 110px}.lkw2{font-size:13.5px;color:var(--soft);font-weight:600}.lcard .lkn{width:100%;margin-top:10px}.lksent{font-size:13.5px;color:var(--soft);line-height:1.5;margin:10px 0 0}.lcard .lksent b{color:var(--ink)}
+.lksg,.lkadd{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}.lksg>span,.lkadd>span{font-size:13px;font-weight:700;color:var(--soft);width:100%}.lksg button{font:600 13.5px/1.2 inherit;padding:9px 13px;border-radius:99px;border:1px dashed var(--line2);background:none;color:var(--ink);cursor:pointer;text-align:left}.lksg button:hover{background:var(--panel)}.lkwarn{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 </style>
 </head>
 <body>
@@ -551,6 +555,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var u = base + '?l=custom&n=' + encodeURIComponent(o.n) + '&a=' + encodeURIComponent(o.a) + '&k=' + o.k + '&b=' + o.b.join(',') + (o.o && o.o.length ? '&o=' + o.o.join(',') : '');
     var hh = (o.h || []).filter(function(f){ return o.b.indexOf(f.split('.')[0]) > -1; }), rr = Object.keys(o.r || {}).filter(function(f){ return o.b.indexOf(f.split('.')[0]) > -1 && o.r[f]; }).map(function(f){ return f + '~' + encodeURIComponent(o.r[f]); });
     if(o.x && o.x.length) u += '&x=' + encodeURIComponent(JSON.stringify(xPack(o.x)));
+    u += lkQ(o);
     if(hh.length) u += '&h=' + hh.join(',');
     if(rr.length) u += '&r=' + rr.join(',');
     return u + lookQ(o);
@@ -681,7 +686,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   var saved = store('lbs-custom') || [];
   var sess = store('lbs-sess');
   var rows = null, loadErr = '', loading = false, lastLoad = 0;
-  var cs = { f:'sans', c:'soft', th:'light', m:'reticle', g:'', bt:{}, n:'My Routine', a:SWATCH[0], ord:['dashboard','workout','mindfocus','night'], b:['dashboard','workout','mindfocus','night'], h:[], r:{}, x:[], sel:'home', pg:'home' };
+  var cs = { f:'sans', c:'soft', th:'light', m:'reticle', g:'', bt:{}, n:'My Routine', a:SWATCH[0], ord:['dashboard','workout','mindfocus','night'], b:['dashboard','workout','mindfocus','night'], h:[], r:{}, x:[], lk:[], edit:null, sel:'home', pg:'home' };
   var mode = 'in', filt = { q:'', m:'' };
 
   /* ================= install sheet ================= */
@@ -863,7 +868,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var m = /^custom-([a-z0-9]+)-(.+)-v1$/.exec(app);
     if(m){ var s = null; saved.forEach(function(o){ if(o.k === m[1]) s = o; });
       var nm = s ? s.n : m[2].split('-').map(function(w){ return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
-      var cu = { k:m[1], n:nm, a:s ? s.a : '#835F1F', b:s ? s.b : ['dashboard','workout','mindfocus','night'] };
+      var cu = s || { k:m[1], n:nm, a:'#835F1F', b:['dashboard','workout','mindfocus','night'] };
       return { n:nm, custom:cu, acc:cu.a }; }
     return { n:app, acc:inkHex() };
   }
@@ -900,7 +905,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     if(loadErr && !rows) return '<div class="vh"><div><h1>Dashboard</h1></div></div><div class="empty"><h3>' + esc(loadErr) + '</h3><button class="btn" data-act="refresh" type="button">Try again</button></div>';
     var h = new Date().getHours(), greet = h < 5 ? 'Late night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
     var head = '<div class="vh"><div><p class="k">' + esc(new Date().toLocaleDateString(undefined, { weekday:'long', month:'long', day:'numeric' })) + '</p><h1>' + greet + '.</h1></div><div class="acts"><button class="btn ghost sm" data-act="refresh" type="button">Refresh</button><a class="btn sm" href="#/library">Add a logbook</a></div></div>';
-    if(!rows || !rows.length) return head + '<div class="empty"><h3>Nothing synced yet.</h3><p>Your logbooks live on your phone first. Three steps and they show up here:</p><ol><li>Pick a logbook and install it on your phone.</li><li>Open it and sign in with this same account.</li><li>In the logbook, go to <b>Settings</b> and turn <b>Sync</b> on.</li></ol><a class="btn" href="#/library">Pick a logbook</a></div>' + linkPanel();
+    if(!rows || !rows.length) return head + '<div class="empty"><h3>Nothing synced yet.</h3><p>Your logbooks live on your phone first. Three steps and they show up here:</p><ol><li>Pick a logbook and install it on your phone.</li><li>Open it and sign in with this same account.</li><li>In the logbook, go to <b>Settings</b> and turn <b>Sync</b> on.</li></ol><a class="btn" href="#/library">Pick a logbook</a></div>';
     var all = {}, ppd = {}; rows.forEach(function(r){ r.keys.forEach(function(k){ all[k] = 1; ppd[k] = (ppd[k] || 0) + r.cnt[k]; }); });
     var days = Object.keys(all).length, streak = streakOf(all), bestAny = Math.max.apply(null, rows.map(function(r){ return r.best; })), week = 0, mx = 1, wk = [], i, d, k;
     for(i = 6; i >= 0; i--){ d = new Date(); d.setDate(d.getDate() - i); k = ymd(d); var n = ppd[k] || 0; wk.push({ k:k, n:n }); week += n; }
@@ -918,7 +923,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var fl = feed.slice(0, 9).map(function(f){ var dd = new Date(f.k + 'T12:00:00'); return '<li><div class="d"><b>' + dd.getDate() + '</b><span>' + dd.toLocaleDateString(undefined, { month:'short' }) + '</span></div><div class="w"><b><span class="dot" style="background:' + esc(f.r.name.acc) + '"></span>' + esc(f.r.name.n) + '</b><p>' + esc(touched(f.r.days[f.k]).map(function(p){ return pageName(p, f.r.data); }).join(', ')) + '</p></div></li>'; }).join('');
     return head + kp
       + '<div class="cols two"><div class="box"><h3>Last 26 weeks</h3><p class="hint">Boxes filled per day, all logbooks together</p>' + hm + '</div><div class="box"><h3>This week</h3><p class="hint">' + (top && top.n ? 'Busiest day: ' + dayLabel(top.k, { weekday:'long' }) + ' (' + top.n + ')' : 'Boxes filled each day') + '</p>' + chart + '</div></div>'
-      + linkPanel() + '<div class="vh" style="margin:30px 0 0"><div><h2 style="font-size:24px">Your logbooks</h2></div></div><div class="lbgrid">' + cards + '</div>'
+      + '<div class="vh" style="margin:30px 0 0"><div><h2 style="font-size:24px">Your logbooks</h2></div></div><div class="lbgrid">' + cards + '</div>'
       + '<div class="cols eq"><div class="box"><h3>Recent activity</h3><p class="hint">Latest days, newest first</p><ul class="feed">' + fl + '</ul></div><div class="box"><h3>Where it lives</h3><p class="hint">Every logbook has its own storage on your phone and its own copy in your account. They never mix.</p><ul class="feed">' + rows.map(function(r){ return '<li><div class="w" style="flex:1"><b><span class="dot" style="background:' + esc(r.name.acc) + '"></span>' + esc(r.name.n) + '</b><p style="word-break:break-all">' + esc(r.app) + ' · ' + Math.max(1, Math.round(r.size / 1024)) + ' KB</p></div></li>'; }).join('') + '</ul></div></div>';
   }
 
@@ -937,7 +942,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var months = {}; r.keys.forEach(function(k2){ months[k2.slice(0, 7)] = 1; });
     var mopts = '<option value="">All months</option>' + Object.keys(months).sort().reverse().map(function(m){ return '<option value="' + m + '"' + (filt.m === m ? ' selected' : '') + '>' + esc(new Date(m + '-15T12:00:00').toLocaleDateString(undefined, { month:'long', year:'numeric' })) + '</option>'; }).join('');
     var mon = Object.keys(months).sort().reverse().slice(0, 6).map(function(m){ var n = r.keys.filter(function(k2){ return k2.slice(0, 7) === m; }).length; return '<div><span style="color:var(--ink);text-align:left">' + esc(new Date(m + '-15T12:00:00').toLocaleDateString(undefined, { month:'short', year:'numeric' })) + '</span><div class="tr"><i style="width:' + Math.round(n / 31 * 100) + '%;background:' + esc(col) + '"></i></div><span>' + n + '</span></div>'; }).join('');
-    return head + kp + insightsHtml(r, col)
+    return head + kp + insightsHtml(r, col) + linksSection(r, col)
       + '<div class="cols two"><div class="box"><h3>Last 26 weeks</h3><p class="hint">Darker means more boxes filled that day</p>' + heat(26, function(k2){ return r.cnt[k2] || 0; }, col, max) + '</div><div class="box"><h3>Days per week</h3><p class="hint">Last 12 weeks</p>' + wchart + '</div></div>'
       + '<div class="cols eq"><div class="box"><h3>What you log most</h3><p class="hint">Days each box was filled</p><div class="use">' + (use || '<p class="hint">Nothing logged yet.</p>') + '</div></div><div class="box"><h3>Month by month</h3><p class="hint">Days logged</p><div class="use">' + (mon || '<p class="hint">Nothing logged yet.</p>') + '</div></div></div>'
       + '<div class="box" style="margin-top:16px"><h3>Day by day</h3><p class="hint">Click a day to see exactly what was saved</p><div class="tools"><input type="search" id="fq" placeholder="Search a box or a date" value="' + esc(filt.q) + '" aria-label="Search"><select id="fm" aria-label="Month">' + mopts + '</select></div><div id="dtbl">' + dayTable(r) + '</div></div>';
@@ -1010,6 +1015,14 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var xy = vs.map(function(v, i){ return [(i / Math.max(1, vs.length - 1)) * (W - 8) + 4, H - 6 - ((v - mn) / rg) * (H - 14)]; });
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="spk" role="img" aria-label="Trend"><polyline points="' + xy.map(function(p){ return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '" fill="none" stroke="' + esc(col) + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="' + xy[xy.length - 1][0].toFixed(1) + '" cy="' + xy[xy.length - 1][1].toFixed(1) + '" r="4.5" fill="' + esc(col) + '"/></svg>';
   }
+  function linksSection(r, col){
+    var o = appRow(r.app), ed = o && o.ed; if(!ed || !ed.k || !ed.x) return '';
+    var idx = saved.indexOf(ed), edit = idx > -1 ? '<button class="btn ghost sm" type="button" data-act="medit" data-i="' + idx + '">' + ((ed.lk || []).length ? 'Edit links' : 'Add links') + '</button>' : '';
+    var nm = function(ref){ var q = ref.split('.'), b = r.data && r.data.bx && r.data.bx.boxes && r.data.bx.boxes[q[0]], f = b && (b.fields || []).filter(function(x){ return x.id === q[1]; })[0]; return f ? f.label : ref; };
+    var items = LK.run(r.days, lkPack(ed), ymd(new Date()), nm, function(id){ return pageName(id, r.data); }).filter(function(x){ return !x.carry; });
+    if(!items.length) return '<section class="box lks"><div class="lh2"><div><h3>Links</h3><p class="hint">Connect your fields, boxes and days to see totals, goals and streaks here.</p></div>' + edit + '</div></section>';
+    return '<section class="box lks"><div class="lh2"><div><h3>Links</h3><p class="hint">The connections you set up in the Studio, worked out from your logs</p></div>' + edit + '</div><div class="lkg">' + LK.html(items, col, esc) + '</div></section>';
+  }
   function insightsHtml(r, col){
     var I = insights(r), sober = /^sober/.test((r.name && r.name.preset) || ''), total = r.keys.length, DN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
     var unit = sober ? 'days clear' : (I.cur === 1 ? 'day streak' : 'day streak');
@@ -1033,11 +1046,168 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       return '<div class="tr1"><div><b>' + esc(fieldLabel(t.id, t.f, r.data)) + '</b><span>' + esc(pageName(t.id, r.data)) + '</span></div>' + spark(t.pts, col) + '<p>Latest <b>' + Math.round(vs[vs.length - 1] * 100) / 100 + '</b> · average <b>' + Math.round(avg * 100) / 100 + '</b> · ' + (Math.abs(up) < avg * .02 ? 'steady' : up > 0 ? 'trending up' : 'trending down') + '</p></div>'; }).join('') + '</div></div>' : '';
     return hero + '<div class="cols eq">' + rhythm + mom + '</div>' + trends;
   }
-  function linkPanel(){
-    var have = {}, opts = ''; (rows || []).forEach(function(r){ have[r.app] = 1; opts += '<option value="a:' + esc(r.app) + '">' + esc(r.name.n) + '</option>'; });
-    PRESETS.forEach(function(p){ if(!have[p.key]) opts += '<option value="p:' + p.id + '">' + esc(p.n) + '</option>'; });
-    return '<div class="box lnk" id="lnk"><div class="lh"><div><h3>Link your phone</h3><p class="hint">Scan the code with your phone camera. The logbook opens already signed in to this account. Then add it to your Home Screen and it works offline.</p></div></div><div class="lrow"><select id="lsel" aria-label="Logbook">' + opts + '</select><button class="btn sm" data-act="lmake" type="button">Show QR code</button></div><div id="lout" aria-live="polite"></div></div>';
+
+  /* ---- Links: connect fields, boxes and days. Shared by the phone and the web dashboard. ---- */
+  var LK = (function(){
+    function pd(s){ var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2], 12); }
+    function ds(d){ return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+    function add(s, n){ var d = pd(s); d.setDate(d.getDate() + n); return ds(d); }
+    function num(days, d, ref){
+      var day = days[d], q = String(ref || '').split('.'); if(!day || !day.pages || !q[1]) return NaN;
+      var pg = day.pages[q[0]]; if(!pg || !pg._touched) return NaN;
+      var v = pg[(q[0].indexOf('cx_') === 0 ? 'cf_' : '') + q[1]];
+      if(v === true) return 1; if(v === false) return 0; if(v === undefined || v === null || v === '') return NaN;
+      var n = parseFloat(v); return isFinite(n) ? n : NaN;
+    }
+    function touched(days, d, box){ var p = days[d] && days[d].pages && days[d].pages[box]; return !!(p && p._touched); }
+    function r2(v){ return Math.round(v * 100) / 100; }
+    function fmt(v, u){ return isFinite(v) ? r2(v).toLocaleString('en-US') + (u ? ' ' + u : '') : '—'; }
+    function ser(today, n, fn){ var o = [], i; for(i = n - 1; i >= 0; i--) o.push(fn(add(today, -i))); return o; }
+    function short(d){ return pd(d).toLocaleDateString(undefined, { month:'short', day:'numeric' }); }
+    function monday(d){ var x = pd(d), w = (x.getDay() + 6) % 7; return add(d, -w); }
+    function one(days, L, today, nm, bn){
+      var out = { t:L.t, n:L.n || '', big:'—', sub:'', frac:null, series:null }, i, d, v;
+      if(L.t === 'calc'){
+        var f = function(x){ var a = num(days, x, L.a), b = num(days, x, L.b); if(!isFinite(a) || !isFinite(b)) return NaN; return L.o === '+' ? a + b : L.o === '-' ? a - b : L.o === '*' ? a * b : (b === 0 ? NaN : a / b); };
+        out.n = out.n || nm(L.a) + ' ' + ({ '+':'+', '-':'−', '*':'×', '/':'÷' })[L.o] + ' ' + nm(L.b);
+        var s = ser(today, 30, f), last = -1; s.forEach(function(x, j){ if(isFinite(x)) last = j; });
+        out.series = s; if(last < 0){ out.sub = 'Appears once both fields have a value on the same day.'; return out; }
+        var vals = s.filter(isFinite), avg = vals.reduce(function(a, b){ return a + b; }, 0) / vals.length;
+        out.big = fmt(s[last], L.u); out.sub = (last === 29 ? 'Today' : 'On ' + short(add(today, last - 29))) + ' · average ' + fmt(avg, L.u) + ' over ' + vals.length + ' day' + (vals.length === 1 ? '' : 's'); return out;
+      }
+      if(L.t === 'roll'){
+        var w = L.d || 7, at = function(x){ var vs = [], j; for(j = 0; j < w; j++){ v = num(days, add(x, -j), L.a); if(isFinite(v)) vs.push(v); } if(!vs.length) return NaN; var sm = vs.reduce(function(a, b){ return a + b; }, 0); return L.g === 'avg' ? sm / vs.length : sm; };
+        out.n = out.n || (L.g === 'avg' ? 'Average ' : 'Total ') + nm(L.a);
+        out.series = ser(today, 30, at); var cur = at(today); out.big = fmt(cur); if(!isFinite(cur)){ out.sub = 'Nothing logged in the last ' + w + ' days.'; return out; }
+        var pv = at(add(today, -w)); out.sub = 'Last ' + w + ' days' + (isFinite(pv) && pv !== 0 ? ' · ' + (cur >= pv ? 'up ' : 'down ') + fmt(Math.abs(cur - pv)) + ' on the ' + w + ' before' : ''); return out;
+      }
+      if(L.t === 'goal'){
+        var wk = L.p === 'week', tg = L.v || 1; out.n = out.n || nm(L.a) + (wk ? ' each week' : ' each day');
+        if(wk){
+          var m0 = monday(today), sm = 0, hit = 0, k, wsum;
+          for(d = m0; d <= today; d = add(d, 1)){ v = num(days, d, L.a); if(isFinite(v)) sm += v; }
+          for(k = 1; k <= 4; k++){ wsum = 0; for(i = 0; i < 7; i++){ v = num(days, add(m0, -7 * k + i), L.a); if(isFinite(v)) wsum += v; } if(wsum >= tg) hit++; }
+          out.big = fmt(sm) + ' of ' + fmt(tg); out.frac = Math.min(1, sm / tg); out.sub = 'This week · hit in ' + hit + ' of the last 4 weeks';
+        } else {
+          var hd = 0; v = num(days, today, L.a); for(i = 0; i < 14; i++){ var y = num(days, add(today, -i), L.a); if(isFinite(y) && y >= tg) hd++; }
+          out.big = (isFinite(v) ? fmt(v) : '0') + ' of ' + fmt(tg); out.frac = isFinite(v) ? Math.min(1, v / tg) : 0; out.sub = 'Today · hit on ' + hd + ' of the last 14 days';
+        }
+        return out;
+      }
+      if(L.t === 'since'){
+        out.n = out.n || 'Days since ' + nm(L.a); var found = -1;
+        for(i = 0; i < 400; i++){ v = num(days, add(today, -i), L.a); if(isFinite(v) && v > 0){ found = i; break; } }
+        if(found < 0){ out.big = '—'; out.sub = 'Not yet logged.'; return out; }
+        out.big = found === 0 ? 'Today' : found + (found === 1 ? ' day' : ' days'); out.sub = found === 0 ? 'Marked today' : 'Last on ' + short(add(today, -found)); out.frac = Math.min(1, found / 30); return out;
+      }
+      if(L.t === 'rule'){
+        var n = 0, ok = 0; for(i = 0; i < 60; i++){ d = add(today, -i); if(touched(days, d, L.a)){ n++; if(touched(days, d, L.b)) ok++; } }
+        out.n = out.n || bn(L.a) + ' → ' + bn(L.b);
+        if(!n){ out.sub = 'Counts the days you log ' + bn(L.a) + ' and also ' + bn(L.b) + '.'; return out; }
+        out.big = Math.round(ok / n * 100) + '%'; out.frac = ok / n; out.sub = 'Logged both on ' + ok + ' of ' + n + ' days';
+        if(touched(days, today, L.a) && !touched(days, today, L.b)){ out.due = bn(L.b); out.sub = 'Due today: ' + bn(L.b) + ' · ' + out.sub; } return out;
+      }
+      if(L.t === 'carry'){
+        out.n = nm(L.a); var q = String(L.a).split('.'), yd = add(today, -1), py = days[yd] && days[yd].pages && days[yd].pages[q[0]], key = (q[0].indexOf('cx_') === 0 ? 'cf_' : '') + q[1];
+        var raw = py && py._touched ? py[key] : undefined, has = isFinite(num(days, today, L.a));
+        out.carry = { box:q[0], key:key, raw:raw }; out.big = raw === undefined || raw === '' ? '—' : String(raw === true ? 'Yes' : raw === false ? 'No' : raw); out.sub = has ? 'Already logged today' : (raw === undefined || raw === '' ? 'Nothing from yesterday' : 'From yesterday'); out.done = has || raw === undefined || raw === ''; return out;
+      }
+      return null;
+    }
+    function run(days, links, today, nm, bn){ var o = []; (links || []).forEach(function(L){ try{ var x = one(days, L, today, nm || String, bn || String); if(x) o.push(x); }catch(e){} }); return o; }
+    function spark(vals, col){
+      var pts = [], mn = 1e18, mx = -1e18; vals.forEach(function(v){ if(isFinite(v)){ if(v < mn) mn = v; if(v > mx) mx = v; } }); if(mn > mx) return '';
+      var W = 120, H = 30, rg = (mx - mn) || 1, seg = [], cur = [];
+      vals.forEach(function(v, i){ if(isFinite(v)){ cur.push((i / 29 * (W - 6) + 3).toFixed(1) + ',' + (H - 4 - (v - mn) / rg * (H - 8)).toFixed(1)); } else if(cur.length){ seg.push(cur); cur = []; } }); if(cur.length) seg.push(cur);
+      return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="lkspk" aria-hidden="true">' + seg.map(function(c){ return c.length > 1 ? '<polyline points="' + c.join(' ') + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>' : '<circle cx="' + c[0].split(',')[0] + '" cy="' + c[0].split(',')[1] + '" r="2.5" fill="' + col + '"/>'; }).join('') + '</svg>';
+    }
+    function html(items, col, esc){
+      return items.map(function(x, i){
+        if(x.carry && x.done) return '';
+        var vis = x.carry ? '' : x.series ? spark(x.series, col) : x.frac != null ? '<div class="lktr"><i style="width:' + Math.round(x.frac * 100) + '%;background:' + col + '"></i></div>' : '';
+        var act = x.carry && !x.done ? '<button type="button" class="lkuse" data-carry="' + i + '">Use it</button>' : '';
+        return '<div class="lkc' + (x.due ? ' due' : '') + '"><div class="lkh"><span>' + esc(x.n) + '</span>' + act + '</div><b>' + esc(x.big) + '</b>' + vis + '<small>' + esc(x.sub) + '</small></div>';
+      }).join('');
+    }
+    return { run:run, html:html, num:num, add:add, fmt:fmt };
+  })();
+
+  /* ================= Links: connect fields, boxes and days (Studio) ================= */
+  var LKT = { calc:'Combine two numbers', roll:'Add up over days', goal:'Set a goal', since:'Count days since', rule:'Connect two boxes', carry:'Start from yesterday' };
+  var LKNUM = ['number','money','percent','duration','scale5','scale10','mood','toggle'];
+  function validFields(b){ return b.f.filter(function(f){ return String(f.l || '').trim() && (!OPT[f.t] || String(f.e || '').split(',').filter(function(v){ return v.trim(); }).length >= 2); }); }
+  function fieldOpts(){
+    var out = []; cs.x.forEach(function(b){ b.f.forEach(function(f){ if(!String(f.l || '').trim() || LKNUM.indexOf(f.t) < 0) return; if(!f.q) f.q = rid().slice(0, 4); out.push({ ref:'cx_' + b.k + ':' + f.q, lbl:(b.n || 'New box') + ' · ' + f.l.trim(), name:f.l.trim(), tog:f.t === 'toggle' }); }); }); return out;
   }
+  function lkRefName(ref, F){ var m = F.filter(function(x){ return x.ref === ref; })[0]; return m ? m.name : '…'; }
+  function boxNameOf(id){ var m = itemMeta(id); return m ? m.name : id; }
+  function lkPack(o){
+    var out = []; (o.lk || []).forEach(function(L){
+      var R = function(ref){ var m = /^cx_([a-z0-9]+):([a-z0-9]+)$/.exec(ref || ''); if(!m) return null; var b = (o.x || []).filter(function(x){ return x.k === m[1]; })[0]; if(!b) return null; var vf = validFields(b), j = -1; vf.forEach(function(f, i){ if(f.q === m[2]) j = i; }); return j < 0 ? null : 'cx_' + m[1] + '.f' + j; };
+      var ordl = (o.o && o.o.length) ? o.o : ordOf(o), p = { t:L.t, n:String(L.n || '').trim().slice(0, 30) };
+      if(L.t === 'rule'){ if(ordl.indexOf(L.a) < 0 || ordl.indexOf(L.b) < 0 || L.a === L.b) return; p.a = L.a; p.b = L.b; }
+      else { p.a = R(L.a); if(!p.a) return;
+        if(L.t === 'calc'){ p.b = R(L.b); if(!p.b) return; p.o = L.o || '-'; p.u = String(L.u || '').trim().slice(0, 10); }
+        if(L.t === 'roll'){ p.d = +L.d || 7; p.g = L.g === 'avg' ? 'avg' : 'sum'; }
+        if(L.t === 'goal'){ p.v = parseFloat(L.v); if(!isFinite(p.v) || p.v <= 0) return; p.p = L.p === 'week' ? 'week' : 'day'; } }
+      out.push(p);
+    });
+    return out.slice(0, 12);
+  }
+  function lkSel(id, key, val, opts, ph){ return '<select data-lkk="' + id + ':' + key + '" aria-label="' + esc(ph || key) + '">' + (ph ? '<option value="">' + esc(ph) + '</option>' : '') + opts.map(function(o){ return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(val) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select>'; }
+  function lkSentence(L, F){
+    var a = lkRefName(L.a, F), b = lkRefName(L.b, F);
+    if(L.t === 'calc') return 'Shows <b>' + esc(a) + '</b> ' + ({ '+':'plus', '-':'minus', '*':'times', '/':'divided by' })[L.o || '-'] + ' <b>' + esc(b) + '</b>, day by day, with a trend.';
+    if(L.t === 'roll') return (L.g === 'avg' ? 'Averages ' : 'Adds up ') + '<b>' + esc(a) + '</b> over the last <b>' + (L.d || 7) + ' days</b>, updated every day.';
+    if(L.t === 'goal') return 'Aims for <b>' + esc(L.v || '?') + '</b> of <b>' + esc(a) + '</b> each <b>' + (L.p === 'week' ? 'week' : 'day') + '</b>, and counts how often you hit it.';
+    if(L.t === 'since') return 'Counts the days since <b>' + esc(a) + '</b> was last marked or above zero.';
+    if(L.t === 'rule') return 'Checks that on days you log <b>' + esc(boxNameOf(L.a)) + '</b>, you also log <b>' + esc(boxNameOf(L.b)) + '</b>, and nudges you when one is missing.';
+    return 'Offers yesterday’s <b>' + esc(a) + '</b> as a one-tap start for today.';
+  }
+  function lkCard(L){
+    var F = fieldOpts(), fo = F.map(function(x){ return [x.ref, x.lbl]; }), bo = cs.ord.map(function(id){ return [id, boxNameOf(id)]; }), body = '';
+    if(L.t === 'calc') body = '<div class="lkr">' + lkSel(L.i, 'a', L.a, fo, 'Choose a field') + lkSel(L.i, 'o', L.o || '-', [['-', 'minus'], ['+', 'plus'], ['*', 'times'], ['/', 'divided by']]) + lkSel(L.i, 'b', L.b, fo, 'Choose a field') + '<input type="text" class="lku" data-lkk="' + L.i + ':u" maxlength="10" placeholder="Unit" value="' + esc(L.u || '') + '" aria-label="Unit"></div>';
+    else if(L.t === 'roll') body = '<div class="lkr">' + lkSel(L.i, 'g', L.g || 'sum', [['sum', 'Add up'], ['avg', 'Average']]) + lkSel(L.i, 'a', L.a, fo, 'Choose a field') + lkSel(L.i, 'd', L.d || 7, [[7, 'last 7 days'], [14, 'last 14 days'], [30, 'last 30 days']]) + '</div>';
+    else if(L.t === 'goal') body = '<div class="lkr">' + lkSel(L.i, 'a', L.a, fo, 'Choose a field') + '<input type="number" class="lku" min="0" step="any" data-lkk="' + L.i + ':v" value="' + esc(L.v == null ? '' : L.v) + '" placeholder="Target" aria-label="Target">' + lkSel(L.i, 'p', L.p || 'day', [['day', 'each day'], ['week', 'each week']]) + '</div>';
+    else if(L.t === 'since') body = '<div class="lkr">' + lkSel(L.i, 'a', L.a, fo, 'Choose a field') + '</div>';
+    else if(L.t === 'rule') body = '<div class="lkr"><span class="lkw2">When I log</span>' + lkSel(L.i, 'a', L.a, bo, 'Choose a box') + '<span class="lkw2">also log</span>' + lkSel(L.i, 'b', L.b, bo, 'Choose a box') + '</div>';
+    else body = '<div class="lkr">' + lkSel(L.i, 'a', L.a, fo, 'Choose a field') + '</div>';
+    return '<div class="lcard" data-lkc="' + L.i + '"><div class="lkt"><b>' + LKT[L.t] + '</b><button type="button" class="xrm" data-lkdel="' + L.i + '" aria-label="Remove this link">&times;</button></div>' + body + '<input type="text" class="xl lkn" data-lkk="' + L.i + ':n" maxlength="30" placeholder="Name (optional)" value="' + esc(L.n || '') + '" aria-label="Link name"><p class="lksent" id="lks-' + L.i + '">' + lkSentence(L, F) + '</p></div>';
+  }
+  function lkSuggest(){
+    var F = fieldOpts(), N = F.filter(function(f){ return !f.tog; }), T = F.filter(function(f){ return f.tog; }), s = [], have = {};
+    cs.lk.forEach(function(L){ have[L.t + '|' + L.a + '|' + (L.b || '')] = 1; });
+    var P = function(o, label){ if(!have[o.t + '|' + o.a + '|' + (o.b || '')]) s.push({ o:o, label:label }); };
+    if(N.length >= 2) P({ t:'calc', a:N[0].ref, b:N[1].ref, o:'-' }, N[0].name + ' minus ' + N[1].name);
+    N.slice(0, 2).forEach(function(f){ P({ t:'roll', a:f.ref, d:7, g:'sum' }, 'Weekly total of ' + f.name); });
+    T.slice(0, 2).forEach(function(f){ P({ t:'goal', a:f.ref, v:4, p:'week' }, 'Aim for 4 ' + f.name + ' a week'); P({ t:'since', a:f.ref }, 'Days since ' + f.name); });
+    if(cs.ord.length >= 2) P({ t:'rule', a:cs.ord[0], b:cs.ord[1] }, boxNameOf(cs.ord[0]) + ' goes with ' + boxNameOf(cs.ord[1]));
+    if(N[0]) P({ t:'carry', a:N[0].ref }, 'Start ' + N[0].name + ' from yesterday');
+    return s.slice(0, 6);
+  }
+  function linksEditor(){
+    var F = fieldOpts(), sg = lkSuggest(), full = cs.lk.length >= 12;
+    return '<div class="xb lkx"><h3 class="xt2">Links</h3><p class="hint">Links connect the things you log. A field can feed another field, a box can depend on another box, and a day can look back at the days before it. Each link shows up on Home on your phone and in the Links section of the web dashboard.</p>'
+      + (F.length ? '' : '<p class="hint lkwarn">Add a number, money, scale or yes/no field to one of your boxes first. Links work on those.</p>')
+      + (sg.length ? '<div class="lksg"><span>Suggested for your boxes</span>' + sg.map(function(x, i){ return '<button type="button" data-lksug="' + i + '"' + (full ? ' disabled' : '') + '>' + esc(x.label) + '</button>'; }).join('') + '</div>' : '')
+      + '<div class="lkl">' + (cs.lk.length ? cs.lk.map(lkCard).join('') : '<p class="empty">No links yet. Add one below.</p>') + '</div>'
+      + '<div class="lkadd"><span>Add a link</span>' + Object.keys(LKT).map(function(t){ return '<button type="button" class="btn sm" data-lkadd="' + t + '"' + (full ? ' disabled' : '') + '>' + LKT[t] + '</button>'; }).join('') + '</div></div>';
+  }
+  function lkRefresh(){ var e = $('sed'); if(e && cs.sel === 'links') e.innerHTML = editorHtml(); var l = $('sl'); if(l) l.innerHTML = listHtml(); pvRefresh(500); }
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('[data-lkadd],[data-lkdel],[data-lksug]'); if(!a || !$('sed') || !$('sed').contains(a)) return;
+    if(a.dataset.lkadd){ if(cs.lk.length >= 12) return; var t = a.dataset.lkadd, F = fieldOpts(), L = { i:rid().slice(0, 4), t:t, n:'' };
+      if(t === 'rule'){ L.a = cs.ord[0] || ''; L.b = cs.ord[1] || ''; } else { L.a = F[0] ? F[0].ref : ''; if(t === 'calc'){ L.b = F[1] ? F[1].ref : ''; L.o = '-'; } if(t === 'roll'){ L.d = 7; L.g = 'sum'; } if(t === 'goal'){ L.v = 1; L.p = 'day'; } }
+      cs.lk.push(L); lkRefresh(); return; }
+    if(a.dataset.lkdel){ cs.lk = cs.lk.filter(function(L){ return L.i !== a.dataset.lkdel; }); lkRefresh(); return; }
+    if(a.dataset.lksug != null){ var s = lkSuggest()[+a.dataset.lksug]; if(!s || cs.lk.length >= 12) return; s.o.i = rid().slice(0, 4); s.o.n = ''; cs.lk.push(s.o); lkRefresh(); }
+  });
+  function lkEdit(e){
+    var t = e.target; if(!t.dataset || !t.dataset.lkk) return; var p = t.dataset.lkk.split(':'), L = cs.lk.filter(function(x){ return x.i === p[0]; })[0]; if(!L) return;
+    var v = t.value; if(p[1] === 'v') v = v === '' ? null : parseFloat(v); if(p[1] === 'd') v = +v; L[p[1]] = v;
+    var s = $('lks-' + L.i); if(s) s.innerHTML = lkSentence(L, fieldOpts()); pvRefresh(e.type === 'input' ? 800 : 400);
+  }
+  document.addEventListener('input', lkEdit); document.addEventListener('change', lkEdit);
 
   function viewLibrary(inShell){
     var have = {}; (rows || []).forEach(function(r){ have[r.app] = 1; });
@@ -1072,6 +1242,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   }
   var XICONS = [['star','Star'],['heart','Heart'],['leaf','Leaf'],['drop','Drop'],['flame','Flame'],['dumbbell','Dumbbell'],['book','Book'],['pen','Pen'],['smile','Smile'],['sparkle','Sparkle'],['moon','Moon'],['sun','Sun'],['coffee','Coffee'],['music','Music'],['shirt','Shirt'],['bed','Bed'],['pill','Pill'],['camera','Camera'],['bag','Bag'],['phone','Phone'],['bolt','Bolt'],['target','Target'],['clock','Clock'],['flag','Flag']];
   function xFields(b){ return b.f.map(function(f){ var o = { l:f.l, t:f.t === 'scale5' || f.t === 'scale10' ? 'scale' : f.t }; if(o.t === 'scale') o.m = f.t === 'scale10' ? 10 : 5; if(f.t === 'number' && f.e) o.u = f.e; if(OPT[f.t]) o.o = String(f.e || '').split(',').map(function(v){ return v.trim(); }).filter(Boolean); return o; }); }
+  function lkQ(o){ var p = lkPack(o); return p.length ? '&lk=' + encodeURIComponent(JSON.stringify(p)) : ''; }
   function xPack(list){ return list.map(function(b){ return { k:b.k, n:b.n, i:b.i, f:xFields(b) }; }); }
   function lum(hex){ var c = [1,3,5].map(function(i){ var v = parseInt(hex.substr(i, 2), 16) / 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; }
   var ARR = { up:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>', dn:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>' };
@@ -1081,7 +1252,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var seen = {}; cs.ord = cs.ord.filter(function(id){ if(seen[id]) return false; seen[id] = 1; return /^cx_/.test(id) ? !!xFind(id.slice(3)) : !!BN[id]; });
     cs.x.forEach(function(b){ if(!seen['cx_' + b.k]) cs.ord.push('cx_' + b.k); });
     cs.b = cs.ord.filter(function(id){ return !/^cx_/.test(id); });
-    if(cs.sel !== 'home' && cs.ord.indexOf(cs.sel) < 0){ cs.sel = 'home'; cs.pg = 'home'; }
+    if(cs.sel !== 'home' && cs.sel !== 'links' && cs.ord.indexOf(cs.sel) < 0){ cs.sel = 'home'; cs.pg = 'home'; }
   }
   function ordOf(o){ if(o.o && o.o.length) return o.o; return (o.b || []).concat((o.x || []).map(function(b){ return 'cx_' + b.k; })); }
   function fieldCount(o){
@@ -1095,6 +1266,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function listHtml(){
     var last = cs.ord.length - 1;
     var home = '<div class="ir home' + (cs.sel === 'home' ? ' sel' : '') + '"><span class="grip off"></span><button type="button" class="inm" data-sel="home"><b>Home</b><span>The first screen. Always first.</span></button></div>';
+    home += '<div class="ir home' + (cs.sel === 'links' ? ' sel' : '') + '"><span class="grip off"></span><button type="button" class="inm" data-sel="links"><b>Links</b><span>' + (cs.lk.length ? cs.lk.length + (cs.lk.length === 1 ? ' link' : ' links') + ' \u00b7 connect your data' : 'Connect fields, boxes and days') + '</span></button></div>';
     var rows = cs.ord.map(function(id, i){
       var m = itemMeta(id); if(!m) return '';
       return '<div class="ir' + (cs.sel === id ? ' sel' : '') + (m.mine ? ' mine' : '') + '" draggable="true" data-it="' + id + '"><span class="grip" aria-hidden="true">' + GRIP + '</span><button type="button" class="inm" data-sel="' + id + '"><b>' + esc(m.name) + '</b><span>' + esc(m.sub) + '</span></button><span class="mvs"><button type="button" data-mv="' + id + ':-1" aria-label="Move ' + esc(m.name) + ' up"' + (i === 0 ? ' disabled' : '') + '>' + ARR.up + '</button><button type="button" data-mv="' + id + ':1" aria-label="Move ' + esc(m.name) + ' down"' + (i === last ? ' disabled' : '') + '>' + ARR.dn + '</button></span></div>';
@@ -1122,7 +1294,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   }
   function homeEditor(){
     var o = { b:cs.b, h:cs.h, x:cs.x }, nf = fieldCount(o);
-    return '<div class="xb ov"><h3 class="xt2">Build your page</h3><p class="hint">Every box is a page in your logbook. Make your own from scratch, or add a ready-made one, then drag them into the order you want. The phone shows exactly what you get.</p>'
+    return '<div class="xb ov"><h3 class="xt2">' + (cs.edit ? 'Edit your logbook' : 'Build your page') + '</h3>' + (cs.edit ? '<p class="hint lkwarn">You are editing a logbook you already made. Links and looks update on your phone when you open the new link. New boxes and fields only appear on a fresh install.</p>' : '') + '<p class="hint">Every box is a page in your logbook. Make your own from scratch, or add a ready-made one, then drag them into the order you want. The phone shows exactly what you get.</p>'
       + '<div class="ovs"><div><b>' + cs.ord.length + '</b><span>' + (cs.ord.length === 1 ? 'box' : 'boxes') + '</span></div><div><b>' + nf + '</b><span>' + (nf === 1 ? 'field' : 'fields') + '</span></div></div>'
       + (cs.x.length < 5 ? '<button type="button" class="btn" data-xnew="1">New box</button>' : '<p class="hint">You have made the most boxes of your own (5).</p>') + '</div>' + lookHtml();
   }
@@ -1140,29 +1312,29 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var lk = e.target.closest && e.target.closest('[data-lk]'); if(!lk) return; var pr = lk.getAttribute('data-lk').split(':'); cs[pr[0]] = pr[1]; xSync(); pvRefresh(150);
   });
   function editorHtml(){
-    var s = cs.sel; if(!s || s === 'home') return homeEditor();
+    var s = cs.sel; if(!s || s === 'home') return homeEditor(); if(s === 'links') return linksEditor();
     if(/^cx_/.test(s)){ var b = xFind(s.slice(3)); return b ? xEditor(b) : homeEditor(); }
     return cs.ord.indexOf(s) > -1 ? coreEditor(s) : homeEditor();
   }
   function xSync(){ ordFix(); var l = $('sl'); if(l) l.innerHTML = listHtml(); var e = $('sed'); if(e) e.innerHTML = editorHtml(); }
   function xSoft(){ var l = $('sl'); if(l) l.innerHTML = listHtml(); }
-  function selectItem(id){ cs.sel = id; cs.pg = id; xSync(); pvGo(); }
+  function selectItem(id){ cs.sel = id; cs.pg = id === 'links' ? 'home' : id; xSync(); pvGo(); }
   function viewCreate(){
     var sw = SWATCH.map(function(c){ return '<button type="button" style="background:' + c + '" data-c="' + c + '" aria-label="Colour ' + c + '" aria-pressed="' + (cs.a.toLowerCase() === c.toLowerCase()) + '"></button>'; }).join('') + '<label title="Pick any colour" aria-label="Pick any colour">+<input type="color" id="ccol" value="' + cs.a + '"></label>';
-    return '<div class="studio-c"><div class="studio"><div class="sbar s-a"><label class="field sname"><span>Name</span><input type="text" id="cn" maxlength="22" placeholder="My Gym" autocomplete="off" value="' + esc(cs.n) + '"></label><div class="field"><span class="lab">Colour</span><div class="sw" id="csw">' + sw + '</div></div><button class="btn sfin" data-act="make" type="button">Finish and package</button><p class="err" id="cerr" role="alert"></p></div>'
+    return '<div class="studio-c"><div class="studio"><div class="sbar s-a"><label class="field sname"><span>Name</span><input type="text" id="cn" maxlength="22" placeholder="My Gym" autocomplete="off" value="' + esc(cs.n) + '"></label><div class="field"><span class="lab">Colour</span><div class="sw" id="csw">' + sw + '</div></div><button class="btn sfin" data-act="make" type="button">' + (cs.edit ? 'Save changes' : 'Finish and package') + '</button><p class="err" id="cerr" role="alert"></p></div>'
       + '<section class="s-card s-l" aria-label="Your boxes"><h3>Your page</h3><p class="hint">Drag a box to move it, or use the arrows.</p><div id="sl">' + listHtml() + '</div></section>'
       + '<section class="s-card s-e" id="sed" aria-label="Edit">' + editorHtml() + '</section>'
       + '<aside class="s-p" aria-label="Live preview"><div class="s-sticky"><div class="phone big"><div class="scr" id="pvs"><iframe id="pvf" title="Live preview of your logbook" loading="lazy" tabindex="-1"></iframe><div class="pvld" aria-hidden="true"><i></i></div></div></div></div></aside>'
       + '<div class="mine s-d" id="mine">' + mineHtml() + '</div></div></div>';
   }
-  function mineHtml(){ return sess && saved.length ? '<h3>Your logbooks</h3>' + saved.map(function(o, i){ return '<div class="mrow"><span class="dot" style="background:' + esc(o.a) + '"></span><b>' + esc(o.n) + '</b><a class="btn sm" data-open="m:' + i + '" href="' + esc(urlFor(o)) + '">Open</a><button class="btn ghost sm" type="button" data-act="minst" data-i="' + i + '">Install</button><button class="x" type="button" data-act="mdel" data-i="' + i + '" aria-label="Remove ' + esc(o.n) + ' from this list">Remove</button></div>'; }).join('') : ''; }
+  function mineHtml(){ return sess && saved.length ? '<h3>Your logbooks</h3>' + saved.map(function(o, i){ return '<div class="mrow"><span class="dot" style="background:' + esc(o.a) + '"></span><b>' + esc(o.n) + '</b><a class="btn sm" data-open="m:' + i + '" href="' + esc(urlFor(o)) + '">Open</a><button class="btn ghost sm" type="button" data-act="medit" data-i="' + i + '">Edit</button><button class="btn ghost sm" type="button" data-act="minst" data-i="' + i + '">Install</button><button class="x" type="button" data-act="mdel" data-i="' + i + '" aria-label="Remove ' + esc(o.n) + ' from this list">Remove</button></div>'; }).join('') : ''; }
   function darken(hex){ var r = parseInt(hex.substr(1,2),16), g2 = parseInt(hex.substr(3,2),16), b = parseInt(hex.substr(5,2),16), l = (Math.max(r,g2,b) + Math.min(r,g2,b)) / 510, f = l > .34 ? .34 / l : 1; return 'rgb(' + Math.round(r*f) + ',' + Math.round(g2*f) + ',' + Math.round(b*f) + ')'; }
   var pvT = 0, pvLast = '';
   function pvUrlO(o, k){
     var inb = function(f){ return o.b.indexOf(f.split('.')[0]) > -1; }, h = (o.h || []).filter(inb), r = Object.keys(o.r || {}).filter(function(f){ return inb(f) && o.r[f]; }).map(function(f){ return f + '~' + encodeURIComponent(o.r[f]); });
-    return 'logbook/?l=custom&pv=1&k=' + k + '&n=' + encodeURIComponent(o.n || 'My Logbook') + '&a=' + encodeURIComponent(o.a) + '&b=' + o.b.join(',') + '&o=' + ordOf(o).join(',') + (h.length ? '&h=' + h.join(',') : '') + (r.length ? '&r=' + r.join(',') : '') + (o.x && o.x.length ? '&x=' + encodeURIComponent(JSON.stringify(xPack(o.x))) : '') + lookQ(o);
+    return 'logbook/?l=custom&pv=1&k=' + k + '&n=' + encodeURIComponent(o.n || 'My Logbook') + '&a=' + encodeURIComponent(o.a) + '&b=' + o.b.join(',') + '&o=' + ordOf(o).join(',') + (h.length ? '&h=' + h.join(',') : '') + (r.length ? '&r=' + r.join(',') : '') + (o.x && o.x.length ? '&x=' + encodeURIComponent(JSON.stringify(xPack(o.x))) : '') + (lkQ(o)) + lookQ(o);
   }
-  function pvUrl(){ return pvUrlO({ n:cs.n, a:cs.a, b:cs.b, h:cs.h, r:cs.r, x:cs.x, o:cs.ord, f:cs.f, c:cs.c, th:cs.th, m:cs.m, g:cs.g, bt:cs.bt }, 'pvx'); }
+  function pvUrl(){ return pvUrlO({ n:cs.n, a:cs.a, b:cs.b, h:cs.h, r:cs.r, x:cs.x, lk:cs.lk, o:cs.ord, f:cs.f, c:cs.c, th:cs.th, m:cs.m, g:cs.g, bt:cs.bt }, 'pvx'); }
   function pvGo(){ var f = $('pvf'); try{ if(f && f.contentWindow && f.contentWindow.nav){ if(cs.pg === 'home' || (cs.b.indexOf(cs.pg) < 0 && !(/^cx_/.test(cs.pg) && xFind(cs.pg.slice(3))))) f.contentWindow.nav('home'); else f.contentWindow.nav('page', cs.pg); } }catch(e){} }
   function pvRefresh(delay){
     clearTimeout(pvT);
@@ -1308,8 +1480,8 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     err.textContent = '';
     if(needAuth({ t:'make' }, 'Sign in to package ' + n + '. Your boxes and their order are kept.')) return;
     var inb = function(f){ return cs.b.indexOf(f.split('.')[0]) > -1; }, rn = {}; Object.keys(cs.r).forEach(function(f){ if(inb(f) && cs.r[f]) rn[f] = cs.r[f]; });
-    var o2 = { f:cs.f, c:cs.c, th:cs.th, m:cs.m, g:cs.g, bt:JSON.parse(JSON.stringify(cs.bt)), k:rid(), n:n.slice(0, 22), a:cs.a.toUpperCase(), b:cs.b.slice(), o:cs.ord.slice(), h:cs.h.filter(inb), r:rn, x:JSON.parse(JSON.stringify(cs.x)).map(function(bx){ bx.f = bx.f.filter(function(f){ return f.l.trim(); }); return bx; }) };
-    saved.unshift(o2); store('lbs-custom', saved); $('mine').innerHTML = mineHtml(); pushPrefs(); finish(o2, btn, true);
+    var o2 = { f:cs.f, c:cs.c, th:cs.th, m:cs.m, g:cs.g, bt:JSON.parse(JSON.stringify(cs.bt)), k:cs.edit || rid(), lk:JSON.parse(JSON.stringify(cs.lk)), n:n.slice(0, 22), a:cs.a.toUpperCase(), b:cs.b.slice(), o:cs.ord.slice(), h:cs.h.filter(inb), r:rn, x:JSON.parse(JSON.stringify(cs.x)).map(function(bx){ bx.f = bx.f.filter(function(f){ return f.l.trim(); }); return bx; }) };
+    var ei = cs.edit ? saved.map(function(q){ return q.k; }).indexOf(cs.edit) : -1; if(ei > -1) saved[ei] = o2; else saved.unshift(o2); store('lbs-custom', saved); $('mine').innerHTML = mineHtml(); pushPrefs(); var wasEdit = !!cs.edit; cs.edit = null; finish(o2, btn, !wasEdit);
   }
   function rid(){ return Math.random().toString(36).slice(2, 8); }
   function appRow(a){ return (rows || []).filter(function(x){ return x.app === a; })[0]; }
@@ -1322,8 +1494,9 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       else if(a === 'signout'){ setSess(null); location.hash = ''; render(); toast('Signed out'); }
       else if(a === 'vchange'){ verifyFor = ''; mode = 'up'; var f1 = $('signin'); if(f1) f1.innerHTML = authForm(); }
       else if(a === 'vdone'){ verifyFor = ''; mode = 'in'; var f2 = $('signin'); if(f2){ f2.innerHTML = authForm(); var ae = $('ae'); if(ae) ae.value = lastEmail; var ap = $('ap'); if(ap) ap.focus(); } }
-      else if(a === 'lmake'){ var lo = $('lout'), le = edOf($('lsel').value); if(!lo || !le) return; lo.innerHTML = '<p class="hint" style="margin-top:14px">Making your code\u2026</p>'; linkFor(le, true).then(function(u){ lo.innerHTML = '<div class="lq">' + qrSvg(u) + '<div><ol><li>Open the camera on your phone and point it at the code.</li><li>Tap the link. The logbook opens already signed in.</li><li>Tap Share, then <b>Add to Home Screen</b> (iPhone), or open the menu and tap <b>Install app</b> (Android).</li></ol><div class="urlbox"><input type="text" readonly value="' + esc(u) + '" id="lu" aria-label="Link"><button class="btn" data-act="lcopy" type="button">Copy</button></div><p class="hint" style="margin-top:8px">The sign-in part of this link works once. Make a new code any time.</p></div></div>'; }); }
-      else if(a === 'lcopy'){ var li = $('lu'); if(li){ li.select(); try{ navigator.clipboard.writeText(li.value).then(function(){ toast('Link copied'); }, function(){ document.execCommand('copy'); toast('Link copied'); }); }catch(x){ try{ document.execCommand('copy'); toast('Link copied'); }catch(y){} } } }
+      else if(a === 'medit'){ var eo = saved[+b.dataset.i]; if(!eo) return; var cp = function(v){ return JSON.parse(JSON.stringify(v)); };
+        cs = { f:eo.f || 'sans', c:eo.c || 'soft', th:eo.th || 'light', m:eo.m || 'reticle', g:eo.g || '', bt:cp(eo.bt || {}), n:eo.n, a:eo.a, ord:(eo.o && eo.o.length ? eo.o.slice() : (eo.b || []).concat((eo.x || []).map(function(q){ return 'cx_' + q.k; }))), b:(eo.b || []).slice(), h:(eo.h || []).slice(), r:cp(eo.r || {}), x:cp(eo.x || []), lk:cp(eo.lk || []), edit:eo.k, sel:'home', pg:'home' };
+        location.hash = '#/create'; render(); }
       else if(a === 'forgot'){ mode = 'forgot'; authNote = ''; var f3 = $('signin'); if(f3) f3.innerHTML = authForm(); }
       else if(a === 'back'){ mode = 'in'; authNote = ''; var f4 = $('signin'); if(f4) f4.innerHTML = authForm(); }
       else if(a === 'mode'){ mode = mode === 'in' ? 'up' : 'in'; var f = $('signin'); if(f) f.innerHTML = authForm(); }
