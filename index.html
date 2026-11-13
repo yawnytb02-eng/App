@@ -489,6 +489,9 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 .lksg,.lkadd{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}.lksg>span,.lkadd>span{font-size:13px;font-weight:700;color:var(--soft);width:100%}.lksg button{font:600 13.5px/1.2 inherit;padding:9px 13px;border-radius:99px;border:1px dashed var(--line2);background:none;color:var(--ink);cursor:pointer;text-align:left}.lksg button:hover{background:var(--panel)}.lkwarn{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .xlinks{width:100%;margin-top:10px}.ovb{margin:0 0 10px}.ovb .btn{width:100%}
 .lcard{padding:0}.lcard>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 16px}.lcard>summary::-webkit-details-marker{display:none}.lcard .lksent{margin:0;font-size:14.5px;color:var(--ink)}.lkchg{font-size:13px;font-weight:700;color:var(--soft);white-space:nowrap}.lcard[open] .lkchg{display:none}.lkbody{padding:0 16px 16px;border-top:1px solid var(--line);padding-top:14px}.lkbody .xdel{margin-top:12px}.lkmore{margin-top:14px}.lkmore>summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--soft)}.lkmore .lkadd{margin-top:10px}.lksg{margin-top:14px}
+.stcols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}.stl{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:10px}.stl li{padding-left:24px;position:relative;font-size:14.5px;line-height:1.45;color:var(--soft)}.stl li:before{content:"\2713";position:absolute;left:0;font-weight:800;color:var(--ink)}.stpaid{border-color:var(--ink)}
+.stps{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:12px}.stp{text-align:left;border:1.5px solid var(--line2);background:var(--bg);color:var(--ink);border-radius:16px;padding:16px;cursor:pointer;font:inherit;display:block}.stp b{font-size:30px;letter-spacing:-.04em}.stp span{font-size:14px;color:var(--soft);margin-left:6px;font-weight:600}.stp small{display:block;margin-top:8px;font-size:13px;line-height:1.45;color:var(--mute)}.stp.on{border-color:var(--ink);box-shadow:0 0 0 2px var(--ink) inset}.stgo{width:100%;max-width:360px}.stok{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14.5px;line-height:1.5}
+@media(max-width:760px){.stcols,.stps{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -600,6 +603,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>',
     lib:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg>',
     plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
+    star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
     me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
   };
 
@@ -1354,6 +1358,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var size = (rows || []).reduce(function(a, r){ return a + r.size; }, 0);
     return '<div class="vh"><div><h1>Account</h1></div></div><div class="acct"><div class="box"><h3>Signed in</h3><dl><dt>Email</dt><dd>' + esc(sess.email || '') + '</dd><dt>Logbooks synced</dt><dd>' + (rows ? rows.length : 0) + '</dd><dt>Data stored</dt><dd>' + Math.max(1, Math.round(size / 1024)) + ' KB</dd><dt>Last checked</dt><dd>' + (lastLoad ? esc(ago(new Date(lastLoad))) : 'Not yet') + '</dd></dl><div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-act="refresh" type="button">Refresh</button><button class="btn" data-act="signout" type="button">Sign out</button></div></div>'
       + '<div class="box"><h3>How your logbooks stay separate</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Every logbook has its own storage key, such as <b>readinggirl-logbook-v1</b>. On your phone that is its own private data, so one logbook never reads another. In your account each logbook is its own row, tied to you and locked so only you can read it. They share the same app and the same login, never the same data.</p></div>'
+      + '<div class="box"><h3>Steady</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Sync, cloud backup, full-year charts and unlimited custom logbooks. Opens soon.</p><a class="btn ghost sm" href="#/steady" style="margin-top:10px;display:inline-block">See Steady</a></div>'
       + '<div class="box"><h3>Turn sync on</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Open a logbook on your phone, sign in with this account, then go to Settings and switch Sync on. Changes upload in the background and appear here.</p></div></div>';
   }
 
@@ -1430,16 +1435,35 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   window.addEventListener('scroll', introKick, { passive:true }); window.addEventListener('resize', introKick);
 
   /* ================= shell (signed in) ================= */
-  function route(){ var h = location.hash || ''; var m = /^#\/(lb\/(.+)|library|create|account)?$/.exec(h); if(!m) return { v:'dash' }; if(m[2]){ var a; try{ a = decodeURIComponent(m[2]); }catch(e){ a = m[2]; } return { v:'lb', app:a }; } return { v:m[1] || 'dash' }; }
+  function route(){ var h = location.hash || ''; var m = /^#\/(lb\/(.+)|library|create|account|steady)?$/.exec(h); if(!m) return { v:'dash' }; if(m[2]){ var a; try{ a = decodeURIComponent(m[2]); }catch(e){ a = m[2]; } return { v:'lb', app:a }; } return { v:m[1] || 'dash' }; }
+
+  /* ================= Steady: the paid tier. Opens soon; for now people join the list. ================= */
+  var stPlan = 'yearly';
+  var STP = [['yearly', '$29', 'a year', 'About $2.42 a month. The best fit for most people.'], ['lifetime', '$49', 'once', 'Founding price for the first 200 people. Pay once, keep Steady for good.'], ['monthly', '$4.99', 'a month', 'Cancel any time.']];
+  function steadyDone(){ return store('steady-int') || {}; }
+  function viewSteady(){
+    var done = steadyDone(), joined = Object.keys(done), pn = { yearly:'the yearly plan', monthly:'the monthly plan', lifetime:'the founding lifetime plan' };
+    var free = ['Every logbook, daily logging, streaks and reminders', 'The weekly look-back and your pattern', 'One custom logbook', 'Charts for the last 30 days', 'Backup file: download and restore any time'];
+    var paid = ['Sync across your phone and computer', 'Cloud backup, so a lost phone does not lose your streak', 'Full-year charts, trends and comparisons', 'As many custom logbooks as you want'];
+    var li = function(a){ return '<ul class="stl">' + a.map(function(x){ return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; };
+    var cards = STP.map(function(p){ return '<button type="button" class="stp' + (stPlan === p[0] ? ' on' : '') + '" data-act="splan" data-p="' + p[0] + '" aria-pressed="' + (stPlan === p[0]) + '"><b>' + p[1] + '</b><span>' + p[2] + '</span><small>' + esc(p[3]) + '</small></button>'; }).join('');
+    var cta = joined.length
+      ? '<div class="stok" role="status"><b>You are on the list.</b> We will email you once when Steady opens, with the founding price for ' + esc(pn[joined[0]] || 'your plan') + '. Nothing was charged.</div>'
+      : '<button class="btn stgo" type="button" data-act="sjoin">Get Steady</button><p class="hint" style="margin-top:10px">Steady opens soon. Choose a plan and you join the list, so you hear first. Nothing is charged today.</p>';
+    return '<div class="vh"><div><h1>Steady</h1><p class="sub">Keep every device up to date, and your streak safe. Your data is always yours: export it any time.</p></div></div>'
+      + '<div class="stcols"><div class="box"><h3>Free, always</h3>' + li(free) + '</div><div class="box stpaid"><h3>Steady</h3>' + li(paid) + '</div></div>'
+      + '<div class="box" style="margin-top:16px"><h3>Pick a plan</h3><div class="stps">' + cards + '</div><div id="stcta" style="margin-top:16px">' + cta + '</div></div>';
+  }
   function shell(){
     var rt = route(), v = rt.v, body;
     if(v === 'dash') body = viewDash();
     else if(v === 'lb') body = viewLb(rt.app);
     else if(v === 'library') body = '<div class="vh"><div><h1>Library</h1><p class="sub">Open one, or install it on your phone.</p></div></div>' + viewLibrary(true);
     else if(v === 'create') body = '<div class="vh"><div><h1>Create your own</h1><p class="sub">Make your own boxes and fields, put them in the order you want.</p></div></div>' + viewCreate();
+    else if(v === 'steady') body = viewSteady();
     else body = viewAccount();
     var cur = function(x){ return v === x ? ' aria-current="page"' : ''; };
-    var side = '<aside class="side"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a><nav aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create your own</a></nav>'
+    var side = '<aside class="side"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a><nav aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create your own</a><a href="#/steady"' + cur('steady') + '>' + IC.star + 'Steady</a></nav>'
       + '<div class="k">Your logbooks</div><div class="lbl">' + ((rows && rows.length) ? rows.map(function(r){ return '<a href="#/lb/' + encodeURIComponent(r.app) + '"' + (v === 'lb' && rt.app === r.app ? ' aria-current="page"' : '') + '><span class="dot" style="background:' + esc(r.name.acc) + '"></span>' + esc(r.name.n) + '<small title="Current streak in days">' + (r.cur ? r.cur + ' day' + (r.cur === 1 ? '' : 's') : '') + '</small></a>'; }).join('') : '<span style="padding:6px 12px;font-size:13px;color:var(--mute)">' + (loading ? 'Loading…' : 'None synced yet') + '</span>') + '</div>'
       + '<div class="me">' + MODEBTN + '<a href="#/account" style="text-decoration:none;font-weight:700;color:var(--ink);display:block">' + esc(sess.email || 'Account') + '</a><button type="button" data-act="signout">Sign out</button></div></aside>';
     var tabs = '<nav class="tabbar" aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create</a><a href="#/account"' + cur('account') + '>' + IC.me + 'Account</a></nav>';
@@ -1500,6 +1524,8 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       else if(a === 'medit'){ var eo = saved[+b.dataset.i]; if(!eo) return; var cp = function(v){ return JSON.parse(JSON.stringify(v)); };
         cs = { f:eo.f || 'sans', c:eo.c || 'soft', th:eo.th || 'light', m:eo.m || 'reticle', g:eo.g || '', bt:cp(eo.bt || {}), n:eo.n, a:eo.a, ord:(eo.o && eo.o.length ? eo.o.slice() : (eo.b || []).concat((eo.x || []).map(function(q){ return 'cx_' + q.k; }))), b:(eo.b || []).slice(), h:(eo.h || []).slice(), r:cp(eo.r || {}), x:cp(eo.x || []), lk:cp(eo.lk || []), edit:eo.k, sel:'home', pg:'home' };
         location.hash = '#/create'; render(); }
+      else if(a === 'splan'){ stPlan = b.dataset.p; render(); }
+      else if(a === 'sjoin'){ b.disabled = true; fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/log_steady_interest', { method:'POST', headers:hdr(tk), body:JSON.stringify({ p_plan:stPlan, p_source:'site' }) }); }).then(function(r){ if(!r.ok) throw new Error('rpc'); var d = steadyDone(); d[stPlan] = 1; store('steady-int', d); render(); }).catch(function(){ b.disabled = false; toast('Could not save that. Try again in a moment.'); }); }
       else if(a === 'forgot'){ mode = 'forgot'; authNote = ''; var f3 = $('signin'); if(f3) f3.innerHTML = authForm(); }
       else if(a === 'back'){ mode = 'in'; authNote = ''; var f4 = $('signin'); if(f4) f4.innerHTML = authForm(); }
       else if(a === 'mode'){ mode = mode === 'in' ? 'up' : 'in'; var f = $('signin'); if(f) f.innerHTML = authForm(); }
