@@ -487,6 +487,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 .lkg .lkc{background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:14px 16px}.lkc .lkh{font-size:13px;font-weight:700;color:var(--soft)}.lkc b{display:block;font-size:30px;letter-spacing:-.04em;margin:4px 0 2px}.lkc small{display:block;font-size:13px;color:var(--mute);line-height:1.4}.lkc .lkspk{width:100%;height:auto;display:block;margin:4px 0}.lkc .lktr{height:7px;background:var(--line);border-radius:6px;overflow:hidden;margin:8px 0}.lkc .lktr i{display:block;height:100%;border-radius:6px}.lkc.due b{color:var(--accent,inherit)}
 .lkx .lkl{display:grid;gap:12px;margin:14px 0}.lcard{border:1px solid var(--line);border-radius:16px;padding:14px 16px;background:var(--panel)}.lkt{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.lkr{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.lkr select,.lkr input{min-height:44px;flex:1 1 190px;min-width:0}.lkr input{border:1px solid var(--line2);border-radius:12px;background:var(--bg);color:var(--ink);padding:0 12px;font:inherit}.lkr .lku{flex:0 1 110px}.lkw2{font-size:13.5px;color:var(--soft);font-weight:600}.lcard .lkn{width:100%;margin-top:10px}.lksent{font-size:13.5px;color:var(--soft);line-height:1.5;margin:10px 0 0}.lcard .lksent b{color:var(--ink)}
 .lksg,.lkadd{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}.lksg>span,.lkadd>span{font-size:13px;font-weight:700;color:var(--soft);width:100%}.lksg button{font:600 13.5px/1.2 inherit;padding:9px 13px;border-radius:99px;border:1px dashed var(--line2);background:none;color:var(--ink);cursor:pointer;text-align:left}.lksg button:hover{background:var(--panel)}.lkwarn{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.xlinks{width:100%;margin-top:10px}.ovb{margin:0 0 10px}.ovb .btn{width:100%}
 </style>
 </head>
 <body>
@@ -1273,6 +1274,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     }).join('');
     var lib = BOXES.filter(function(b){ return cs.ord.indexOf(b[0]) < 0; });
     return home + '<div id="irs">' + rows + '</div>' + (cs.ord.length ? '' : '<p class="empty">Nothing here yet. Make your first box.</p>')
+      + '<button type="button" class="btn ghost xlinks" data-sel="links">Links: connect your data' + (cs.lk.length ? ' (' + cs.lk.length + ')' : '') + '</button>'
       + '<button type="button" class="btn xnew2" data-xnew="1"' + (cs.x.length >= 5 ? ' disabled' : '') + '>New box</button>'
       + (lib.length ? '<div class="lib"><span>Or add a ready-made box</span>' + lib.map(function(b){ return '<button type="button" data-addcore="' + b[0] + '">' + esc(b[1]) + '</button>'; }).join('') + '</div>' : '');
   }
@@ -1296,7 +1298,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var o = { b:cs.b, h:cs.h, x:cs.x }, nf = fieldCount(o);
     return '<div class="xb ov"><h3 class="xt2">' + (cs.edit ? 'Edit your logbook' : 'Build your page') + '</h3>' + (cs.edit ? '<p class="hint lkwarn">You are editing a logbook you already made. Links and looks update on your phone when you open the new link. New boxes and fields only appear on a fresh install.</p>' : '') + '<p class="hint">Every box is a page in your logbook. Make your own from scratch, or add a ready-made one, then drag them into the order you want. The phone shows exactly what you get.</p>'
       + '<div class="ovs"><div><b>' + cs.ord.length + '</b><span>' + (cs.ord.length === 1 ? 'box' : 'boxes') + '</span></div><div><b>' + nf + '</b><span>' + (nf === 1 ? 'field' : 'fields') + '</span></div></div>'
-      + (cs.x.length < 5 ? '<button type="button" class="btn" data-xnew="1">New box</button>' : '<p class="hint">You have made the most boxes of your own (5).</p>') + '</div>' + lookHtml();
+      + '<div class="ovb"><button type="button" class="btn ghost" data-sel="links">Links: connect your data</button></div>' + (cs.x.length < 5 ? '<button type="button" class="btn" data-xnew="1">New box</button>' : '<p class="hint">You have made the most boxes of your own (5).</p>') + '</div>' + lookHtml();
   }
   function seg(key, list, render){ return '<div class="seg" role="group">' + list.map(function(o){ var on = cs[key] === o[0]; return '<button type="button" data-lk="' + key + ':' + o[0] + '" aria-pressed="' + on + '"' + (render ? ' class="rich"' : '') + '>' + (render ? render(o) : o[1]) + '</button>'; }).join('') + '</div>'; }
   function lookHtml(){
