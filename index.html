@@ -1016,7 +1016,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="spk" role="img" aria-label="Trend"><polyline points="' + xy.map(function(p){ return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '" fill="none" stroke="' + esc(col) + '" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="' + xy[xy.length - 1][0].toFixed(1) + '" cy="' + xy[xy.length - 1][1].toFixed(1) + '" r="4.5" fill="' + esc(col) + '"/></svg>';
   }
   function linksSection(r, col){
-    var o = appRow(r.app), ed = o && o.ed; if(!ed || !ed.k || !ed.x) return '';
+    var o = appRow(r.app), ed = o && o.ed; if(!ed || !ed.k) return '';
     var idx = saved.indexOf(ed), edit = idx > -1 ? '<button class="btn ghost sm" type="button" data-act="medit" data-i="' + idx + '">' + ((ed.lk || []).length ? 'Edit links' : 'Add links') + '</button>' : '';
     var nm = function(ref){ var q = ref.split('.'), b = r.data && r.data.bx && r.data.bx.boxes && r.data.bx.boxes[q[0]], f = b && (b.fields || []).filter(function(x){ return x.id === q[1]; })[0]; return f ? f.label : ref; };
     var items = LK.run(r.days, lkPack(ed), ymd(new Date()), nm, function(id){ return pageName(id, r.data); }).filter(function(x){ return !x.carry; });
