@@ -488,6 +488,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 .lkx .lkl{display:grid;gap:12px;margin:14px 0}.lcard{border:1px solid var(--line);border-radius:16px;padding:14px 16px;background:var(--panel)}.lkt{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}.lkr{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.lkr select,.lkr input{min-height:44px;flex:1 1 190px;min-width:0}.lkr input{border:1px solid var(--line2);border-radius:12px;background:var(--bg);color:var(--ink);padding:0 12px;font:inherit}.lkr .lku{flex:0 1 110px}.lkw2{font-size:13.5px;color:var(--soft);font-weight:600}.lcard .lkn{width:100%;margin-top:10px}.lksent{font-size:13.5px;color:var(--soft);line-height:1.5;margin:10px 0 0}.lcard .lksent b{color:var(--ink)}
 .lksg,.lkadd{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}.lksg>span,.lkadd>span{font-size:13px;font-weight:700;color:var(--soft);width:100%}.lksg button{font:600 13.5px/1.2 inherit;padding:9px 13px;border-radius:99px;border:1px dashed var(--line2);background:none;color:var(--ink);cursor:pointer;text-align:left}.lksg button:hover{background:var(--panel)}.lkwarn{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
 .xlinks{width:100%;margin-top:10px}.ovb{margin:0 0 10px}.ovb .btn{width:100%}
+.lcard{padding:0}.lcard>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px 16px}.lcard>summary::-webkit-details-marker{display:none}.lcard .lksent{margin:0;font-size:14.5px;color:var(--ink)}.lkchg{font-size:13px;font-weight:700;color:var(--soft);white-space:nowrap}.lcard[open] .lkchg{display:none}.lkbody{padding:0 16px 16px;border-top:1px solid var(--line);padding-top:14px}.lkbody .xdel{margin-top:12px}.lkmore{margin-top:14px}.lkmore>summary{cursor:pointer;font-weight:700;font-size:14px;color:var(--soft)}.lkmore .lkadd{margin-top:10px}.lksg{margin-top:14px}
 </style>
 </head>
 <body>
@@ -1173,7 +1174,8 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     else if(L.t === 'since') body = '<div class="lkr">' + lkSel(L.i, 'a', L.a, fo, 'Choose a field') + '</div>';
     else if(L.t === 'rule') body = '<div class="lkr"><span class="lkw2">When I log</span>' + lkSel(L.i, 'a', L.a, bo, 'Choose a box') + '<span class="lkw2">also log</span>' + lkSel(L.i, 'b', L.b, bo, 'Choose a box') + '</div>';
     else body = '<div class="lkr">' + lkSel(L.i, 'a', L.a, fo, 'Choose a field') + '</div>';
-    return '<div class="lcard" data-lkc="' + L.i + '"><div class="lkt"><b>' + LKT[L.t] + '</b><button type="button" class="xrm" data-lkdel="' + L.i + '" aria-label="Remove this link">&times;</button></div>' + body + '<input type="text" class="xl lkn" data-lkk="' + L.i + ':n" maxlength="30" placeholder="Name (optional)" value="' + esc(L.n || '') + '" aria-label="Link name"><p class="lksent" id="lks-' + L.i + '">' + lkSentence(L, F) + '</p></div>';
+    var needs = !L.a || (L.t === 'calc' && !L.b) || (L.t === 'rule' && !L.b) || cs.lkOpen === L.i;
+    return '<details class="lcard" data-lkc="' + L.i + '"' + (needs ? ' open' : '') + '><summary><span class="lksent" id="lks-' + L.i + '">' + lkSentence(L, F) + '</span><span class="lkchg">Change</span></summary><div class="lkbody">' + body + '<input type="text" class="xl lkn" data-lkk="' + L.i + ':n" maxlength="30" placeholder="Name it (optional)" value="' + esc(L.n || '') + '" aria-label="Link name"><button type="button" class="xdel" data-lkdel="' + L.i + '">Remove this link</button></div></details>';
   }
   function lkSuggest(){
     var F = fieldOpts(), N = F.filter(function(f){ return !f.tog; }), T = F.filter(function(f){ return f.tog; }), s = [], have = {};
@@ -1188,20 +1190,20 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   }
   function linksEditor(){
     var F = fieldOpts(), sg = lkSuggest(), full = cs.lk.length >= 12;
-    return '<div class="xb lkx"><h3 class="xt2">Links</h3><p class="hint">Links connect the things you log. A field can feed another field, a box can depend on another box, and a day can look back at the days before it. Each link shows up on Home on your phone and in the Links section of the web dashboard.</p>'
-      + (F.length ? '' : '<p class="hint lkwarn">Add a number, money, scale or yes/no field to one of your boxes first. Links work on those.</p>')
-      + (sg.length ? '<div class="lksg"><span>Suggested for your boxes</span>' + sg.map(function(x, i){ return '<button type="button" data-lksug="' + i + '"' + (full ? ' disabled' : '') + '>' + esc(x.label) + '</button>'; }).join('') + '</div>' : '')
-      + '<div class="lkl">' + (cs.lk.length ? cs.lk.map(lkCard).join('') : '<p class="empty">No links yet. Add one below.</p>') + '</div>'
-      + '<div class="lkadd"><span>Add a link</span>' + Object.keys(LKT).map(function(t){ return '<button type="button" class="btn sm" data-lkadd="' + t + '"' + (full ? ' disabled' : '') + '>' + LKT[t] + '</button>'; }).join('') + '</div></div>';
+    return '<div class="xb lkx"><h3 class="xt2">Links</h3><p class="hint">Turn what you log into totals, goals and streaks. Tap a suggestion to add it.</p>'
+      + (F.length ? '' : '<p class="hint lkwarn">Add a number or yes/no field to one of your boxes first.</p>')
+      + (sg.length ? '<div class="lksg">' + sg.map(function(x, i){ return '<button type="button" data-lksug="' + i + '"' + (full ? ' disabled' : '') + '>' + esc(x.label) + '</button>'; }).join('') + '</div>' : '')
+      + (cs.lk.length ? '<div class="lkl">' + cs.lk.map(lkCard).join('') + '</div>' : '')
+      + '<details class="lkmore"><summary>Add your own</summary><div class="lkadd">' + Object.keys(LKT).map(function(t){ return '<button type="button" class="btn ghost sm" data-lkadd="' + t + '"' + (full ? ' disabled' : '') + '>' + LKT[t] + '</button>'; }).join('') + '</div></details></div>';
   }
   function lkRefresh(){ var e = $('sed'); if(e && cs.sel === 'links') e.innerHTML = editorHtml(); var l = $('sl'); if(l) l.innerHTML = listHtml(); pvRefresh(500); }
   document.addEventListener('click', function(e){
     var a = e.target.closest && e.target.closest('[data-lkadd],[data-lkdel],[data-lksug]'); if(!a || !$('sed') || !$('sed').contains(a)) return;
     if(a.dataset.lkadd){ if(cs.lk.length >= 12) return; var t = a.dataset.lkadd, F = fieldOpts(), L = { i:rid().slice(0, 4), t:t, n:'' };
       if(t === 'rule'){ L.a = cs.ord[0] || ''; L.b = cs.ord[1] || ''; } else { L.a = F[0] ? F[0].ref : ''; if(t === 'calc'){ L.b = F[1] ? F[1].ref : ''; L.o = '-'; } if(t === 'roll'){ L.d = 7; L.g = 'sum'; } if(t === 'goal'){ L.v = 1; L.p = 'day'; } }
-      cs.lk.push(L); lkRefresh(); return; }
+      cs.lk.push(L); cs.lkOpen = L.i; lkRefresh(); return; }
     if(a.dataset.lkdel){ cs.lk = cs.lk.filter(function(L){ return L.i !== a.dataset.lkdel; }); lkRefresh(); return; }
-    if(a.dataset.lksug != null){ var s = lkSuggest()[+a.dataset.lksug]; if(!s || cs.lk.length >= 12) return; s.o.i = rid().slice(0, 4); s.o.n = ''; cs.lk.push(s.o); lkRefresh(); }
+    if(a.dataset.lksug != null){ var s = lkSuggest()[+a.dataset.lksug]; if(!s || cs.lk.length >= 12) return; s.o.i = rid().slice(0, 4); s.o.n = ''; cs.lk.push(s.o); cs.lkOpen = null; lkRefresh(); }
   });
   function lkEdit(e){
     var t = e.target; if(!t.dataset || !t.dataset.lkk) return; var p = t.dataset.lkk.split(':'), L = cs.lk.filter(function(x){ return x.i === p[0]; })[0]; if(!L) return;
@@ -1267,14 +1269,13 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function listHtml(){
     var last = cs.ord.length - 1;
     var home = '<div class="ir home' + (cs.sel === 'home' ? ' sel' : '') + '"><span class="grip off"></span><button type="button" class="inm" data-sel="home"><b>Home</b><span>The first screen. Always first.</span></button></div>';
-    home += '<div class="ir home' + (cs.sel === 'links' ? ' sel' : '') + '"><span class="grip off"></span><button type="button" class="inm" data-sel="links"><b>Links</b><span>' + (cs.lk.length ? cs.lk.length + (cs.lk.length === 1 ? ' link' : ' links') + ' \u00b7 connect your data' : 'Connect fields, boxes and days') + '</span></button></div>';
     var rows = cs.ord.map(function(id, i){
       var m = itemMeta(id); if(!m) return '';
       return '<div class="ir' + (cs.sel === id ? ' sel' : '') + (m.mine ? ' mine' : '') + '" draggable="true" data-it="' + id + '"><span class="grip" aria-hidden="true">' + GRIP + '</span><button type="button" class="inm" data-sel="' + id + '"><b>' + esc(m.name) + '</b><span>' + esc(m.sub) + '</span></button><span class="mvs"><button type="button" data-mv="' + id + ':-1" aria-label="Move ' + esc(m.name) + ' up"' + (i === 0 ? ' disabled' : '') + '>' + ARR.up + '</button><button type="button" data-mv="' + id + ':1" aria-label="Move ' + esc(m.name) + ' down"' + (i === last ? ' disabled' : '') + '>' + ARR.dn + '</button></span></div>';
     }).join('');
     var lib = BOXES.filter(function(b){ return cs.ord.indexOf(b[0]) < 0; });
     return home + '<div id="irs">' + rows + '</div>' + (cs.ord.length ? '' : '<p class="empty">Nothing here yet. Make your first box.</p>')
-      + '<button type="button" class="btn ghost xlinks" data-sel="links">Links: connect your data' + (cs.lk.length ? ' (' + cs.lk.length + ')' : '') + '</button>'
+      + '<button type="button" class="btn ghost xlinks" data-sel="links">Links' + (cs.lk.length ? ' (' + cs.lk.length + ')' : '') + '</button>'
       + '<button type="button" class="btn xnew2" data-xnew="1"' + (cs.x.length >= 5 ? ' disabled' : '') + '>New box</button>'
       + (lib.length ? '<div class="lib"><span>Or add a ready-made box</span>' + lib.map(function(b){ return '<button type="button" data-addcore="' + b[0] + '">' + esc(b[1]) + '</button>'; }).join('') + '</div>' : '');
   }
@@ -1298,7 +1299,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var o = { b:cs.b, h:cs.h, x:cs.x }, nf = fieldCount(o);
     return '<div class="xb ov"><h3 class="xt2">' + (cs.edit ? 'Edit your logbook' : 'Build your page') + '</h3>' + (cs.edit ? '<p class="hint lkwarn">You are editing a logbook you already made. Links and looks update on your phone when you open the new link. New boxes and fields only appear on a fresh install.</p>' : '') + '<p class="hint">Every box is a page in your logbook. Make your own from scratch, or add a ready-made one, then drag them into the order you want. The phone shows exactly what you get.</p>'
       + '<div class="ovs"><div><b>' + cs.ord.length + '</b><span>' + (cs.ord.length === 1 ? 'box' : 'boxes') + '</span></div><div><b>' + nf + '</b><span>' + (nf === 1 ? 'field' : 'fields') + '</span></div></div>'
-      + '<div class="ovb"><button type="button" class="btn ghost" data-sel="links">Links: connect your data</button></div>' + (cs.x.length < 5 ? '<button type="button" class="btn" data-xnew="1">New box</button>' : '<p class="hint">You have made the most boxes of your own (5).</p>') + '</div>' + lookHtml();
+      + (cs.x.length < 5 ? '<button type="button" class="btn" data-xnew="1">New box</button>' : '<p class="hint">You have made the most boxes of your own (5).</p>') + '</div>' + lookHtml();
   }
   function seg(key, list, render){ return '<div class="seg" role="group">' + list.map(function(o){ var on = cs[key] === o[0]; return '<button type="button" data-lk="' + key + ':' + o[0] + '" aria-pressed="' + on + '"' + (render ? ' class="rich"' : '') + '>' + (render ? render(o) : o[1]) + '</button>'; }).join('') + '</div>'; }
   function lookHtml(){
