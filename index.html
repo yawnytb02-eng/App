@@ -1362,6 +1362,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     return '<div class="vh"><div><h1>Account</h1></div></div><div class="acct"><div class="box"><h3>Signed in</h3><dl><dt>Email</dt><dd>' + esc(sess.email || '') + '</dd><dt>Logbooks synced</dt><dd>' + (rows ? rows.length : 0) + '</dd><dt>Data stored</dt><dd>' + Math.max(1, Math.round(size / 1024)) + ' KB</dd><dt>Last checked</dt><dd>' + (lastLoad ? esc(ago(new Date(lastLoad))) : 'Not yet') + '</dd></dl><div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-act="refresh" type="button">Refresh</button><button class="btn" data-act="signout" type="button">Sign out</button></div></div>'
       + '<div class="box"><h3>How your logbooks stay separate</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Every logbook has its own storage key, such as <b>readinggirl-logbook-v1</b>. On your phone that is its own private data, so one logbook never reads another. In your account each logbook is its own row, tied to you and locked so only you can read it. They share the same app and the same login, never the same data.</p></div>'
       + '<div class="box"><h3>Steady</h3><dl><dt>Your plan</dt><dd>' + esc(planLine()) + '</dd></dl><a class="btn ghost sm" href="#/steady" style="margin-top:10px;display:inline-block">' + (ent && ent.steady ? 'See Steady' : 'About Steady') + '</a></div>'
+      + (isAdmin ? '<div class="box"><h3>Subscriptions (owner only)</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Right now: <b>' + (BILLING_LIVE ? 'subscriptions are ON. Free accounts have limits and people can pay.' : 'FREE for everyone. No limits, nobody can pay.') + '</b></p><button class="btn' + (BILLING_LIVE ? ' ghost' : '') + ' sm" type="button" data-act="sadm" style="margin-top:10px">' + (BILLING_LIVE ? 'Turn subscriptions off (free for all)' : 'Turn subscriptions on') + '</button></div>' : '')
       + '<div class="box"><h3>Turn sync on</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Open a logbook on your phone, sign in with this account, then go to Settings and switch Sync on. Changes upload in the background and appear here.</p></div></div>';
   }
 
@@ -1442,13 +1443,20 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 
 
   /* ================= Steady entitlement and free limits ================= */
-  var BILLING_LIVE = false;   /* flip to true at launch: turns on free limits and the Pay button */
+  var BILLING_LIVE = false;   /* set from the database switch (app_flags.enforce_steady); free for everyone until the owner turns it on */
+  var isAdmin = false;
+  function loadFlags(){
+    return fetch(SB + '/rest/v1/rpc/get_flags', { method:'POST', headers:{ 'apikey':KEY, 'Content-Type':'application/json' }, body:'{}' }).then(j).then(function(r){
+      var on = !!(r.ok && r.j && r.j.enforce_steady === true); if(on !== BILLING_LIVE){ BILLING_LIVE = on; render(); } }).catch(function(){});
+  }
+  loadFlags();
   try{ var lm = /[?&]limits=(on|off)/.exec(location.search); if(lm) localStorage.setItem('dev-limits', lm[1]); }catch(e){}
   function limitsOn(){ var d = null; try{ d = localStorage.getItem('dev-limits'); }catch(e){} return d === 'on' ? true : d === 'off' ? false : BILLING_LIVE; }
   var ent = null;
   function isSteady(){ return !limitsOn() || !!(ent && ent.steady); }
   function loadEnt(){
     if(!sess) return Promise.resolve();
+    fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/am_i_admin', { method:'POST', headers:hdr(tk), body:'{}' }); }).then(j).then(function(r){ var a = r.ok && r.j === true; if(a !== isAdmin){ isAdmin = a; render(); } }).catch(function(){});
     return rpc('get_entitlement').then(function(a){ ent = Array.isArray(a) && a[0] ? a[0] : { steady:false }; render(); }).catch(function(){});
   }
   function planLine(){
@@ -1557,6 +1565,13 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
         b.disabled = true; if(ee) ee.textContent = 'Opening checkout...';
         fresh().then(function(tk){ return fetch(SB + '/functions/v1/start-checkout', { method:'POST', headers:hdr(tk), body:JSON.stringify({ plan:stPlan }) }); }).then(j).then(function(r){
           if(r.ok && r.j && r.j.url){ location.href = r.j.url; return; } throw new Error('x'); }).catch(function(){ b.disabled = false; if(ee) ee.textContent = 'Could not open checkout. Try again in a moment.'; });
+      }
+      else if(a === 'sadm'){
+        var turnOn = !BILLING_LIVE;
+        if(!confirm(turnOn ? 'Turn subscriptions ON for everyone? Free accounts get limits and the Pay button appears. Only do this when Polar is approved and the payment functions are deployed.' : 'Turn subscriptions OFF? Everyone gets everything for free again.')) return;
+        b.disabled = true;
+        fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/set_enforce_steady', { method:'POST', headers:hdr(tk), body:JSON.stringify({ p_on:turnOn }) }); }).then(j).then(function(r){
+          if(!r.ok) throw new Error('x'); BILLING_LIVE = turnOn; toast(turnOn ? 'Subscriptions are ON.' : 'Subscriptions are OFF. Everything is free.'); render(); }).catch(function(){ b.disabled = false; toast('Could not change it. Check the owner setup SQL has been run.'); });
       }
       else if(a === 'sref'){ loadEnt().then(function(){ toast(ent && ent.steady ? 'Steady is on. Thank you.' : 'No payment found yet. It can take a minute.'); }); }
       else if(a === 'sjoin'){ b.disabled = true; fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/log_steady_interest', { method:'POST', headers:hdr(tk), body:JSON.stringify({ p_plan:stPlan, p_source:'site' }) }); }).then(function(r){ if(!r.ok) throw new Error('rpc'); var d = steadyDone(); d[stPlan] = 1; store('steady-int', d); render(); }).catch(function(){ b.disabled = false; toast('Could not save that. Try again in a moment.'); }); }
