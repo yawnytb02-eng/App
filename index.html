@@ -496,33 +496,40 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 
 /* Steady member page: one moment, the seal is stamped, the ring fills, the perks tick on */
 .mb{--el:0s;position:relative;display:grid;grid-template-columns:220px 1fr;gap:28px;align-items:center;background:var(--panel);border:1.5px solid var(--ink);border-radius:24px;padding:28px 32px;margin-top:6px;overflow:hidden}
-.mbseal{position:relative;width:200px;height:200px;margin:0 auto}.mbseal svg{width:100%;height:100%;display:block;overflow:visible}
-.mbstamp{transform-origin:50% 50%;transform:rotate(-5deg);animation:mbstamp .62s cubic-bezier(.2,1.5,.4,1) both;animation-delay:calc(.15s + var(--el))}
-@keyframes mbstamp{0%{transform:scale(1.7) rotate(-14deg);opacity:0}55%{opacity:1}100%{transform:scale(1) rotate(-5deg);opacity:1}}
-.mbtrk{fill:none;stroke:var(--line2);stroke-width:7}.mbarc{fill:none;stroke:var(--acc);stroke-width:7;stroke-linecap:round;stroke-dasharray:var(--c) var(--c);stroke-dashoffset:var(--c);transform:rotate(-90deg);transform-origin:100px 100px;animation:mbarc 1.25s cubic-bezier(.3,.7,.2,1) both;animation-delay:calc(.7s + var(--el))}
+.mbseal{position:relative;width:208px;height:208px;margin:0 auto;isolation:isolate}
+.mbseal:before{content:"";position:absolute;inset:-28%;z-index:-1;border-radius:50%;background:radial-gradient(closest-side,color-mix(in srgb,var(--acc) 38%,transparent),transparent 72%);opacity:0;animation:mbglow 1.8s ease both;animation-delay:calc(.45s + var(--el))}
+@keyframes mbglow{to{opacity:1}}
+.mbseal svg{width:100%;height:100%;display:block;overflow:visible;filter:drop-shadow(0 16px 20px color-mix(in srgb,var(--acc) 30%,transparent))}
+.mbdisc{transform-origin:50% 50%;animation:mbemerge 1.1s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(.1s + var(--el))}
+@keyframes mbemerge{from{opacity:0;transform:scale(.82);filter:blur(10px)}to{opacity:1;transform:none;filter:blur(0)}}
+.mbtrk{fill:none;stroke:var(--line2);stroke-width:1.4}
+.mbarc{fill:none;stroke:var(--acc);stroke-width:2.4;stroke-linecap:round;stroke-dasharray:var(--c) var(--c);stroke-dashoffset:var(--c);transform:rotate(-90deg);transform-origin:104px 104px;animation:mbarc 1.7s cubic-bezier(.3,.7,.2,1) both;animation-delay:calc(.7s + var(--el))}
 @keyframes mbarc{to{stroke-dashoffset:var(--to)}}
-.mbin{fill:none;stroke:var(--ink);stroke-width:1.3;stroke-dasharray:2 5;opacity:.55}.mbtx{font:800 12.5px/1 var(--font);letter-spacing:.2em;fill:var(--ink)}
-.mbc{font:800 52px/1 var(--font);letter-spacing:-.05em;fill:var(--ink);text-anchor:middle}.mbcs{font:700 12.5px/1 var(--font);fill:var(--soft);text-anchor:middle}
-.mbinf,.mbck{fill:none;stroke:var(--ink);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:var(--len) var(--len);stroke-dashoffset:var(--len);animation:mbdraw .9s ease both;animation-delay:calc(1.0s + var(--el))}
+.mbdotg{transform-origin:104px 104px;transform:rotate(0);animation:mborb 1.7s cubic-bezier(.3,.7,.2,1) both;animation-delay:calc(.7s + var(--el))}
+@keyframes mborb{to{transform:rotate(var(--a))}}
+.mbdot{fill:var(--acc)}.mbdoth{fill:#fff;opacity:.85}
+.mbc{font:500 58px/1 var(--font);letter-spacing:-.05em;fill:#2B1D08;text-anchor:middle}.mbcs{font:600 11.5px/1 var(--font);letter-spacing:.14em;fill:#2B1D08;opacity:.68;text-anchor:middle}
+.mbinf{fill:none;stroke:#2B1D08;stroke-width:3.2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:var(--len) var(--len);stroke-dashoffset:var(--len);animation:mbdraw 1.3s ease both;animation-delay:calc(1.0s + var(--el))}
 @keyframes mbdraw{to{stroke-dashoffset:0}}
-.mbpt{position:absolute;left:50%;top:50%;width:9px;height:9px;margin:-4px 0 0 -4px;border-radius:2px;background:var(--acc);opacity:0;animation:mbpt 1.3s cubic-bezier(.1,.7,.3,1) both;animation-delay:calc(.62s + var(--el))}.mbpt:nth-child(3n){background:var(--ink)}.mbpt:nth-child(3n+1){border-radius:50%;width:7px;height:7px}
-@keyframes mbpt{0%{opacity:1;transform:translate(0,0) rotate(0)}100%{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(var(--r))}}
+.mbspk{fill:var(--acc);transform-box:fill-box;transform-origin:center;opacity:0;animation:mbtw 1.6s ease-out both;animation-delay:calc(1.7s + var(--k)*.3s + var(--el))}
+@keyframes mbtw{0%{opacity:0;transform:scale(.2) rotate(0)}45%{opacity:1;transform:scale(1.15) rotate(40deg)}100%{opacity:.85;transform:scale(.9) rotate(90deg)}}
+.mbpt{position:absolute;left:50%;top:50%;width:7px;height:7px;margin:-3px 0 0 -3px;border-radius:50%;background:var(--acc);opacity:0;animation:mbpt 1.5s cubic-bezier(.1,.7,.3,1) both;animation-delay:calc(.8s + var(--el))}.mbpt:nth-child(3n){background:color-mix(in srgb,var(--acc) 35%,#fff)}.mbpt:nth-child(3n+1){width:4px;height:4px}
+@keyframes mbpt{0%{opacity:1;transform:translate(0,0)}100%{opacity:0;transform:translate(var(--dx),var(--dy))}}
 .mbn{min-width:0}.mbtag{display:inline-flex;align-items:center;gap:7px;font-weight:700;font-size:13px;color:var(--soft);border:1px solid var(--line2);border-radius:99px;padding:5px 12px;background:var(--bg)}.mbtag i{width:8px;height:8px;border-radius:50%;background:#3E8E5A;display:block}
 .mbn h2{font-size:clamp(46px,8vw,76px);letter-spacing:-.055em;line-height:.95;margin:14px 0 10px;overflow:hidden}.mbn h2 span{display:inline-block;animation:mbrise .7s cubic-bezier(.2,.9,.2,1) both;animation-delay:calc(.45s + var(--el))}
 @keyframes mbrise{from{transform:translateY(105%)}to{transform:none}}
-.mbn p{color:var(--soft);font-size:15.5px;line-height:1.5;max-width:46ch}.mbfound{position:relative;display:inline-flex;align-items:center;gap:9px;margin-top:14px;padding:8px 16px 8px 10px;border-radius:99px;background:var(--ink);color:var(--bg);font-weight:700;font-size:14px;letter-spacing:-.01em;overflow:hidden;isolation:isolate}
-.mbfound:before{content:"";position:absolute;inset:3px;border:1px dashed color-mix(in srgb,var(--acc) 70%,transparent);border-radius:99px;pointer-events:none}
-.mbfound:after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-50%;background:linear-gradient(100deg,transparent,color-mix(in srgb,var(--acc) 55%,transparent),transparent);transform:skewX(-18deg);animation:mbshine 1.5s ease-in-out calc(1.9s + var(--el)) 1 both;pointer-events:none}
-.mbfound svg{width:20px;height:20px;flex:none}.mbfound svg .r{fill:none;stroke:var(--acc);stroke-width:5}.mbfound svg .d{fill:var(--acc)}
+.mbn p{color:var(--soft);font-size:15.5px;line-height:1.5;max-width:46ch}.mbfound{position:relative;display:inline-flex;align-items:center;gap:9px;margin-top:14px;padding:8px 17px 8px 13px;border-radius:99px;color:var(--ink);font-weight:600;font-size:14px;letter-spacing:.01em;background:linear-gradient(180deg,color-mix(in srgb,var(--panel) 85%,transparent),color-mix(in srgb,var(--acc) 15%,transparent));border:1px solid color-mix(in srgb,var(--acc) 55%,transparent);box-shadow:0 8px 20px -10px color-mix(in srgb,var(--acc) 70%,transparent),inset 0 1px 0 color-mix(in srgb,#fff 55%,transparent);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);overflow:hidden;isolation:isolate}
+.mbfound:after{content:"";position:absolute;top:0;bottom:0;width:40%;left:-50%;background:linear-gradient(100deg,transparent,color-mix(in srgb,#fff 60%,transparent),transparent);transform:skewX(-18deg);animation:mbshine 1.6s ease-in-out calc(2.2s + var(--el)) 1 both;pointer-events:none}
+.mbfound svg{width:15px;height:15px;fill:var(--acc);flex:none}
 @keyframes mbshine{from{left:-50%}to{left:130%}}
 .mbp{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:4px}.mbp li{display:grid;grid-template-columns:30px 1fr;gap:12px;align-items:start;padding:11px 0;border-top:1px solid var(--line)}.mbp li:first-child{border-top:0}
 .mbp svg{width:26px;height:26px;margin-top:1px}.mbp .mbr{fill:none;stroke:var(--ink);stroke-width:1.8}.mbp .mbt{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:22;stroke-dashoffset:22;animation:mbdraw .5s ease both;animation-delay:calc(1.5s + var(--i)*.2s + var(--el));--len:22}
 .mbp b{display:block;font-size:15.5px;letter-spacing:-.01em}.mbp span{display:block;font-size:14px;color:var(--soft);margin-top:2px;line-height:1.4}
 .mbdl{display:grid;grid-template-columns:150px 1fr;gap:10px 16px;margin-top:12px;font-size:14.5px}.mbdl dt{color:var(--mute);font-weight:600}.mbdl dd{margin:0;font-weight:600}
 .mbact{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.mbprev{margin:0 0 14px;padding:10px 14px;border:1.5px dashed var(--acc);border-radius:12px;font-size:13.5px;font-weight:600;color:var(--soft)}
-.mb.still *{animation:none!important}.mb.still .mbarc{stroke-dashoffset:var(--to)}.mb.still .mbinf,.mb.still .mbck,.mb.still .mbp .mbt{stroke-dashoffset:0}.mb.still .mbpt{display:none}
-@media(max-width:760px){.mb{grid-template-columns:1fr;padding:24px 20px;gap:18px;text-align:center}.mbn p{margin:0 auto}.mbseal{width:176px;height:176px}.mbdl{grid-template-columns:120px 1fr}}
-@media(prefers-reduced-motion:reduce){.mb *{animation:none!important}.mb .mbarc{stroke-dashoffset:var(--to)}.mb .mbinf,.mb .mbck,.mb .mbp .mbt{stroke-dashoffset:0}.mb .mbpt{display:none}}
+.mb.still *{animation:none!important}.mb.still .mbarc{stroke-dashoffset:var(--to)}.mb.still .mbdotg{transform:rotate(var(--a))}.mb.still .mbinf,.mb.still .mbp .mbt{stroke-dashoffset:0}.mb.still .mbspk{opacity:.85}.mb.still .mbseal:before{opacity:1}.mb.still .mbpt{display:none}
+@media(max-width:760px){.mb{grid-template-columns:1fr;padding:24px 20px;gap:18px;text-align:center}.mbn p{margin:0 auto}.mbseal{width:184px;height:184px}.mbdl{grid-template-columns:120px 1fr}}
+@media(prefers-reduced-motion:reduce){.mb *,.mb *:after,.mb *:before{animation:none!important}.mb .mbarc{stroke-dashoffset:var(--to)}.mb .mbdotg{transform:rotate(var(--a))}.mb .mbinf,.mb .mbp .mbt{stroke-dashoffset:0}.mb .mbspk{opacity:.85}.mb .mbseal:before{opacity:1}.mb .mbpt{display:none}}
 </style>
 </head>
 <body>
@@ -1515,17 +1522,25 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var now = Date.now(); if(now - mbLast > 1500) mbT0 = now; mbLast = now; var el = (now - mbT0) / 1000;
     var plan = e.plan, nm = { yearly:'Yearly', monthly:'Monthly', lifetime:'Lifetime', trial:'Trial' }[plan] || 'Steady', life = plan === 'lifetime' || !e.current_period_end;
     var end = e.current_period_end ? new Date(e.current_period_end) : null, days = end ? Math.max(0, Math.ceil((end - now) / 86400000)) : 0;
-    var span = plan === 'monthly' ? 31 : 366, frac = life ? 1 : Math.max(.04, Math.min(1, days / span)), C = 2 * Math.PI * 88, to = C * (1 - frac);
+    var span = plan === 'monthly' ? 31 : 366, frac = life ? 1 : Math.max(.04, Math.min(1, days / span)), C = 2 * Math.PI * 88, to = C * (1 - frac), C2 = 2 * Math.PI * 96, to2 = C2 * (1 - frac);
     var fmt = function(d){ return d.toLocaleDateString(undefined, { month:'long', day:'numeric', year:'numeric' }); };
     var still = el > 4.5, celKey = 'steady-cel', celeb = !still && store(celKey) !== plan;
     if(celeb){ setTimeout(function(){ store(celKey, plan); }, 4500); }
-    var pts = ''; if(celeb){ for(var i = 0; i < 20; i++){ var ang = i / 20 * Math.PI * 2 + (i % 2) * .15, dist = 96 + (i * 37 % 46); pts += '<i class="mbpt" style="--dx:' + Math.round(Math.cos(ang) * dist) + 'px;--dy:' + Math.round(Math.sin(ang) * dist) + 'px;--r:' + (i * 53 % 360) + 'deg"></i>'; } }
+    var pts = ''; if(celeb){ for(var i = 0; i < 14; i++){ var ang = i / 14 * Math.PI * 2 + (i % 2) * .2, dist = 100 + (i * 37 % 44); pts += '<i class="mbpt" style="--dx:' + Math.round(Math.cos(ang) * dist) + 'px;--dy:' + Math.round(Math.sin(ang) * dist) + 'px"></i>'; } }
     var mid = life
-      ? '<path class="mbinf" style="--len:182" d="M134.0 96.0 L133.1 100.3 L130.8 104.0 L127.4 106.5 L123.6 107.8 L119.7 108.0 L116.0 107.3 L112.7 106.1 L109.7 104.4 L107.0 102.5 L104.6 100.4 L102.2 98.2 L100.0 96.0 L97.8 93.8 L95.4 91.6 L93.0 89.5 L90.3 87.6 L87.3 85.9 L84.0 84.7 L80.3 84.0 L76.4 84.2 L72.6 85.5 L69.2 88.0 L66.9 91.7 L66.0 96.0 L66.9 100.3 L69.2 104.0 L72.6 106.5 L76.4 107.8 L80.3 108.0 L84.0 107.3 L87.3 106.1 L90.3 104.4 L93.0 102.5 L95.4 100.4 L97.8 98.2 L100.0 96.0 L102.2 93.8 L104.6 91.6 L107.0 89.5 L109.7 87.6 L112.7 85.9 L116.0 84.7 L119.7 84.0 L123.6 84.2 L127.4 85.5 L130.8 88.0 L133.1 91.7 L134.0 96.0Z"/><text class="mbcs" x="100" y="128">for good</text>'
-      : '<text class="mbc" x="100" y="110">' + days + '</text><text class="mbcs" x="100" y="130">' + (days === 1 ? 'day left' : 'days left') + '</text>';
-    var seal = '<div class="mbseal">' + pts + '<svg viewBox="0 0 200 200" role="img" aria-label="Steady ' + nm + ' seal"><g class="mbstamp"><circle class="mbtrk" cx="100" cy="100" r="88"/><circle class="mbarc" cx="100" cy="100" r="88" style="--c:' + C.toFixed(1) + ';--to:' + to.toFixed(1) + '"/>'
-      + '<circle class="mbin" cx="100" cy="100" r="74"/><defs><path id="mbp" d="M100 100m-61 0a61 61 0 1 1 122 0a61 61 0 1 1-122 0"/></defs><text class="mbtx"><textPath href="#mbp" startOffset="0">STEADY MEMBER • STEADY MEMBER •</textPath></text>'
-      + '<g transform="translate(0 4)">' + mid + '</g></g></svg></div>';
+      ? '<path class="mbinf" style="--len:182" d="M138.0 100.0 L137.1 104.3 L134.8 108.0 L131.4 110.5 L127.6 111.8 L123.7 112.0 L120.0 111.3 L116.7 110.1 L113.7 108.4 L111.0 106.5 L108.6 104.4 L106.2 102.2 L104.0 100.0 L101.8 97.8 L99.4 95.6 L97.0 93.5 L94.3 91.6 L91.3 89.9 L88.0 88.7 L84.3 88.0 L80.4 88.2 L76.6 89.5 L73.2 92.0 L70.9 95.7 L70.0 100.0 L70.9 104.3 L73.2 108.0 L76.6 110.5 L80.4 111.8 L84.3 112.0 L88.0 111.3 L91.3 110.1 L94.3 108.4 L97.0 106.5 L99.4 104.4 L101.8 102.2 L104.0 100.0 L106.2 97.8 L108.6 95.6 L111.0 93.5 L113.7 91.6 L116.7 89.9 L120.0 88.7 L123.7 88.0 L127.6 88.2 L131.4 89.5 L134.8 92.0 L137.1 95.7 L138.0 100.0Z"/><text class="mbcs" x="104" y="140">for good</text>'
+      : '<text class="mbc" x="104" y="112">' + days + '</text><text class="mbcs" x="104" y="136">' + (days === 1 ? 'day left' : 'days left') + '</text>';
+    var spk = [[26, 46, 1], [186, 62, .8], [172, 178, 1.1]].map(function(q, k){ return '<path class="mbspk" style="--k:' + k + '" transform="translate(' + q[0] + ' ' + q[1] + ') scale(' + q[2] + ')" d="M0 -8C0 -2 2 0 8 0C2 0 0 2 0 8C0 2 -2 0 -8 0C-2 0 0 -2 0 -8Z"/>'; }).join('');
+    var seal = '<div class="mbseal">' + pts + '<svg viewBox="0 0 208 208" role="img" aria-label="Steady ' + nm + ' medallion"><defs>'
+      + '<radialGradient id="mbg" cx=".32" cy=".26" r=".95"><stop offset="0" stop-color="#FFF1D0"/><stop offset=".48" stop-color="#E7BC68"/><stop offset="1" stop-color="#B97F22"/></radialGradient>'
+      + '<clipPath id="mbclip"><circle cx="104" cy="104" r="76"/></clipPath>'
+      + '<filter id="mbnz" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" seed="7"/><feColorMatrix type="saturate" values="0"/></filter>'
+      + '<filter id="mbbl" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="9"/></filter></defs>'
+      + '<circle class="mbtrk" cx="104" cy="104" r="96"/><circle class="mbarc" cx="104" cy="104" r="96" style="--c:' + C2.toFixed(1) + ';--to:' + to2.toFixed(1) + '"/>'
+      + '<g class="mbdotg" style="--a:' + (frac * 360).toFixed(1) + 'deg"><circle class="mbdot" cx="104" cy="8" r="4.6"/><circle class="mbdoth" cx="104" cy="8" r="1.7"/></g>'
+      + '<g class="mbdisc"><circle cx="104" cy="104" r="76" fill="url(#mbg)"/><g clip-path="url(#mbclip)"><rect x="28" y="28" width="152" height="152" filter="url(#mbnz)" opacity=".5" style="mix-blend-mode:soft-light"/>'
+      + '<ellipse cx="80" cy="68" rx="46" ry="26" fill="#fff" opacity=".42" filter="url(#mbbl)" transform="rotate(-24 80 68)"/></g>'
+      + '<circle cx="104" cy="104" r="72.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1"/>' + mid + '</g>' + spk + '</svg></div>';
     var line = life
       ? 'No renewals and no end date. Steady is yours for good.'
       : 'Paid through ' + fmt(end) + '. Your plan runs until then; change or cancel it any time in Manage plan.';
@@ -1536,7 +1551,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     return '<div class="vh"><div><h1>Your Steady</h1><p class="sub">Thank you for backing Clean Routine Co. Here is what you have.</p></div></div>'
       + (e.preview ? '<p class="mbprev">Preview only. This is how a ' + esc(nm) + ' member sees this page. Your real plan is not changed.</p>' : '')
       + '<section class="mb' + (still ? ' still' : '') + '" style="--el:' + (-el).toFixed(2) + 's" aria-label="Your Steady plan">' + seal
-      + '<div class="mbn"><span class="mbtag"><i></i>' + stat + '</span><h2><span>' + esc(nm) + '</span></h2><p>' + esc(line) + '</p>' + (plan === 'lifetime' ? '<span class="mbfound"><svg viewBox="0 0 32 32" aria-hidden="true"><circle class="r" cx="16" cy="16" r="11"/><circle class="d" cx="16" cy="16" r="4"/></svg>Founding member</span>' : '') + '</div></section>'
+      + '<div class="mbn"><span class="mbtag"><i></i>' + stat + '</span><h2><span>' + esc(nm) + '</span></h2><p>' + esc(line) + '</p>' + (plan === 'lifetime' ? '<span class="mbfound"><svg viewBox="-8 -8 16 16" aria-hidden="true"><path d="M0 -8C0 -2 2 0 8 0C2 0 0 2 0 8C0 2 -2 0 -8 0C-2 0 0 -2 0 -8Z"/></svg>Founding member</span>' : '') + '</div></section>'
       + '<div class="stcols" style="margin-top:16px"><div class="box"><h3>What you have</h3><ul class="mbp">' + perks + '</ul></div>'
       + '<div class="box"><h3>Your plan</h3><dl class="mbdl"><dt>Plan</dt><dd>' + esc(nm) + (plan === 'lifetime' ? ' (founding)' : '') + '</dd><dt>Status</dt><dd>' + stat + '</dd><dt>' + (life ? 'Ends' : 'Paid through') + '</dt><dd>' + (life ? 'Never' : esc(fmt(end))) + '</dd><dt>Billing</dt><dd>Handled by Polar</dd></dl>'
       + '<div class="mbact"><button class="btn" type="button" data-act="smanage">Manage plan</button><a class="btn ghost" href="#/create">Create your own</a></div>'
