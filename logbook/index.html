@@ -222,7 +222,7 @@
   var ios = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   var standalone = !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
   window.__INST = { code: /^[a-z0-9]{10}$/i.test(q.i || '') ? q.i.toLowerCase() : '', ios: ios, standalone: standalone };
-  window.__INST.hold = !!(window.__INST.code && ios && !standalone);
+  window.__INST.hold = false; /* Safari signs in at once; the code stays usable for a short while so the Home Screen app can sign in too */
   if(edFail){
     document.title = 'Logbook';
     document.write('<meta name="viewport" content="width=device-width,initial-scale=1"><body style="font:16px/1.5 system-ui,sans-serif;margin:0;padding:48px 24px;text-align:center;background:#f7f2e7;color:#1b1712"><h1 style="font-size:20px;margin:0 0 8px">This logbook could not load</h1><p style="margin:0 0 20px">Check your connection, then try again.</p><button onclick="location.reload()" style="font:inherit;font-weight:700;padding:12px 22px;border-radius:12px;border:0;background:#1b1712;color:#f7f2e7">Try again</button></body>');
@@ -344,7 +344,7 @@
       }
       if(!ed.manifest){
         /* Home-screen install keeps this exact address (the edition, and the sign-in code until it is spent), so the logbook reopens as itself. */
-        var u = new URL(location.href); u.hash = ''; if(!window.__INST.hold) u.searchParams.delete('i');
+        var u = new URL(location.href); u.hash = ''; if(!(window.__INST.ios && !window.__INST.standalone)) u.searchParams.delete('i');
         var idu = new URL(u.href); idu.searchParams.delete('i'); var base = location.href.split('?')[0].split('#')[0];
         var man = { id:idu.href, name:nm, short_name:ed.n.slice(0,12), start_url:u.href, scope:base.replace(/[^\/]*$/,''), display:'standalone', orientation:'any', background_color:bgc, theme_color:bgc, icons: ed.icon512 ? [{src:ed.icon512,sizes:'512x512',type:'image/png',purpose:'any'}] : [{src:new URL('icons/icon-512.png',base).href,sizes:'512x512',type:'image/png'}] };
         document.querySelectorAll('link[rel="manifest"]').forEach(function(l){ l.parentNode.removeChild(l); });
@@ -577,7 +577,7 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
     tried = true;
     if(ph === 'in'){ stripCode(); return; }
     if(ph !== 'out' || !CLOUD.handoff) return;
-    CLOUD.handoff(INST.code).then(function(r){ stripCode(); if(!r || !r.ok){ try{ flashSaved('That install link was already used. Sign in with your email and password.'); }catch(e){} } });
+    CLOUD.handoff(INST.code).then(function(r){ stripCode(); try{ if(!r || !r.ok) flashSaved('That install link has expired. Sign in with your email and password.'); else if(INST.ios && !INST.standalone) flashSaved('Signed in. To put it on your Home Screen: tap Share, then Add to Home Screen.'); }catch(e){} });
   }
   var r0 = window.render;
   window.render = function(){ skipSetup(); var out = r0.apply(this, arguments); try{ var h1 = document.querySelector('.au2-h'), bk = document.querySelector('.au2-top .onboard-back'); if(bk) bk.style.visibility = (h1 && /^Sign in$/.test(h1.textContent) && !CLOUD.signedIn()) ? 'hidden' : ''; }catch(e){} install(); return out; };
