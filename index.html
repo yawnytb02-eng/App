@@ -540,7 +540,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   <p class="sub" id="dsub">Open this link on your phone, then add it to your home screen.</p>
   <div class="urlbox"><input type="text" id="du" readonly aria-label="Link"><button class="btn" id="dc" type="button">Copy</button></div>
   <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><a class="btn ghost sm" id="do" href="#">Open it</a><button class="btn ghost sm hide" id="dsh" type="button">Share</button></div>
-  <div class="qrrow"><div id="dq" role="img" aria-label="QR code for the link"></div><p><b style="color:var(--ink)">On a computer?</b><br>Scan this with your phone camera. It opens already signed in, so keep it to yourself.</p></div>
+  <div class="qrrow"><div id="dq" role="img" aria-label="QR code for the link"></div><p><b style="color:var(--ink)">On a computer?</b><br>Scan this with your phone camera. Your computer will ask you to approve it, so nobody can sign in just by seeing the QR code.</p></div>
   <div class="tabs" role="tablist"><button role="tab" aria-selected="true" id="ti">iPhone</button><button role="tab" aria-selected="false" id="ta">Android</button></div>
   <ol class="steps" id="dsteps"></ol>
   <p class="note">It works offline once it has opened once. To see it on this site, open the logbook, sign in, then turn Sync on in Settings.</p>
@@ -561,7 +561,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       <div class="pk-acts"><a class="btn ghost sm" id="fo" href="#">Open it</a><button class="btn ghost sm hide" id="fsh" type="button">Share</button><button class="btn ghost sm" id="pkre" type="button">Watch the screens again</button><button class="btn sm pkdone" id="pkdone" type="button">Done</button></div>
     </div>
     <div class="pk-r">
-      <div class="qrrow"><div id="fq" role="img" aria-label="QR code for the link"></div><p><b>On a computer?</b><br>Scan this with your phone camera. It opens already signed in, so keep it to yourself.</p></div>
+      <div class="qrrow"><div id="fq" role="img" aria-label="QR code for the link"></div><p><b>On a computer?</b><br>Scan this with your phone camera. Your computer will ask you to approve it, so nobody can sign in just by seeing the QR code.</p></div>
       <div class="tabs" role="tablist"><button role="tab" aria-selected="true" id="fti">iPhone</button><button role="tab" aria-selected="false" id="fta">Android</button></div>
       <ol class="steps" id="fsteps"></ol>
     </div>
@@ -637,6 +637,32 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var w = null; try{ w = window.open('', '_blank'); }catch(x){}
     linkFor(o, true).then(function(u){ if(w && !w.closed){ try{ w.opener = null; }catch(x){} w.location.href = u; } else location.href = u; });
   });
+  /* QR and copy-link carry NO login. A phone that scans them has to be approved here, after you check a 4-digit code. */
+  var pair = { run:0, id:'', asking:false, t1:0, t2:0, mint:null };
+  function pairStop(){ pair.run++; clearInterval(pair.t1); clearInterval(pair.t2); pair.id = ''; pair.asking = false; pair.mint = null; }
+  function pairUrl(o){
+    return linkFor(o, false).then(function(u){ return rpc('make_pairing').then(function(pid){ if(typeof pid !== 'string' || !/^[a-z0-9]{12}$/.test(pid)) return { url:u, pid:'' }; return { url:u + (u.indexOf('?') > -1 ? '&' : '?') + 'p=' + pid, pid:pid }; }).catch(function(){ return { url:u, pid:'' }; }); });
+  }
+  function pairRun(o, apply, alive){
+    pairStop(); var run = pair.run;
+    function mint(){ pairUrl(o).then(function(x){ if(run !== pair.run) return; pair.id = x.pid; apply(x.url); }); }
+    pair.mint = mint; mint();
+    pair.t1 = setInterval(function(){ if(run !== pair.run) return; if(!alive()){ pairStop(); return; } if(!pair.asking) mint(); }, 240000);
+    pair.t2 = setInterval(function(){
+      if(run !== pair.run) return; if(!alive()){ pairStop(); return; } if(!pair.id || pair.asking) return;
+      rpc('pairing_state', { p_id:pair.id }).then(function(st){ if(run === pair.run && st && st.status === 'claimed' && !pair.asking) pairAsk(st.confirm, pair.id); }).catch(function(){});
+    }, 2000);
+  }
+  function pairAsk(code, pid){
+    pair.asking = true; var d = document.createElement('dialog'); d.className = 'pairask';
+    d.innerHTML = '<div style="padding:28px 26px"><h2 style="margin:0 0 8px;font-size:22px;letter-spacing:-.03em">Sign in on a phone?</h2><p class="sub" style="margin:0">A phone just scanned your QR code. Does it show this code?</p><p style="font:800 52px/1.1 var(--font);letter-spacing:.14em;margin:14px 0;text-align:center">' + esc(code) + '</p><p class="hint">Only press Yes if the code matches the phone in your hand. If you did not just scan it, press No.</p><div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button class="btn" type="button" data-d="y">Yes, it matches</button><button class="btn ghost" type="button" data-d="n">No, block it</button></div></div>';
+    document.body.appendChild(d);
+    function done(ok){ if(!d.parentNode) return; d.remove(); pair.asking = false;
+      rpc('decide_pairing', { p_id:pid, p_ok:ok }).then(function(r){ toast(!ok ? 'Blocked. Nobody was signed in.' : r ? 'Approved. Your phone is signing in.' : 'That request expired. Scan the QR code again.'); if(pair.mint) pair.mint(); }).catch(function(){ toast('Could not send that. Try again.'); if(pair.mint) pair.mint(); }); }
+    d.addEventListener('click', function(e){ var b = e.target.closest && e.target.closest('[data-d]'); if(b) done(b.getAttribute('data-d') === 'y'); });
+    d.addEventListener('cancel', function(e){ e.preventDefault(); done(false); });
+    if(d.showModal) d.showModal(); else d.setAttribute('open', '');
+  }
   var IC = {
     home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>',
     lib:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg>',
@@ -748,11 +774,12 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function install(name, ed){
     if(needAuth({ t:'inst', name:name, ed:ed }, 'Sign in to get the install link for ' + name + '.')) return;
     curUrl = ''; curEd = ed; $('dt').textContent = 'Install ' + name; $('du').value = 'Making your link…'; $('do').href = typeof ed === 'string' ? ed : urlFor(ed); $('do').setAttribute('data-open', 'cur'); $('dq').innerHTML = '';
-    linkFor(ed, true).then(function(url){ if(curEd !== ed) return; curUrl = url; $('du').value = url; $('dq').innerHTML = qrSvg(url); });
+    pairRun(ed, function(url){ if(curEd !== ed) return; curUrl = url; $('du').value = url; $('dq').innerHTML = qrSvg(url); }, function(){ return dlg.open && curEd === ed; });
     steps(/android/i.test(navigator.userAgent) ? 'a' : 'i'); $('dsh').classList.toggle('hide', !navigator.share);
     if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open', '');
   }
   $('dx').onclick = function(){ dlg.close(); };
+  dlg.addEventListener('close', pairStop);
   dlg.addEventListener('click', function(e){ if(e.target === dlg) dlg.close(); });
   $('ti').onclick = function(){ steps('i'); }; $('ta').onclick = function(){ steps('a'); };
   $('du').addEventListener('focus', function(){ this.select(); });
@@ -815,7 +842,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     $('fh2').textContent = o.n + ' is ready to ship'; $('pksum').textContent = o.preset ? (o.t || 'Ready-made') + ' Works offline.' : nb + (nb === 1 ? ' box' : ' boxes') + ' · ' + nf + (nf === 1 ? ' field' : ' fields') + ' · works offline';
     $('pkl').innerHTML = pkItemsL.map(function(it){ return '<li>' + esc(it[1]) + '</li>'; }).join('');
     $('fu').value = 'Making your link…'; $('fo').href = urlFor(o); $('fo').setAttribute('data-open', 'cur'); $('fq').innerHTML = '';
-    linkFor(o, true).then(function(url){ if(pkO !== o) return; curUrl = url; $('fu').value = url; var q = qrSvg(url); $('fq').innerHTML = q || '<p class="qrno">This link is too long for a QR code. Copy the link and send it to your phone instead.</p>'; });
+    pairRun(o, function(url){ if(pkO !== o) return; curUrl = url; $('fu').value = url; var q = qrSvg(url); $('fq').innerHTML = q || '<p class="qrno">This link is too long for a QR code. Copy the link and send it to your phone instead.</p>'; }, function(){ return pkO === o && !!$('fu') && $('fu').offsetParent !== null; });
     $('fic').innerHTML = iconSvg(o.a); fsteps(/android/i.test(navigator.userAgent) ? 'a' : 'i'); $('fsh').classList.toggle('hide', !navigator.share);
   }
   function pkLock(on){

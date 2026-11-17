@@ -223,6 +223,7 @@
   var standalone = !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
   window.__INST = { code: /^[a-z0-9]{10}$/i.test(q.i || '') ? q.i.toLowerCase() : '', ios: ios, standalone: standalone };
   window.__INST.hold = false; /* Safari signs in at once; the code stays usable for a short while so the Home Screen app can sign in too */
+  window.__INST.pair = /^[a-z0-9]{12}$/.test(q.p || '') ? q.p : ''; window.__INST.sb = SB; window.__INST.sk = SK; window.__INST.pairCode = '';
   if(edFail){
     document.title = 'Logbook';
     document.write('<meta name="viewport" content="width=device-width,initial-scale=1"><body style="font:16px/1.5 system-ui,sans-serif;margin:0;padding:48px 24px;text-align:center;background:#f7f2e7;color:#1b1712"><h1 style="font-size:20px;margin:0 0 8px">This logbook could not load</h1><p style="margin:0 0 20px">Check your connection, then try again.</p><button onclick="location.reload()" style="font:inherit;font-weight:700;padding:12px 22px;border-radius:12px;border:0;background:#1b1712;color:#f7f2e7">Try again</button></body>');
@@ -344,14 +345,15 @@
       }
       if(!ed.manifest){
         /* Home-screen install keeps this exact address (the edition, and the sign-in code until it is spent), so the logbook reopens as itself. */
-        var u = new URL(location.href); u.hash = ''; if(!(window.__INST.ios && !window.__INST.standalone)) u.searchParams.delete('i');
-        var idu = new URL(u.href); idu.searchParams.delete('i'); var base = location.href.split('?')[0].split('#')[0];
+        var u = new URL(location.href); u.hash = ''; u.searchParams.delete('i'); u.searchParams.delete('p'); if(window.__INST.pairCode) u.searchParams.set('i', window.__INST.pairCode);
+        var idu = new URL(u.href); idu.searchParams.delete('i'); idu.searchParams.delete('p'); var base = location.href.split('?')[0].split('#')[0];
         var man = { id:idu.href, name:nm, short_name:ed.n.slice(0,12), start_url:u.href, scope:base.replace(/[^\/]*$/,''), display:'standalone', orientation:'any', background_color:bgc, theme_color:bgc, icons: ed.icon512 ? [{src:ed.icon512,sizes:'512x512',type:'image/png',purpose:'any'}] : [{src:new URL('icons/icon-512.png',base).href,sizes:'512x512',type:'image/png'}] };
         document.querySelectorAll('link[rel="manifest"]').forEach(function(l){ l.parentNode.removeChild(l); });
         var l = document.createElement('link'); l.rel = 'manifest'; l.href = URL.createObjectURL(new Blob([JSON.stringify(man)],{type:'application/manifest+json'})); document.head.appendChild(l); ed.manifest = true;
       }
     }catch(e){}
   }
+  window.__edHead = function(){ if(ed){ ed.manifest = false; } head(); };
   /* Look and feel: a few lines of CSS on top of the engine's own tokens */
   function look(){
     if(!ed || !ed.custom || ed.looked) return; ed.looked = true;
@@ -579,8 +581,38 @@ Resources:`;for(let t of c){if(!t||typeof t!=`string`)throw Error(`@supabase/aut
     if(ph !== 'out' || !CLOUD.handoff) return;
     CLOUD.handoff(INST.code).then(function(r){ stripCode(); try{ if(!r || !r.ok) flashSaved('That install link has expired. Sign in with your email and password.'); else if(INST.ios && !INST.standalone) flashSaved('Signed in. To put it on your Home Screen: tap Share, then Add to Home Screen.'); }catch(e){} });
   }
+  /* QR from a computer holds no login. Claim it, show a 4-digit code, wait for the computer to say yes, then sign in with a one-time code. */
+  var pairBox = null, pairTimer = null;
+  function pairClose(){ if(pairTimer){ clearInterval(pairTimer); pairTimer = null; } if(pairBox){ pairBox.remove(); pairBox = null; } }
+  function pairShow(html){
+    if(!pairBox){ pairBox = document.createElement('div'); pairBox.className = 'lb-inst'; pairBox.setAttribute('role', 'dialog'); pairBox.setAttribute('aria-live', 'polite'); document.body.appendChild(pairBox);
+      pairBox.addEventListener('click', function(e){ if(e.target.closest('[data-p=close]')) pairClose(); }); }
+    pairBox.innerHTML = html;
+  }
+  function pairRpc(name, body){ return fetch(INST.sb.replace(/\/+$/, '') + '/rest/v1/rpc/' + name, { method:'POST', headers:{ apikey:INST.sk, Authorization:'Bearer ' + INST.sk, 'Content-Type':'application/json' }, body:JSON.stringify(body), cache:'no-store' }).then(function(r){ return r.ok ? r.json() : null; }); }
+  function pairEnd(h, b){ if(pairTimer){ clearInterval(pairTimer); pairTimer = null; } pairShow('<h2>' + h + '</h2><p>' + b + '</p><div class="r"><button type="button" class="p" data-p="close">OK</button></div>'); }
+  function pairFlow(){
+    if(!INST.pair || INST.pairStarted) return;
+    var ph = CLOUD.phase(); if(ph === 'init' || ph === 'verifying') return;
+    INST.pairStarted = true; var id = INST.pair;
+    try{ var u = new URL(location.href); u.searchParams.delete('p'); history.replaceState(null, '', u.pathname + u.search + u.hash); }catch(e){}
+    if(ph === 'in') return;
+    pairRpc('claim_pairing', { p_id:id }).then(function(c){
+      if(!c || !c.confirm){ pairEnd('This QR code has expired', 'Make a new one on your computer and scan it again, or sign in with your email and password.'); return; }
+      pairShow('<h2>Check your computer</h2><p>Your computer is asking if this is you. Check that it shows this code, then press <b>Yes</b> there.</p><p style="font:800 44px/1.1 system-ui,sans-serif;letter-spacing:.12em;margin:10px 0">' + c.confirm + '</p><div class="r"><button type="button" data-p="close">Cancel</button></div>');
+      var tries = 0; pairTimer = setInterval(function(){
+        if(++tries > 90){ pairEnd('That took too long', 'Make a new QR code on your computer and scan it again.'); return; }
+        pairRpc('take_pairing', { p_id:id, p_secret:c.secret }).then(function(r){
+          if(!r || !pairBox) return;
+          if(r.status === 'approved' && r.code){ pairClose(); INST.code = r.code; INST.pairCode = r.code; window.__INST.pairCode = r.code; tried = false; try{ if(window.__edHead) window.__edHead(); }catch(e){} install(); }
+          else if(r.status === 'denied') pairEnd('Your computer said no', 'If that was you, make a new QR code and try again.');
+          else if(r.status === 'gone') pairEnd('That took too long', 'Make a new QR code on your computer and scan it again.');
+        }).catch(function(){});
+      }, 2000);
+    }).catch(function(){ pairEnd('No connection', 'Check your internet and scan the QR code again.'); });
+  }
   var r0 = window.render;
-  window.render = function(){ skipSetup(); var out = r0.apply(this, arguments); try{ var h1 = document.querySelector('.au2-h'), bk = document.querySelector('.au2-top .onboard-back'); if(bk) bk.style.visibility = (h1 && /^Sign in$/.test(h1.textContent) && !CLOUD.signedIn()) ? 'hidden' : ''; }catch(e){} install(); return out; };
+  window.render = function(){ skipSetup(); var out = r0.apply(this, arguments); try{ var h1 = document.querySelector('.au2-h'), bk = document.querySelector('.au2-top .onboard-back'); if(bk) bk.style.visibility = (h1 && /^Sign in$/.test(h1.textContent) && !CLOUD.signedIn()) ? 'hidden' : ''; }catch(e){} install(); pairFlow(); return out; };
   try{ wideQ.addEventListener('change', function(){ try{ render(); }catch(e){} }); }catch(e){}
   /* ---- Small daily niceties: log-again chips, saved dot, reminder, pick up where you left off, a little haptic ---- */
   var UXK = (ED && ED.key) || (typeof STORAGE_KEY !== 'undefined' ? STORAGE_KEY : 'lb'), K_WH = 'lb-where-' + UXK, K_RM = 'lb-rem-' + UXK, K_NF = 'lb-notified-' + UXK;
