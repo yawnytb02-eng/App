@@ -623,7 +623,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function linkFor(o, withCode){
     var base = new URL('logbook/', location.href.split('#')[0].split('?')[0]).href, job;
     if(o.preset) job = Promise.resolve(base + '?l=' + o.preset);
-    else { var key = JSON.stringify(cfgOf(o)); job = edCache[key] ? Promise.resolve(edCache[key]) : rpc('make_edition', { p_cfg:cfgOf(o) }).then(function(id){ if(typeof id !== 'string' || !/^[a-z0-9]{6}$/.test(id)) throw new Error('id'); return (edCache[key] = base + '?e=' + id); }).catch(function(){ return urlFor(o); }); }
+    else { var key = JSON.stringify(cfgOf(o)); job = edCache[key] ? Promise.resolve(edCache[key]) : rpc('make_edition', { p_cfg:cfgOf(o) }).then(function(id){ if(typeof id !== 'string' || !/^[a-z0-9]{6}$/.test(id)) throw new Error('id'); track('install_link'); return (edCache[key] = base + '?e=' + id); }).catch(function(){ return urlFor(o); }); }
     return job.then(function(u){
       if(!withCode || !sess) return u;
       return rpc('make_handoff').then(function(c){ return typeof c === 'string' && /^[a-z0-9]{10}$/.test(c) ? u + (u.indexOf('?') > -1 ? '&' : '?') + 'i=' + c : u; }).catch(function(){ return u; });
@@ -1398,6 +1398,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var size = (rows || []).reduce(function(a, r){ return a + r.size; }, 0);
     return '<div class="vh"><div><h1>Account</h1></div></div><div class="acct"><div class="box"><h3>Signed in</h3><dl><dt>Email</dt><dd>' + esc(sess.email || '') + '</dd><dt>Logbooks synced</dt><dd>' + (rows ? rows.length : 0) + '</dd><dt>Data stored</dt><dd>' + Math.max(1, Math.round(size / 1024)) + ' KB</dd><dt>Last checked</dt><dd>' + (lastLoad ? esc(ago(new Date(lastLoad))) : 'Not yet') + '</dd></dl><div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-act="refresh" type="button">Refresh</button><button class="btn" data-act="signout" type="button">Sign out</button></div></div>'
       + '<div class="box"><h3>Steady</h3><dl><dt>Your plan</dt><dd>' + esc(planLine()) + '</dd></dl><div style="margin-top:16px"><a class="btn ghost" href="#/steady">' + (ent && ent.steady ? 'See Steady' : 'About Steady') + '</a></div></div>'
+      + (isAdmin ? '<div class="box"><h3>Anonymous stats (owner only)</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Totals per day. No names, emails, IP addresses or logbook contents are stored.</p><button class="btn ghost sm" type="button" data-act="stats" style="margin-top:14px">Show the last 14 days</button><div id="stout" style="margin-top:14px"></div></div>' : '')
       + (isAdmin ? '<div class="box"><h3>Subscriptions (owner only)</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Right now: <b>' + (BILLING_LIVE ? 'subscriptions are ON. Free accounts have limits and people can pay.' : 'FREE for everyone. No limits, nobody can pay.') + '</b></p><button class="btn' + (BILLING_LIVE ? ' ghost' : '') + '" type="button" data-act="sadm" style="margin-top:16px">' + (BILLING_LIVE ? 'Turn subscriptions off (free for all)' : 'Turn subscriptions on') + '</button></div>' : '')
       + '<div class="box"><h3>Turn sync on</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Open a logbook on your phone, sign in with this account, then go to Settings and switch Sync on. Changes upload in the background and appear here.</p></div>'
       + '<div class="box"><h3>How your logbooks stay separate</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Every logbook has its own storage key, such as <b>readinggirl-logbook-v1</b>. On your phone that is its own private data, so one logbook never reads another. In your account each logbook is its own row, tied to you and locked so only you can read it. They share the same app and the same login, never the same data.</p></div></div>';
@@ -1482,6 +1483,18 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   /* ================= Steady entitlement and free limits ================= */
   var BILLING_LIVE = false;   /* set from the database switch (app_flags.enforce_steady); free for everyone until the owner turns it on */
   var isAdmin = false;
+  /* Anonymous counters: one +1 per event per day, with an optional source tag from ?src=. No ids, no IP, nothing from inside a logbook.
+     Skipped when the browser says Do Not Track or Global Privacy Control, on local test hosts, and for the owner's own browser. */
+  var SRC = (function(){ try{ var m = /[?&](?:src|ref)=([A-Za-z0-9_-]{1,24})/.exec(location.search); if(m){ sessionStorage.setItem('cr-src', m[1].toLowerCase()); } return sessionStorage.getItem('cr-src') || ''; }catch(e){ return ''; } })();
+  function track(ev){
+    try{
+      if(navigator.doNotTrack === '1' || navigator.globalPrivacyControl) return;
+      if(!/(^|\.)cleanroutineco\.app$/.test(location.hostname) && localStorage.getItem('cr-track-test') !== '1') return;
+      if(localStorage.getItem('cr-notrack') === '1') return;
+      fetch(SB + '/rest/v1/rpc/track', { method:'POST', headers:hdr(), body:JSON.stringify({ p_event:ev, p_src:SRC }), keepalive:true }).catch(function(){});
+    }catch(e){}
+  }
+  try{ if(!sessionStorage.getItem('cr-v')){ sessionStorage.setItem('cr-v', '1'); track('visit'); } }catch(e){}
   function loadFlags(){
     return fetch(SB + '/rest/v1/rpc/get_flags', { method:'POST', headers:{ 'apikey':KEY, 'Content-Type':'application/json' }, body:'{}' }).then(j).then(function(r){
       var on = !!(r.ok && r.j && r.j.enforce_steady === true); if(on !== BILLING_LIVE){ BILLING_LIVE = on; render(); } }).catch(function(){});
@@ -1495,7 +1508,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function isSteady(){ return !limitsOn() || !!(ent && ent.steady); }
   function loadEnt(){
     if(!sess) return Promise.resolve();
-    fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/am_i_admin', { method:'POST', headers:hdr(tk), body:'{}' }); }).then(j).then(function(r){ var a = r.ok && r.j === true; if(a !== isAdmin){ isAdmin = a; render(); } }).catch(function(){});
+    fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/am_i_admin', { method:'POST', headers:hdr(tk), body:'{}' }); }).then(j).then(function(r){ var a = r.ok && r.j === true; try{ if(a) localStorage.setItem('cr-notrack', '1'); }catch(e){} if(a !== isAdmin){ isAdmin = a; render(); } }).catch(function(){});
     return rpc('get_entitlement').then(function(a){ ent = Array.isArray(a) && a[0] ? a[0] : { steady:false }; render(); }).catch(function(){});
   }
   function planLine(){
@@ -1659,6 +1672,18 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
         fresh().then(function(tk){ return fetch(SB + '/functions/v1/manage-plan', { method:'POST', headers:hdr(tk), body:'{}' }); }).then(j).then(function(r){
           if(r.ok && r.j && r.j.url){ location.href = r.j.url; return; } throw new Error('x'); }).catch(function(){ b.disabled = false; b.textContent = lab; toast('Could not open billing just now. Email hello@cleanroutineco.app and we will sort it out.'); });
       }
+      else if(a === 'stats'){
+        b.disabled = true; var out = $('stout');
+        fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/get_stats', { method:'POST', headers:hdr(tk), body:JSON.stringify({ p_days:14 }) }); }).then(j).then(function(r){
+          if(!r.ok || !Array.isArray(r.j)) throw new Error('x');
+          var EV = [['visit', 'Visits'], ['signup', 'Sign-ups'], ['install_link', 'Install links'], ['steady_join', 'Steady waitlist']], days = {}, srcs = {};
+          r.j.forEach(function(x){ (days[x.day] = days[x.day] || {})[x.event] = (days[x.day][x.event] || 0) + Number(x.n); if(x.event === 'visit'){ var k = x.src || 'direct'; srcs[k] = (srcs[k] || 0) + Number(x.n); } });
+          var ds = Object.keys(days).sort().reverse(), tot = {}; EV.forEach(function(e){ tot[e[0]] = 0; });
+          var rows = ds.map(function(d){ EV.forEach(function(e){ tot[e[0]] += days[d][e[0]] || 0; }); return '<tr><td>' + esc(d.slice(5)) + '</td>' + EV.map(function(e){ return '<td>' + (days[d][e[0]] || 0) + '</td>'; }).join('') + '</tr>'; }).join('');
+          var sl = Object.keys(srcs).sort(function(a, c){ return srcs[c] - srcs[a]; }).slice(0, 8).map(function(k){ return '<li><b>' + esc(k) + '</b> ' + srcs[k] + '</li>'; }).join('');
+          out.innerHTML = ds.length ? '<div style="overflow:auto"><table class="mbdl" style="display:table;width:100%;border-collapse:collapse;font-size:14px"><thead><tr><th style="text-align:left">Day</th>' + EV.map(function(e){ return '<th style="text-align:left">' + e[1] + '</th>'; }).join('') + '</tr></thead><tbody>' + rows + '<tr><td><b>Total</b></td>' + EV.map(function(e){ return '<td><b>' + tot[e[0]] + '</b></td>'; }).join('') + '</tr></tbody></table></div>' + (sl ? '<p class="hint" style="margin:12px 0 4px">Where visits came from (add ?src=tiktok to a link):</p><ul style="margin:0;padding-left:18px;font-size:14px">' + sl + '</ul>' : '') : '<p class="hint">Nothing counted yet.</p>';
+          b.disabled = false; b.textContent = 'Refresh'; }).catch(function(){ b.disabled = false; out.innerHTML = '<p class="hint">Could not load the stats. Run stats.sql in Supabase first.</p>'; });
+      }
       else if(a === 'sadm'){
         var turnOn = !BILLING_LIVE;
         if(!confirm(turnOn ? 'Turn subscriptions ON for everyone? Free accounts get limits and the Pay button appears. Only do this when Polar is approved and the payment functions are deployed.' : 'Turn subscriptions OFF? Everyone gets everything for free again.')) return;
@@ -1667,7 +1692,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
           if(!r.ok) throw new Error('x'); BILLING_LIVE = turnOn; toast(turnOn ? 'Subscriptions are ON.' : 'Subscriptions are OFF. Everything is free.'); render(); }).catch(function(){ b.disabled = false; toast('Could not change it. Check the owner setup SQL has been run.'); });
       }
       else if(a === 'sref'){ loadEnt().then(function(){ toast(ent && ent.steady ? 'Steady is on. Thank you.' : 'No payment found yet. It can take a minute.'); }); }
-      else if(a === 'sjoin'){ b.disabled = true; fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/log_steady_interest', { method:'POST', headers:hdr(tk), body:JSON.stringify({ p_plan:stPlan, p_source:'site' }) }); }).then(function(r){ if(!r.ok) throw new Error('rpc'); var d = steadyDone(); d[stPlan] = 1; store('steady-int', d); render(); }).catch(function(){ b.disabled = false; toast('Could not save that. Try again in a moment.'); }); }
+      else if(a === 'sjoin'){ track('steady_join'); b.disabled = true; fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/log_steady_interest', { method:'POST', headers:hdr(tk), body:JSON.stringify({ p_plan:stPlan, p_source:'site' }) }); }).then(function(r){ if(!r.ok) throw new Error('rpc'); var d = steadyDone(); d[stPlan] = 1; store('steady-int', d); render(); }).catch(function(){ b.disabled = false; toast('Could not save that. Try again in a moment.'); }); }
       else if(a === 'forgot'){ mode = 'forgot'; authNote = ''; var f3 = $('signin'); if(f3) f3.innerHTML = authForm(); }
       else if(a === 'back'){ mode = 'in'; authNote = ''; var f4 = $('signin'); if(f4) f4.innerHTML = authForm(); }
       else if(a === 'mode'){ mode = mode === 'in' ? 'up' : 'in'; var f = $('signin'); if(f) f.innerHTML = authForm(); }
@@ -1745,6 +1770,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     $('ab').disabled = true; lastEmail = em;
     fetch(mode === 'in' ? SB + '/auth/v1/token?grant_type=password' : SB + '/auth/v1/signup', { method:'POST', headers:hdr(), body:JSON.stringify(mode === 'in' ? { email:em, password:pw } : { email:em, password:pw, data:{ agreed_terms:3, agreed_at:new Date().toISOString(), min_age:16 } }) }).then(j).then(function(r){
       if(!r.ok){ $('ab').disabled = false; $('aerr').textContent = emsg(r); if(/confirm/i.test($('aerr').textContent)){ showVerify(em); } return; }
+      if(mode !== 'in') track('signup');
       if(r.j && r.j.access_token){ setSess(r.j); location.hash = '#/'; render(); load(false); pushPrefs(); resume(); }
       else { showVerify(em); }
     }, function(){ $('ab').disabled = false; $('aerr').textContent = 'Could not reach the server. Check your connection.'; });
