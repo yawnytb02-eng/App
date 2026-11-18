@@ -1698,7 +1698,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
         if(ent && !ent.steady || previewEnt()){ toast('This is a preview. Nothing to manage.'); return; }
         var lab = b.textContent; b.disabled = true; b.textContent = 'Opening...';
         fresh().then(function(tk){ return fetch(SB + '/functions/v1/manage-plan', { method:'POST', headers:hdr(tk), body:'{}' }); }).then(j).then(function(r){
-          if(r.ok && r.j && r.j.url){ location.href = r.j.url; return; } throw new Error('x'); }).catch(function(){ b.disabled = false; b.textContent = lab; toast('Could not open billing just now. Email hello@cleanroutineco.app and we will sort it out.'); });
+          if(r.ok && r.j && r.j.url){ location.href = r.j.url; return; } var e = new Error('x'); e.code = (r.j && r.j.polar) || r.status || 0; throw e; }).catch(function(er){ b.disabled = false; b.textContent = lab; toast('Could not open billing just now (code ' + ((er && er.code) || 'net') + '). Email hello@cleanroutineco.app and we will sort it out.'); });
       }
       else if(a === 'stats'){
         b.disabled = true; var out = $('stout');
