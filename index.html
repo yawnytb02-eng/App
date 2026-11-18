@@ -526,6 +526,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 .mbp svg{width:26px;height:26px;margin-top:1px}.mbp .mbr{fill:none;stroke:var(--ink);stroke-width:1.8}.mbp .mbt{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:22;stroke-dashoffset:22;animation:mbdraw .5s ease both;animation-delay:calc(1.5s + var(--i)*.2s + var(--el));--len:22}
 .mbp b{display:block;font-size:15.5px;letter-spacing:-.01em}.mbp span{display:block;font-size:14px;color:var(--soft);margin-top:2px;line-height:1.4}
 .mbdl{display:grid;grid-template-columns:150px 1fr;gap:10px 16px;margin-top:12px;font-size:14.5px}.mbdl dt{color:var(--mute);font-weight:600}.mbdl dd{margin:0;font-weight:600}
+.bill{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}.bill h4{margin:0 0 8px;font-size:15px}.bill .bl{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}.bill .bl:last-child{border-bottom:0}.bill .bl span{color:var(--mute);font-size:13px}.bill .bl button{font:700 13px/1 inherit;min-height:34px;padding:0 14px;border-radius:99px;border:1.5px solid var(--line);background:none;color:var(--ink);cursor:pointer}.bill .bl button:hover{border-color:var(--ink)}.bill .bn{margin:0 0 10px;font-size:14px;font-weight:600}.bill .bn small{display:block;color:var(--mute);font-weight:500;font-size:13px;margin-top:2px}.bill .bc{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}.bill .bc .btn{min-height:38px;font-size:13.5px}.bill .bq{padding:12px 14px;border-radius:14px;background:var(--tint);font-size:13.5px;font-weight:600;margin:10px 0}.bill .sk{height:12px;border-radius:6px;background:var(--line);margin:10px 0;width:70%;animation:blp 1.2s ease-in-out infinite}@keyframes blp{50%{opacity:.4}}@media(prefers-reduced-motion:reduce){.bill .sk{animation:none}}
 .mbact{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.mbprev{margin:0 0 14px;padding:10px 14px;border:1.5px dashed var(--acc);border-radius:12px;font-size:13.5px;font-weight:600;color:var(--soft)}
 .mb.still *{animation:none!important}.mb.still .mbarc{stroke-dashoffset:var(--to)}.mb.still .mbdotg{transform:rotate(var(--a))}.mb.still .mbinf,.mb.still .mbp .mbt{stroke-dashoffset:0}.mb.still .mbspk{opacity:.85}.mb.still .mbseal:before{opacity:1}.mb.still .mbpt{display:none}
 @media(max-width:760px){.mb{grid-template-columns:1fr;padding:24px 20px;gap:18px;text-align:center}.mbn p{margin:0 auto}.mbseal{width:184px;height:184px}.mbdl{grid-template-columns:120px 1fr}}
@@ -1583,7 +1584,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       + '<circle cx="104" cy="104" r="72.5" fill="none" stroke="#fff" stroke-opacity=".55" stroke-width="1"/>' + mid + '</g>' + spk + '</svg></div>';
     var line = life
       ? 'No renewals and no end date. Steady is yours for good.'
-      : 'Paid through ' + fmt(end) + '. Your plan runs until then; change or cancel it any time in Manage plan.';
+      : 'Paid through ' + fmt(end) + '. Your plan runs until then; you can cancel or update your card below.';
     var tk = '<svg viewBox="0 0 26 26" aria-hidden="true"><circle class="mbr" cx="13" cy="13" r="11.5"/><path class="mbt" d="M7.5 13.5l4 4 7-8"/></svg>';
     var perks = [['Sync across your devices', 'Sign in anywhere and your logbooks match.'], ['Cloud backup', 'A lost phone does not lose your streak.'], ['Longer charts', 'The heat map and trends reach back 26 weeks.'], ['Unlimited custom logbooks', 'Make as many as you like in Create your own.']]
       .map(function(x, i){ return '<li style="--i:' + i + '">' + tk + '<div><b>' + esc(x[0]) + '</b><span>' + esc(x[1]) + '</span></div></li>'; }).join('');
@@ -1593,9 +1594,9 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       + '<section class="mb' + (still ? ' still' : '') + '" style="--el:' + (-el).toFixed(2) + 's" aria-label="Your Steady plan">' + seal
       + '<div class="mbn"><span class="mbtag"><i></i>' + stat + '</span><h2><span>' + esc(nm) + '</span></h2><p>' + esc(line) + '</p>' + (plan === 'lifetime' ? '<span class="mbfound"><svg viewBox="-8 -8 16 16" aria-hidden="true"><path d="M0 -8C0 -2 2 0 8 0C2 0 0 2 0 8C0 2 -2 0 -8 0C-2 0 0 -2 0 -8Z"/></svg>Founding member</span>' : '') + '</div></section>'
       + '<div class="stcols" style="margin-top:16px"><div class="box"><h3>What you have</h3><ul class="mbp">' + perks + '</ul></div>'
-      + '<div class="box"><h3>Your plan</h3><dl class="mbdl"><dt>Plan</dt><dd>' + esc(nm) + (plan === 'lifetime' ? ' (founding)' : '') + '</dd><dt>Status</dt><dd>' + stat + '</dd><dt>' + (life ? 'Ends' : 'Paid through') + '</dt><dd>' + (life ? 'Never' : esc(fmt(end))) + '</dd><dt>Billing</dt><dd>Handled by Polar</dd></dl>'
-      + '<div class="mbact"><button class="btn" type="button" data-act="smanage">Manage plan</button><a class="btn ghost" href="#/create">Create your own</a></div>'
-      + '<p class="hint" style="margin-top:12px">' + (life ? 'Manage plan opens your receipts and billing details.' : 'Manage plan lets you update your card, cancel, or download receipts.') + '</p></div></div>';
+      + '<div class="box"><h3>Your plan</h3><dl class="mbdl"><dt>Plan</dt><dd>' + esc(nm) + (plan === 'lifetime' ? ' (founding)' : '') + '</dd><dt>Status</dt><dd>' + stat + '</dd><dt>' + (life ? 'Ends' : 'Paid through') + '</dt><dd>' + (life ? 'Never' : esc(fmt(end))) + '</dd></dl>'
+      + (e.preview ? '' : '<div class="bill" id="bill" aria-live="polite"><div class="sk"></div><div class="sk" style="width:45%"></div></div>')
+      + '<div class="mbact"><a class="btn" href="#/create">Create your own</a></div></div></div>';
   }
   function viewSteady(){
     var me = previewEnt() || ((ent && ent.steady) ? ent : null); if(me) return viewMember(me);
@@ -1631,6 +1632,59 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     return '<div class="shell">' + side + '<main class="main"><div class="mtop"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a>' + MODEBTN + '</div>' + body + '</main></div>' + tabs;
   }
 
+
+  /* ================= billing (inside the Steady page) ================= */
+  var bill = { d:null, at:0, busy:false, ask:false, err:'' };
+  function money(n, c){ try{ return new Intl.NumberFormat(undefined, { style:'currency', currency:(c || 'usd').toUpperCase() }).format((n || 0) / 100); }catch(e){ return ((n || 0) / 100).toFixed(2); } }
+  function bdate(x){ try{ return new Date(x).toLocaleDateString(undefined, { month:'long', day:'numeric', year:'numeric' }); }catch(e){ return ''; } }
+  function billCall(body){ return fresh().then(function(tk){ return fetch(SB + '/functions/v1/billing', { method:'POST', headers:hdr(tk), body:JSON.stringify(body) }); }).then(j); }
+  function billHtml(){
+    var el = $('bill'); if(!el) return;
+    if(bill.err){ el.innerHTML = '<p class="bn">' + esc(bill.err) + '<small>Email hello@cleanroutineco.app and we will sort it out.</small></p>'; return; }
+    var d = bill.d; if(!d){ el.innerHTML = '<div class="sk"></div><div class="sk" style="width:45%"></div>'; return; }
+    var sb = d.sub, h = '';
+    if(sb && sb.status !== 'canceled'){
+      var per = sb.interval === 'year' ? 'year' : 'month';
+      h += '<p class="bn">' + esc(sb.plan || 'Steady') + (sb.amount ? ' &middot; ' + esc(money(sb.amount, sb.currency)) + ' every ' + per : '')
+        + '<small>' + (sb.cancel ? 'Ends on ' + esc(bdate(sb.end)) + '. It will not renew.' : 'Renews on ' + esc(bdate(sb.end)) + '.') + '</small></p>';
+      if(bill.ask && !sb.cancel){
+        h += '<div class="bq">Cancel at the end of this period? You keep Steady until ' + esc(bdate(sb.end)) + '.<div class="bc"><button class="btn sm" type="button" data-act="bdo"' + (bill.busy ? ' disabled' : '') + '>Yes, cancel</button><button class="btn ghost sm" type="button" data-act="bkeep">Keep my plan</button></div></div>';
+      } else {
+        h += '<div class="bc">' + (sb.cancel ? '<button class="btn sm" type="button" data-act="bresume"' + (bill.busy ? ' disabled' : '') + '>Keep my plan</button>' : '<button class="btn ghost sm" type="button" data-act="bask">Cancel plan</button>')
+          + '<button class="btn ghost sm" type="button" data-act="smanage">Update card</button></div><p class="hint">Updating your card opens Polar, our secure payment partner. Come back here after.</p>';
+      }
+    } else if(sb && sb.status === 'canceled'){
+      h += '<p class="bn">Your plan has ended.<small>You can start again any time from the Steady page.</small></p>';
+    } else {
+      h += '<p class="bn">No subscription to manage.<small>Your plan has no renewals, so there is nothing to cancel.</small></p>';
+    }
+    var os = (d.orders || []).filter(function(o){ return o.amount > 0 && /paid|succeeded|refunded/.test(o.status || 'paid'); });
+    h += '<h4 style="margin-top:14px">Receipts</h4>' + (os.length ? os.map(function(o){ return '<div class="bl"><div>' + esc(bdate(o.at)) + ' <span>&middot; ' + esc(o.name || 'Steady') + ' &middot; ' + esc(money(o.amount, o.currency)) + '</span></div><button type="button" data-act="brc" data-id="' + esc(o.id) + '">Download</button></div>'; }).join('') : '<p class="hint">No payments yet.</p>');
+    el.innerHTML = h;
+  }
+  function billInit(){
+    if(!$('bill')) return; billHtml();
+    if(bill.busy || (bill.d && Date.now() - bill.at < 60000)) return;
+    bill.busy = true;
+    billCall({ a:'info' }).then(function(r){
+      bill.busy = false;
+      if(r.ok && r.j && r.j.orders){ bill.d = r.j; bill.at = Date.now(); bill.err = ''; }
+      else if(r.status === 404){ bill.d = { sub:null, orders:[] }; bill.at = Date.now(); bill.err = ''; }
+      else bill.err = 'Could not load billing just now (code ' + ((r.j && r.j.polar) || r.status || 'net') + ').';
+      billHtml();
+    }).catch(function(){ bill.busy = false; bill.err = 'Could not load billing just now (code net).'; billHtml(); });
+  }
+  function billAct(a, id, win){
+    bill.busy = true; billHtml();
+    return billCall({ a:a, id:id }).then(function(r){
+      bill.busy = false;
+      if(!(r.ok && r.j)){ if(win) try{ win.close(); }catch(e){} toast('That did not go through (code ' + ((r.j && r.j.polar) || r.status || 'net') + '). Email hello@cleanroutineco.app.'); billHtml(); return; }
+      if(a === 'receipt'){ if(r.j.url && win){ try{ win.location.replace(r.j.url); }catch(e){ location.href = r.j.url; } } else if(r.j.url){ location.href = r.j.url; } else { if(win) try{ win.close(); }catch(e){} toast('Receipt is not ready yet. Try again in a minute.'); } return; }
+      bill.ask = false; if(bill.d && bill.d.sub){ bill.d.sub.cancel = !!r.j.cancel; if(r.j.end) bill.d.sub.end = r.j.end; } bill.at = Date.now();
+      toast(a === 'cancel' ? 'Cancelled. You keep Steady until the end of your period.' : 'Welcome back. Your plan will renew as normal.'); billHtml();
+    }).catch(function(){ bill.busy = false; toast('That did not go through (code net).'); billHtml(); });
+  }
+
   /* ================= render + events ================= */
   function render(){
     var rootEl = $('root'), y = window.scrollY, h0 = rootEl.offsetHeight, el = document.activeElement, keep = el && el.id && /^(fq|cn)$/.test(el.id) ? { id:el.id, s:el.selectionStart } : null;
@@ -1642,6 +1696,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var key = sess ? (location.hash || '#/') : 'out', anim = key !== lastKey; lastKey = key; $('root').dataset.anim = anim ? '1' : ''; if(anim) countUp();
     [].forEach.call(document.querySelectorAll('.hmw'), function(h){ h.scrollLeft = h.scrollWidth; });
     if(keep && $(keep.id)){ $(keep.id).focus({ preventScroll:true }); try{ $(keep.id).setSelectionRange(keep.s, keep.s); }catch(e){} }
+    if(sess && $('bill')) billInit();
     if(sess){ window.scrollTo({ top:y, left:0, behavior:'instant' }); rootEl.style.minHeight = ''; if(Math.abs(window.scrollY - y) > 1) requestAnimationFrame(function(){ window.scrollTo({ top:y, left:0, behavior:'instant' }); }); }
   }
   window.addEventListener('hashchange', function(){ if(sess){ filt = { q:'', m:'' }; render(); window.scrollTo({ top:0, left:0, behavior:'instant' }); } });
@@ -1694,6 +1749,11 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
         fresh().then(function(tk){ return fetch(SB + '/functions/v1/start-checkout', { method:'POST', headers:hdr(tk), body:JSON.stringify({ plan:stPlan }) }); }).then(j).then(function(r){
           if(r.ok && r.j && r.j.url){ location.href = r.j.url; return; } throw new Error('x'); }).catch(function(){ b.disabled = false; if(ee) ee.textContent = 'Could not open checkout. Try again in a moment.'; });
       }
+      else if(a === 'bask'){ bill.ask = true; billHtml(); }
+      else if(a === 'bkeep'){ bill.ask = false; billHtml(); }
+      else if(a === 'bdo'){ if(!bill.busy && bill.d && bill.d.sub) billAct('cancel', bill.d.sub.id); }
+      else if(a === 'bresume'){ if(!bill.busy && bill.d && bill.d.sub) billAct('resume', bill.d.sub.id); }
+      else if(a === 'brc'){ var rid0 = b.dataset.id, w0 = null; try{ w0 = window.open('', '_blank'); if(w0) w0.opener = null; }catch(e){} b.disabled = true; billAct('receipt', rid0, w0).then(function(){ b.disabled = false; }); }
       else if(a === 'smanage'){
         if(ent && !ent.steady || previewEnt()){ toast('This is a preview. Nothing to manage.'); return; }
         var lab = b.textContent; b.disabled = true; b.textContent = 'Opening...';
