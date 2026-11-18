@@ -620,6 +620,7 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
     }).catch(function(){ pairEnd('No connection', 'Check your internet and scan the QR code again.'); });
   }
   var r0 = window.render;
+  try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   window.render = function(){ skipSetup(); var out = r0.apply(this, arguments); try{ var h1 = document.querySelector('.au2-h'), bk = document.querySelector('.au2-top .onboard-back'); if(bk) bk.style.visibility = (h1 && /^Sign in$/.test(h1.textContent) && !CLOUD.signedIn()) ? 'hidden' : ''; }catch(e){} install(); pairFlow(); return out; };
   try{ wideQ.addEventListener('change', function(){ try{ render(); }catch(e){} }); }catch(e){}
   /* ---- Small daily niceties: log-again chips, saved dot, reminder, pick up where you left off, a little haptic ---- */
