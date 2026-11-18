@@ -1667,15 +1667,17 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var pv = previewEnt();
     if(pv){ if(!bill.d || !bill.d.pv || bill.d.pv !== pv.plan){ bill.d = { pv:pv.plan, sub: pv.plan === 'lifetime' ? null : { id:'preview', status:'active', plan:'Steady ' + (pv.plan === 'yearly' ? 'Yearly' : 'Monthly'), amount: pv.plan === 'yearly' ? 2900 : 399, currency:'usd', interval: pv.plan === 'yearly' ? 'year' : 'month', end:pv.current_period_end, cancel:false }, orders: pv.plan === 'lifetime' ? [] : [{ id:'preview', at:new Date(Date.now() - 864e5 * (pv.plan === 'yearly' ? 78 : 11)).toISOString(), amount: pv.plan === 'yearly' ? 2900 : 399, currency:'usd', status:'paid', name:'Steady ' + (pv.plan === 'yearly' ? 'Yearly' : 'Monthly') }] }; } bill.err = ''; billHtml(); return; }
     billHtml();
-    if(bill.busy || (bill.d && Date.now() - bill.at < 60000)) return;
+    if(bill.busy || (bill.d && !bill.d.pv && Date.now() - bill.at < 60000)) return;
+    if(bill.d && bill.d.pv) bill.d = null;
     bill.busy = true;
     billCall({ a:'info' }).then(function(r){
       bill.busy = false;
+      if(previewEnt()){ billInit(); return; }
       if(r.ok && r.j && r.j.orders){ bill.d = r.j; bill.at = Date.now(); bill.err = ''; }
       else if(r.status === 404){ bill.d = { sub:null, orders:[] }; bill.at = Date.now(); bill.err = ''; }
       else bill.err = 'Could not load billing just now (code ' + ((r.j && r.j.polar) || r.status || 'net') + ').';
       billHtml();
-    }).catch(function(){ bill.busy = false; bill.err = 'Could not load billing just now (code net).'; billHtml(); });
+    }).catch(function(){ bill.busy = false; if(previewEnt()) return; bill.err = 'Could not load billing just now (code net).'; billHtml(); });
   }
   function billAct(a, id, win){
     if(id === 'preview'){ if(win) try{ win.close(); }catch(e){} if(a === 'receipt'){ toast('Preview: the real receipt opens here.'); return Promise.resolve(); } bill.ask = false; if(bill.d && bill.d.sub) bill.d.sub.cancel = (a === 'cancel'); toast(a === 'cancel' ? 'Preview: your plan would end on the date shown.' : 'Preview: your plan would renew as normal.'); billHtml(); return Promise.resolve(); }
