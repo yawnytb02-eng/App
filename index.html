@@ -1595,7 +1595,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       + '<div class="mbn"><span class="mbtag"><i></i>' + stat + '</span><h2><span>' + esc(nm) + '</span></h2><p>' + esc(line) + '</p>' + (plan === 'lifetime' ? '<span class="mbfound"><svg viewBox="-8 -8 16 16" aria-hidden="true"><path d="M0 -8C0 -2 2 0 8 0C2 0 0 2 0 8C0 2 -2 0 -8 0C-2 0 0 -2 0 -8Z"/></svg>Founding member</span>' : '') + '</div></section>'
       + '<div class="stcols" style="margin-top:16px"><div class="box"><h3>What you have</h3><ul class="mbp">' + perks + '</ul></div>'
       + '<div class="box"><h3>Your plan</h3><dl class="mbdl"><dt>Plan</dt><dd>' + esc(nm) + (plan === 'lifetime' ? ' (founding)' : '') + '</dd><dt>Status</dt><dd>' + stat + '</dd><dt>' + (life ? 'Ends' : 'Paid through') + '</dt><dd>' + (life ? 'Never' : esc(fmt(end))) + '</dd></dl>'
-      + (e.preview ? '' : '<div class="bill" id="bill" aria-live="polite"><div class="sk"></div><div class="sk" style="width:45%"></div></div>')
+      + ('<div class="bill" id="bill" aria-live="polite"><div class="sk"></div><div class="sk" style="width:45%"></div></div>')
       + '<div class="mbact"><a class="btn" href="#/create">Create your own</a></div></div></div>';
   }
   function viewSteady(){
@@ -1663,7 +1663,10 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     el.innerHTML = h;
   }
   function billInit(){
-    if(!$('bill')) return; billHtml();
+    if(!$('bill')) return;
+    var pv = previewEnt();
+    if(pv){ if(!bill.d || !bill.d.pv || bill.d.pv !== pv.plan){ bill.d = { pv:pv.plan, sub: pv.plan === 'lifetime' ? null : { id:'preview', status:'active', plan:'Steady ' + (pv.plan === 'yearly' ? 'Yearly' : 'Monthly'), amount: pv.plan === 'yearly' ? 2900 : 399, currency:'usd', interval: pv.plan === 'yearly' ? 'year' : 'month', end:pv.current_period_end, cancel:false }, orders: pv.plan === 'lifetime' ? [] : [{ id:'preview', at:new Date(Date.now() - 864e5 * (pv.plan === 'yearly' ? 78 : 11)).toISOString(), amount: pv.plan === 'yearly' ? 2900 : 399, currency:'usd', status:'paid', name:'Steady ' + (pv.plan === 'yearly' ? 'Yearly' : 'Monthly') }] }; } bill.err = ''; billHtml(); return; }
+    billHtml();
     if(bill.busy || (bill.d && Date.now() - bill.at < 60000)) return;
     bill.busy = true;
     billCall({ a:'info' }).then(function(r){
@@ -1675,6 +1678,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     }).catch(function(){ bill.busy = false; bill.err = 'Could not load billing just now (code net).'; billHtml(); });
   }
   function billAct(a, id, win){
+    if(id === 'preview'){ if(win) try{ win.close(); }catch(e){} if(a === 'receipt'){ toast('Preview: the real receipt opens here.'); return Promise.resolve(); } bill.ask = false; if(bill.d && bill.d.sub) bill.d.sub.cancel = (a === 'cancel'); toast(a === 'cancel' ? 'Preview: your plan would end on the date shown.' : 'Preview: your plan would renew as normal.'); billHtml(); return Promise.resolve(); }
     bill.busy = true; billHtml();
     return billCall({ a:a, id:id }).then(function(r){
       bill.busy = false;
