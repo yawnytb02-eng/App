@@ -898,7 +898,12 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var m = (r.j && (r.j.msg || r.j.error_description || r.j.message || r.j.error)) || '';
     if(/invalid login/i.test(m)) return 'That email and password do not match.';
     if(/already|registered/i.test(m)) return 'That email already has an account. Try signing in.';
-    if(/password/i.test(m)) return 'Use at least 8 characters for the password.';
+    var wr = (r.j && r.j.weak_password && r.j.weak_password.reasons) || [];
+    if(wr.indexOf('pwned') > -1 || /known to be weak|easy to guess|pwned|data breach|leak/i.test(m)) return 'That password is too easy to guess, or it has appeared in a data leak. Pick a different one.';
+    if(wr.indexOf('characters') > -1 || /character of each|uppercase|lowercase|symbol|digit/i.test(m)) return 'Mix it up: add a capital letter, a number and a symbol.';
+    if(/password/i.test(m) && /(at least|should be|short|length)/i.test(m)) return 'Use at least 8 characters for the password.';
+    if((r.j && r.j.error_code === 'weak_password') || /weak/i.test(m)) return 'That password is too weak. Try a longer one with letters, numbers and a symbol.';
+    if(/password/i.test(m)) return 'That password was not accepted. Try a different one.';
     if(/rate|too many/i.test(m)) return 'Too many tries. Wait a minute and try again.';
     if(/confirm/i.test(m)) return 'This account needs its email confirmed first.';
     return m || 'Something went wrong. Try again.';
