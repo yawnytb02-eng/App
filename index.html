@@ -526,6 +526,17 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 .mbp svg{width:26px;height:26px;margin-top:1px}.mbp .mbr{fill:none;stroke:var(--ink);stroke-width:1.8}.mbp .mbt{fill:none;stroke:var(--ink);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:22;stroke-dashoffset:22;animation:mbdraw .5s ease both;animation-delay:calc(1.5s + var(--i)*.2s + var(--el));--len:22}
 .mbp b{display:block;font-size:15.5px;letter-spacing:-.01em}.mbp span{display:block;font-size:14px;color:var(--soft);margin-top:2px;line-height:1.4}
 .mbdl{display:grid;grid-template-columns:150px 1fr;gap:10px 16px;margin-top:12px;font-size:14.5px}.mbdl dt{color:var(--mute);font-weight:600}.mbdl dd{margin:0;font-weight:600}
+.adt{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;border-bottom:1px solid var(--line);padding-bottom:10px}.adt button{font:700 14px/1 inherit;min-height:38px;padding:0 16px;border-radius:99px;border:1.5px solid transparent;background:none;color:var(--soft);cursor:pointer}.adt button[aria-selected=true]{background:var(--ink);color:var(--bg)}.adt .adref{margin-left:auto;border-color:var(--line2)}
+.adg{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:18px}.adtile{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:14px 16px}.adtile b{display:block;font-size:28px;line-height:1.1;letter-spacing:-.02em}.adtile span{display:block;color:var(--soft);font-size:13.5px;font-weight:600;margin-top:4px}.adtile i{display:block;color:var(--mute);font-size:12.5px;font-style:normal;margin-top:3px}
+.adbox{margin-bottom:16px}.adbars{display:block;width:100%;height:84px;margin-top:10px}.adbars rect{fill:var(--acc)}
+.adfn{display:grid;grid-template-columns:minmax(150px,1.1fr) 3fr auto;align-items:center;gap:12px;padding:7px 0;font-size:14px}.adfn span i{color:var(--mute);font-size:12px;font-style:normal;margin-left:4px}.adfn>div{height:10px;border-radius:6px;background:var(--tint);overflow:hidden}.adfn u{display:block;height:100%;background:var(--ink);border-radius:6px}.adfn b{min-width:44px;text-align:right}
+.adtbl{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}.adtbl th{text-align:left;color:var(--mute);font-weight:700;font-size:12px;padding:6px 8px 6px 0}.adtbl td{padding:8px 8px 8px 0;border-top:1px solid var(--line);vertical-align:top;word-break:break-word}.adtbl td i{color:var(--mute);font-style:normal;font-size:12px}
+.adsearch,.adf{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin:10px 0}.adsearch input,.adf input,.adf select,.adt select{font:inherit;min-height:38px;padding:0 12px;border-radius:12px;border:1.5px solid var(--line2);background:var(--bg);color:var(--ink);min-width:0}.adsearch input{flex:1 1 220px}.adf input[type=text],.adf input[type=email]{flex:1 1 220px}.adf input[type=number]{width:96px}
+.adrow{border:1px solid var(--line);border-radius:14px;background:var(--panel);margin-bottom:8px}.adhead{display:block;width:100%;text-align:left;font:inherit;background:none;border:0;padding:12px 14px;cursor:pointer;color:var(--ink)}.adhead .ade{font-weight:700;margin-right:8px;word-break:break-all}.adhead .adm{display:block;color:var(--mute);font-size:13px;margin-top:3px}.adhead em{font-style:normal;font-size:11px;font-weight:700;border-radius:99px;padding:2px 8px;background:var(--ink);color:var(--bg);margin-right:5px}.adhead em.w{background:var(--err);color:#fff}.adact{padding:2px 14px 14px;border-top:1px solid var(--line)}
+.adpg{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:14px 0}.adqr{display:flex;justify-content:center;margin:12px 0}.adqr img{background:#fff;border-radius:12px;padding:8px}
+.bnr{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:60;max-width:min(560px,92vw);background:var(--ink);color:var(--bg);border-radius:14px;padding:10px 16px;font-size:14px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.25);text-align:center}
+@media(max-width:999px){.bnr{bottom:76px}}
+@media(max-width:700px){.adfn{grid-template-columns:1fr auto}.adfn>div{grid-column:1/-1;order:3}}
 .bill{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}.bill h4{margin:0 0 8px;font-size:15px}.bill .bl{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}.bill .bl:last-child{border-bottom:0}.bill .bl span{color:var(--mute);font-size:13px}.bill .bl button{font:700 13px/1 inherit;min-height:34px;padding:0 14px;border-radius:99px;border:1.5px solid var(--line);background:none;color:var(--ink);cursor:pointer}.bill .bl button:hover{border-color:var(--ink)}.bill .bn{margin:0 0 10px;font-size:14px;font-weight:600}.bill .bn small{display:block;color:var(--mute);font-weight:500;font-size:13px;margin-top:2px}.bill .bc{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px}.bill .bc .btn{min-height:38px;font-size:13.5px}.bill .bq{padding:12px 14px;border-radius:14px;background:var(--tint);font-size:13.5px;font-weight:600;margin:10px 0}.bill .sk{height:12px;border-radius:6px;background:var(--line);margin:10px 0;width:70%;animation:blp 1.2s ease-in-out infinite}@keyframes blp{50%{opacity:.4}}@media(prefers-reduced-motion:reduce){.bill .sk{animation:none}}
 .mbact{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}.mbprev{margin:0 0 14px;padding:10px 14px;border:1.5px dashed var(--acc);border-radius:12px;font-size:13.5px;font-weight:600;color:var(--soft)}
 .mb.still *{animation:none!important}.mb.still .mbarc{stroke-dashoffset:var(--to)}.mb.still .mbdotg{transform:rotate(var(--a))}.mb.still .mbinf,.mb.still .mbp .mbt{stroke-dashoffset:0}.mb.still .mbspk{opacity:.85}.mb.still .mbseal:before{opacity:1}.mb.still .mbpt{display:none}
@@ -669,7 +680,8 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     lib:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg>',
     plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
     star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
-    me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>'
+    me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+    adm:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 7.8-8 9-4.8-1.2-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg>'
   };
 
 
@@ -1432,8 +1444,9 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     return '<div class="vh"><div><h1>Account</h1></div></div><div class="acct"><div class="box"><h3>Signed in</h3><dl><dt>Email</dt><dd>' + esc(sess.email || '') + '</dd><dt>Logbooks synced</dt><dd>' + (rows ? rows.length : 0) + '</dd><dt>Data stored</dt><dd>' + Math.max(1, Math.round(size / 1024)) + ' KB</dd><dt>Last checked</dt><dd>' + (lastLoad ? esc(ago(new Date(lastLoad))) : 'Not yet') + '</dd></dl><div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-act="refresh" type="button">Refresh</button><button class="btn" data-act="signout" type="button">Sign out</button></div></div>'
       + '<div class="box"><h3>Steady</h3><dl><dt>Your plan</dt><dd>' + esc(planLine()) + '</dd></dl><div style="margin-top:16px"><a class="btn ghost" href="#/steady">' + (ent && ent.steady ? 'See Steady' : 'About Steady') + '</a></div></div>'
       + (isAdmin ? '<div class="box"><h3>Anonymous stats (owner only)</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Totals per day. No names, emails, IP addresses or logbook contents are stored.</p><button class="btn ghost sm" type="button" data-act="stats" style="margin-top:14px">Show the last 14 days</button><div id="stout" style="margin-top:14px"></div></div>' : '')
-      + (isAdmin ? '<div class="box"><h3>Payment check (owner only)</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Compares what Polar says people paid with who has Steady here. Use it if a customer says they paid but have no access.</p><button class="btn ghost sm" type="button" data-act="recon" style="margin-top:14px">Check payments</button><div id="rcout" class="bill" style="margin-top:14px;border-top:0;padding-top:0"></div></div>' : '')
-      + (isAdmin ? '<div class="box"><h3>Subscriptions (owner only)</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Right now: <b>' + (BILLING_LIVE ? 'subscriptions are ON. Free accounts have limits and people can pay.' : 'FREE for everyone. No limits, nobody can pay.') + '</b></p><button class="btn' + (BILLING_LIVE ? ' ghost' : '') + '" type="button" data-act="sadm" style="margin-top:16px">' + (BILLING_LIVE ? 'Turn subscriptions off (free for all)' : 'Turn subscriptions on') + '</button></div>' : '')
+      + (isAdmin ? '<div class="box"><h3>Control panel</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Stats, people, switches, staff and the action log.</p><a class="btn" href="#/admin" style="margin-top:14px">Open the control panel</a></div>' : '')
+      + (isOwner() ? '<div class="box"><h3>Payment check (owner only)</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Compares what Polar says people paid with who has Steady here. Use it if a customer says they paid but have no access.</p><button class="btn ghost sm" type="button" data-act="recon" style="margin-top:14px">Check payments</button><div id="rcout" class="bill" style="margin-top:14px;border-top:0;padding-top:0"></div></div>' : '')
+      + (isOwner() ? '<div class="box"><h3>Subscriptions (owner only)</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Right now: <b>' + (BILLING_LIVE ? 'subscriptions are ON. Free accounts have limits and people can pay.' : 'FREE for everyone. No limits, nobody can pay.') + '</b></p><button class="btn' + (BILLING_LIVE ? ' ghost' : '') + '" type="button" data-act="sadm" style="margin-top:16px">' + (BILLING_LIVE ? 'Turn subscriptions off (free for all)' : 'Turn subscriptions on') + '</button></div>' : '')
       + '<div class="box"><h3>Turn sync on</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Open a logbook on your phone, sign in with this account, then go to Settings and switch Sync on. Changes upload in the background and appear here.</p></div>'
       + '<div class="box"><h3>How your logbooks stay separate</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Every logbook has its own storage key, such as <b>readinggirl-logbook-v1</b>. On your phone that is its own private data, so one logbook never reads another. In your account each logbook is its own row, tied to you and locked so only you can read it. They share the same app and the same login, never the same data.</p></div></div>';
   }
@@ -1511,7 +1524,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   window.addEventListener('scroll', introKick, { passive:true }); window.addEventListener('resize', introKick);
 
   /* ================= shell (signed in) ================= */
-  function route(){ var h = location.hash || ''; var m = /^#\/(lb\/(.+)|library|create|account|steady)?$/.exec(h); if(!m) return { v:'dash' }; if(m[2]){ var a; try{ a = decodeURIComponent(m[2]); }catch(e){ a = m[2]; } return { v:'lb', app:a }; } return { v:m[1] || 'dash' }; }
+  function route(){ var h = location.hash || ''; var m = /^#\/(lb\/(.+)|library|create|account|steady|admin)?$/.exec(h); if(!m) return { v:'dash' }; if(m[2]){ var a; try{ a = decodeURIComponent(m[2]); }catch(e){ a = m[2]; } return { v:'lb', app:a }; } return { v:m[1] || 'dash' }; }
 
 
   /* ================= Steady entitlement and free limits ================= */
@@ -1529,11 +1542,19 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     }catch(e){}
   }
   try{ if(!sessionStorage.getItem('cr-v')){ sessionStorage.setItem('cr-v', '1'); track('visit'); } }catch(e){}
+  var FL = {}, BANNER = '';
+  function showBanner(){
+    var el = document.getElementById('bnr');
+    if(!BANNER){ if(el) el.remove(); return; }
+    if(!el){ el = document.createElement('div'); el.id = 'bnr'; el.className = 'bnr'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+    el.textContent = BANNER;
+  }
   function loadFlags(){
     return fetch(SB + '/rest/v1/rpc/get_flags', { method:'POST', headers:{ 'apikey':KEY, 'Content-Type':'application/json' }, body:'{}' }).then(j).then(function(r){
-      var on = !!(r.ok && r.j && r.j.enforce_steady === true); if(on !== BILLING_LIVE){ BILLING_LIVE = on; render(); } }).catch(function(){});
+      var on = !!(r.ok && r.j && r.j.enforce_steady === true); if(r.ok && r.j) FL = r.j; BANNER = typeof FL.banner === 'string' ? FL.banner.slice(0, 200) : ''; showBanner(); if(on !== BILLING_LIVE){ BILLING_LIVE = on; render(); } }).catch(function(){});
   }
   loadFlags();
+  document.addEventListener('visibilitychange', function(){ if(!document.hidden) loadFlags(); });
   try{ var lm = /[?&]limits=(on|off)/.exec(location.search); if(lm) localStorage.setItem('dev-limits', lm[1]); }catch(e){}
   function limitsOn(){ var d = null; try{ d = localStorage.getItem('dev-limits'); }catch(e){} return d === 'on' ? true : d === 'off' ? false : BILLING_LIVE; }
   var ent = null;
@@ -1542,7 +1563,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function isSteady(){ return !limitsOn() || !!(ent && ent.steady); }
   function loadEnt(){
     if(!sess) return Promise.resolve();
-    fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/am_i_admin', { method:'POST', headers:hdr(tk), body:'{}' }); }).then(j).then(function(r){ var a = r.ok && r.j === true; try{ if(a) localStorage.setItem('cr-notrack', '1'); }catch(e){} if(a !== isAdmin){ isAdmin = a; render(); } }).catch(function(){});
+    fresh().then(function(tk){ return fetch(SB + '/rest/v1/rpc/am_i_admin', { method:'POST', headers:hdr(tk), body:'{}' }); }).then(j).then(function(r){ var a = r.ok && r.j === true; try{ if(a) localStorage.setItem('cr-notrack', '1'); }catch(e){} if(a !== isAdmin){ isAdmin = a; render(); } if(a && !myRole){ fresh().then(function(t2){ return fetch(SB + '/rest/v1/rpc/my_role', { method:'POST', headers:hdr(t2), body:'{}' }); }).then(j).then(function(q){ myRole = (q.ok && typeof q.j === 'string') ? q.j : 'owner'; render(); }).catch(function(){ myRole = 'owner'; }); } }).catch(function(){});
     return rpc('get_entitlement').then(function(a){ ent = Array.isArray(a) && a[0] ? a[0] : { steady:false }; render(); }).catch(function(){});
   }
   function planLine(){
@@ -1629,15 +1650,206 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     else if(v === 'library') body = '<div class="vh"><div><h1>Library</h1><p class="sub">Open one, or install it on your phone.</p></div></div>' + viewLibrary(true);
     else if(v === 'create') body = '<div class="vh"><div><h1>Create your own</h1><p class="sub">Make your own boxes and fields, put them in the order you want.</p></div></div>' + viewCreate();
     else if(v === 'steady') body = viewSteady();
+    else if(v === 'admin') body = viewAdmin();
     else body = viewAccount();
     var cur = function(x){ return v === x ? ' aria-current="page"' : ''; };
-    var side = '<aside class="side"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a><nav aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create your own</a><a href="#/steady"' + cur('steady') + '>' + IC.star + 'Steady</a><a href="#/account"' + cur('account') + '>' + IC.me + 'Account</a></nav>'
+    var side = '<aside class="side"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a><nav aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create your own</a><a href="#/steady"' + cur('steady') + '>' + IC.star + 'Steady</a><a href="#/account"' + cur('account') + '>' + IC.me + 'Account</a>' + (isAdmin ? '<a href="#/admin"' + cur('admin') + '>' + IC.adm + 'Control panel</a>' : '') + '</nav>'
       + '<div class="k">Your logbooks</div><div class="lbl">' + ((rows && rows.length) ? rows.map(function(r){ return '<a href="#/lb/' + encodeURIComponent(r.app) + '"' + (v === 'lb' && rt.app === r.app ? ' aria-current="page"' : '') + '><span class="dot" style="background:' + esc(r.name.acc) + '"></span>' + esc(r.name.n) + '<small title="Current streak in days">' + (r.cur ? r.cur + ' day' + (r.cur === 1 ? '' : 's') : '') + '</small></a>'; }).join('') : '<span style="padding:6px 12px;font-size:13px;color:var(--mute)">' + (loading ? 'Loading…' : 'None synced yet') + '</span>') + '</div>'
       + '<div class="me">' + MODEBTN + '<a href="#/account" style="text-decoration:none;font-weight:700;color:var(--ink);display:block">' + esc(sess.email || 'Account') + '</a><button type="button" data-act="signout">Sign out</button></div></aside>';
     var tabs = '<nav class="tabbar" aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create</a><a href="#/account"' + cur('account') + '>' + IC.me + 'Account</a></nav>';
     return '<div class="shell">' + side + '<main class="main"><div class="mtop"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a>' + MODEBTN + '</div>' + body + '</main></div>' + tabs;
   }
 
+
+  /* ================= control panel (owners and developers only; every real check happens on the server) ================= */
+  var myRole = null;
+  function isOwner(){ return isAdmin && myRole !== 'developer'; }
+  var adm = { who:null, tab:'overview', d:{}, sel:'', q:'', off:0, busy:false, err:'', mf:{ st:'' } };
+  var ADM_ERR = { not_admin:'This account is not on the staff list.', owner_only:'Only owners can do that.', mfa_required:'Two-step sign-in is needed first.', last_owner:'You cannot remove or demote the last owner.', has_paid_plan:'This person pays through Polar.', no_such_user:'No account with that email. They need to sign up first.', already_staff:'Already on the staff list.', is_self:'You cannot do that to your own account.', is_staff:'Remove them from the staff list first.', bad_value:'That value is not allowed.', days_required:'Enter how many days.', not_a_grant:'Only free grants can be revoked here. Paid plans are managed in Polar.', not_pending:'Nothing to undo.', failed:'That did not work. Try again.', bad_request:'That request was not understood.' };
+  function admCall(body){ return fresh().then(function(tk){ return fetch(SB + '/functions/v1/admin', { method:'POST', headers:hdr(tk), body:JSON.stringify(body) }); }).then(j); }
+  function admMsg(r){ var e = r.j && r.j.error; return ADM_ERR[e] || (r.status === 404 ? 'The admin function is not deployed yet.' : 'Could not reach the panel (code ' + (e || r.status || 'net') + ').'); }
+  function admWho(){
+    if(adm.busy) return; adm.busy = true;
+    admCall({ a:'whoami' }).then(function(r){
+      adm.busy = false;
+      if(r.ok && r.j && r.j.role){ adm.who = r.j; adm.err = ''; if(r.j.aal === 'aal2' || !r.j.mfa_required){ render(); admLoad(true); return; } admMfaInit(); }
+      else { adm.who = { none:true }; adm.err = admMsg(r); }
+      render();
+    }).catch(function(){ adm.busy = false; adm.who = { none:true }; adm.err = 'Could not reach the panel (code net).'; render(); });
+  }
+  function admMfaInit(){
+    adm.mf = { st:'wait' };
+    fresh().then(function(tk){ return fetch(SB + '/auth/v1/user', { headers:hdr(tk) }); }).then(j).then(function(r){
+      var fs = (r.j && r.j.factors) || [], v = fs.filter(function(f){ return f.factor_type === 'totp' && f.status === 'verified'; })[0];
+      if(v){ adm.mf = { st:'code', fid:v.id, err:'' }; render(); return; }
+      var stale = fs.filter(function(f){ return f.status !== 'verified'; });
+      return Promise.all(stale.map(function(f){ return fresh().then(function(t2){ return fetch(SB + '/auth/v1/factors/' + f.id, { method:'DELETE', headers:hdr(t2) }); }); })).then(fresh).then(function(t3){
+        return fetch(SB + '/auth/v1/factors', { method:'POST', headers:hdr(t3), body:JSON.stringify({ factor_type:'totp', issuer:'Clean Routine Co.', friendly_name:'Admin ' + Date.now() }) }); }).then(j).then(function(e){
+        if(e.ok && e.j && e.j.totp) adm.mf = { st:'enrol', fid:e.j.id, qr:e.j.totp.qr_code, secret:e.j.totp.secret, err:'' };
+        else adm.mf = { st:'fail', err:'Could not start two-step setup. In Supabase, check Authentication > Sign In / Providers > Multi-Factor: TOTP must be enabled.' };
+        render(); });
+    }).catch(function(){ adm.mf = { st:'fail', err:'Could not start two-step setup (code net).' }; render(); });
+  }
+  function admMfaVerify(code){
+    var fid = adm.mf.fid; adm.mf.err = '';
+    fresh().then(function(tk){ return fetch(SB + '/auth/v1/factors/' + fid + '/challenge', { method:'POST', headers:hdr(tk), body:'{}' }); }).then(j).then(function(c){
+      if(!(c.ok && c.j && c.j.id)) throw new Error('c');
+      return fresh().then(function(tk){ return fetch(SB + '/auth/v1/factors/' + fid + '/verify', { method:'POST', headers:hdr(tk), body:JSON.stringify({ challenge_id:c.j.id, code:code }) }); }).then(j);
+    }).then(function(v){
+      if(v.ok && v.j && v.j.access_token){ setSess(v.j); adm.who = null; adm.mf = { st:'' }; render(); }
+      else { adm.mf.err = 'That code did not match. Use the newest one from your authenticator app.'; render(); }
+    }).catch(function(){ adm.mf.err = 'Could not check the code just now. Try again.'; render(); });
+  }
+  function admLoad(force){
+    var t = adm.tab; if(adm.busy && !force) return;
+    var body = t === 'people' ? { a:'users', q:adm.q, offset:adm.off, limit:25 } : t === 'overview' ? { a:'overview' } : t === 'switches' ? { a:'flags' } : t === 'staff' ? { a:'staff' } : { a:'log' };
+    adm.busy = true; render();
+    admCall(body).then(function(r){
+      adm.busy = false;
+      if(r.ok && r.j){ adm.d[t] = r.j; adm.err = ''; if(t === 'log'){ admCall({ a:'errors' }).then(function(e){ adm.d.errors = e.j; render(); }); } }
+      else { adm.err = admMsg(r); if(r.j && r.j.error === 'mfa_required') adm.who = null; }
+      render();
+    }).catch(function(){ adm.busy = false; adm.err = 'Could not reach the panel (code net).'; render(); });
+  }
+  function admInit(){ if(!isAdmin) return; if(!adm.who && !adm.busy) admWho(); }
+  function admDo(body, okMsg, after){
+    adm.busy = true; render();
+    return admCall(body).then(function(r){
+      adm.busy = false;
+      if(r.ok){ toast(okMsg || 'Done'); if(after) after(r); admLoad(true); }
+      else { toast(admMsg(r)); render(); }
+      return r;
+    }).catch(function(){ adm.busy = false; toast('Could not reach the panel (code net).'); render(); });
+  }
+  function aN(n){ return (n || 0).toLocaleString(); }
+  function aD(x){ try{ return new Date(x).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' }); }catch(e){ return ''; } }
+  function aT(x){ try{ return new Date(x).toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }); }catch(e){ return ''; } }
+  function aMoney(c){ return '$' + ((c || 0) / 100).toLocaleString(undefined, { minimumFractionDigits:0, maximumFractionDigits:2 }); }
+  function aBars(list, label){
+    var w = 600, h = 84, mx = Math.max.apply(null, list.map(function(x){ return x.n; }).concat([1])), bw = w / Math.max(list.length, 1);
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" role="img" aria-label="' + esc(label) + '" class="adbars">' + list.map(function(x, i){
+      var bh = x.n ? Math.max(3, x.n / mx * (h - 6)) : 1; return '<rect x="' + (i * bw + 1.5) + '" y="' + (h - bh) + '" width="' + Math.max(bw - 3, 1) + '" height="' + bh + '" rx="2"><title>' + esc(aD(x.day)) + ': ' + x.n + '</title></rect>'; }).join('') + '</svg>';
+  }
+  function aTile(v, l, sub){ return '<div class="adtile"><b>' + v + '</b><span>' + esc(l) + '</span>' + (sub ? '<i>' + sub + '</i>' : '') + '</div>'; }
+  function admOverview(d){
+    if(!d) return '<p class="hint">Loading...</p>';
+    var u = d.users || {}, rv = d.revenue, pl = d.plans || {}, steady = Object.keys(pl).reduce(function(n, k){ return n + pl[k]; }, 0), tr = d.traffic || {};
+    var days = (d.signups || []), vis = {}; (d.daily || []).forEach(function(x){ if(x.event === 'visit') vis[x.day] = x.n; });
+    var visList = days.map(function(x){ return { day:x.day, n:Number(vis[x.day] || 0) }; });
+    var fn = [['Visits to the site', tr.visit, '30 days'], ['Sign-ups counted', tr.signup, '30 days'], ['Accounts confirmed', u.confirmed, 'all time'], ['Synced a logbook', d.sync && d.sync.users, 'all time'], ['Steady members', steady, 'all time']];
+    var fmx = Math.max.apply(null, fn.map(function(x){ return Number(x[1]) || 0; }).concat([1]));
+    var src = {}; (d.sources || []).forEach(function(x){ (src[x.src] = src[x.src] || {})[x.event] = x.n; });
+    var h = '<div class="adg">' + aTile(aN(u.total), 'People', '+' + aN(u.new7) + ' this week') + aTile(aN(u.dau), 'Active today') + aTile(aN(u.wau), 'Active in 7 days') + aTile(aN(u.mau), 'Active in 30 days')
+      + aTile(aN(steady), 'Steady members', Object.keys(pl).map(function(k){ return esc(k) + ' ' + pl[k]; }).join(' &middot; ')) + aTile(rv && !rv.error ? aMoney(rv.mrr) : '-', 'Monthly recurring', rv && !rv.error ? aN(rv.subs) + ' paying subscribers' : (rv && rv.error ? 'Polar: ' + esc(rv.error) : 'Polar not connected'))
+      + aTile(rv && !rv.error ? aMoney(rv.lifetime_total) : '-', 'Lifetime sales', rv && !rv.error ? aN(rv.lifetime_sales) + ' sold' : '') + aTile(aN(d.errors && d.errors.d1), 'App errors today', aN(d.errors && d.errors.total) + ' kept') + '</div>'
+      + '<div class="box adbox"><h3>New accounts, last 30 days</h3>' + aBars(days, 'New accounts per day') + '</div>'
+      + '<div class="box adbox"><h3>Site visits, last 30 days</h3><p class="hint">Anonymous counts. Nobody is identified.</p>' + aBars(visList, 'Visits per day') + '</div>'
+      + '<div class="box adbox"><h3>From first visit to paying</h3>' + fn.map(function(x){ var v = Number(x[1]) || 0; return '<div class="adfn"><span>' + esc(x[0]) + ' <i>' + x[2] + '</i></span><div><u style="width:' + Math.max(v / fmx * 100, v ? 2 : 0) + '%"></u></div><b>' + aN(v) + '</b></div>'; }).join('') + '</div>'
+      + '<div class="box adbox"><h3>Where people come from</h3>' + (Object.keys(src).length ? '<table class="adtbl"><tr><th>Link tag</th><th>Visits</th><th>Sign-ups</th></tr>' + Object.keys(src).map(function(k){ return '<tr><td>?src=' + esc(k) + '</td><td>' + aN(src[k].visit) + '</td><td>' + aN(src[k].signup) + '</td></tr>'; }).join('') + '</table>' : '<p class="hint">No tagged links yet. Share links like cleanroutineco.app/?src=tiktok</p>') + '</div>'
+      + '<div class="box adbox"><h3>Waitlist and sync</h3><p class="hint">' + aN(d.waitlist && d.waitlist.total) + ' people asked to be told about Steady. ' + aN(d.sync && d.sync.users) + ' people sync (' + aN(d.sync && d.sync.rows) + ' saved logbooks).</p></div>';
+    if(d.pending && d.pending.length) h += '<div class="box adbox"><h3>Waiting to be deleted</h3>' + d.pending.map(function(p){ return '<div class="bl"><div>' + esc(p.email || p.user) + ' <span>deleted on ' + esc(aD(p.due)) + '</span></div>' + (isOwner() ? '<button class="btn ghost sm" type="button" data-act="adundo" data-u="' + esc(p.user) + '">Undo</button>' : '') + '</div>'; }).join('') + '</div>';
+    return h;
+  }
+  function admPeople(d){
+    var h = '<form class="adsearch" id="adsf"><input id="adq" type="search" placeholder="Search by email" value="' + esc(adm.q) + '" autocomplete="off"><button class="btn sm" type="submit">Search</button></form>';
+    if(!d) return h + '<p class="hint">Loading...</p>';
+    var it = d.items || [];
+    h += '<p class="hint">' + aN(d.total) + ' ' + (d.total === 1 ? 'person' : 'people') + (adm.q ? ' match' : '') + '</p>';
+    h += it.map(function(p){
+      var tags = (p.staff ? '<em>' + esc(p.staff) + '</em>' : '') + (!p.confirmed ? '<em class="w">not confirmed</em>' : '') + (p.banned ? '<em class="w">suspended</em>' : '') + (p.delete_due ? '<em class="w">deleting ' + esc(aD(p.delete_due)) + '</em>' : '');
+      var plan = p.plan && p.status === 'active' && (!p.current_period_end || new Date(p.current_period_end) > new Date()) ? esc(p.plan) + (p.provider === 'grant' ? ' (free grant)' : p.provider === 'owner' ? ' (owner)' : '') : 'Free';
+      var open = adm.sel === p.id, r = '<div class="adrow' + (open ? ' on' : '') + '"><button type="button" class="adhead" data-act="apick" data-u="' + esc(p.id) + '" aria-expanded="' + open + '"><span class="ade">' + esc(p.email || '(no email)') + '</span>' + tags + '<span class="adm">' + plan + ' &middot; joined ' + esc(aD(p.created_at)) + ' &middot; seen ' + (p.last_sign_in_at ? esc(aD(p.last_sign_in_at)) : 'never') + '</span></button>';
+      if(open){
+        r += '<div class="adact"><p class="hint">ID ' + esc(p.id) + ' &middot; ' + aN(p.synced) + ' synced logbooks' + (p.current_period_end ? ' &middot; plan ends ' + esc(aD(p.current_period_end)) : '') + '</p>';
+        if(isOwner()){
+          r += '<div class="adf"><select id="agp"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="lifetime">Lifetime</option></select><input id="agd" type="number" min="1" max="3650" value="30" aria-label="Days"><span class="hint">days (ignored for Lifetime)</span><button class="btn sm" type="button" data-act="agrant" data-u="' + esc(p.id) + '">Give free Steady</button>' + (p.provider === 'grant' && p.status === 'active' ? '<button class="btn ghost sm" type="button" data-act="arevoke" data-u="' + esc(p.id) + '">Remove free Steady</button>' : '') + '</div>'
+            + '<div class="adf">' + (!p.confirmed ? '<button class="btn ghost sm" type="button" data-act="aresend" data-k="confirm" data-u="' + esc(p.id) + '">Resend confirmation email</button>' : '') + '<button class="btn ghost sm" type="button" data-act="aresend" data-k="reset" data-u="' + esc(p.id) + '">Send password reset</button>'
+            + (p.banned && !p.delete_due ? '<button class="btn ghost sm" type="button" data-act="asus" data-k="unsuspend" data-u="' + esc(p.id) + '">Unsuspend</button>' : (!p.banned ? '<button class="btn ghost sm" type="button" data-act="asus" data-k="suspend" data-u="' + esc(p.id) + '">Suspend</button>' : '')) + '</div>';
+          if(p.delete_due) r += '<div class="adf"><span class="hint">Will be deleted on ' + esc(aD(p.delete_due)) + '. Until then the account is locked.</span><button class="btn sm" type="button" data-act="adundo" data-u="' + esc(p.id) + '">Undo delete</button></div>';
+          else if(!p.staff) r += '<div class="adf"><input id="addel" type="text" placeholder="Type their email to confirm" data-want="' + esc((p.email || '').toLowerCase()) + '" autocomplete="off"><button class="btn ghost sm" id="adelgo" type="button" data-act="adel" data-u="' + esc(p.id) + '" disabled>Delete in 7 days</button></div>';
+        } else r += '<p class="hint">Developers can look but not change people.</p>';
+        r += '</div>';
+      }
+      return r + '</div>';
+    }).join('');
+    var tot = d.total || 0; h += '<div class="adpg"><button class="btn ghost sm" type="button" data-act="apg" data-d="-1"' + (adm.off <= 0 ? ' disabled' : '') + '>Previous</button><span class="hint">' + (tot ? (adm.off + 1) + '-' + Math.min(adm.off + 25, tot) + ' of ' + aN(tot) : '') + '</span><button class="btn ghost sm" type="button" data-act="apg" data-d="1"' + (adm.off + 25 >= tot ? ' disabled' : '') + '>Next</button></div>';
+    return h;
+  }
+  function admSwitches(d){
+    if(!d) return '<p class="hint">Loading...</p>';
+    var f = d.flags || {}, ro = isOwner() ? '' : ' disabled';
+    function tg(key, title, on, hint){ return '<div class="bl"><div>' + esc(title) + '<span style="display:block">' + hint + '</span></div><button type="button" data-act="aflag" data-k="' + key + '" data-v="' + (on ? 'false' : 'true') + '"' + ro + '>' + (on ? 'On - turn off' : 'Off - turn on') + '</button></div>'; }
+    return '<div class="box adbox"><h3>Switches</h3><p class="hint">Changes apply within seconds. Every change is written to the log.</p>'
+      + tg('enforce_steady', 'Subscriptions', f.enforce_steady === true, f.enforce_steady === true ? 'Free limits apply. Sync and extras need Steady.' : 'Everything is free for everyone right now.')
+      + tg('signups_open', 'New sign-ups', f.signups_open !== false, 'When off, the site and app show a "paused" message on sign-up. People who already have accounts are not affected.')
+      + tg('checkout_on', 'Checkout', f.checkout_on !== false, 'When off, nobody can start a purchase. Existing members are not affected.') + '</div>'
+      + '<div class="box adbox"><h3>Message bar</h3><p class="hint">Shows a small note at the bottom of the site and app (up to 200 characters). Leave empty to hide.</p><div class="adf"><input id="adban" type="text" maxlength="200" value="' + esc(typeof f.banner === 'string' ? f.banner : '') + '" placeholder="For example: Short maintenance tonight at 9 PM"' + ro + '><button class="btn sm" type="button" data-act="aban"' + ro + '>Save</button></div></div>'
+      + '<div class="box adbox"><h3>Lifetime limit</h3><p class="hint">How many Lifetime memberships can be sold. When reached, checkout says sold out.</p><div class="adf"><input id="adcap" type="number" min="0" max="100000" value="' + (typeof f.lifetime_cap === 'number' ? f.lifetime_cap : 200) + '"' + ro + '><button class="btn sm" type="button" data-act="acap"' + ro + '>Save</button></div></div>'
+      + '<p class="hint">Note: the sign-up switch is enforced by the site and app, not by the database itself.</p>';
+  }
+  function admStaff(d){
+    if(!d) return '<p class="hint">Loading...</p>';
+    var h = '<div class="box adbox"><h3>Owners and developers</h3><p class="hint">Owners can change anything. Developers can look at stats, people and logs, but cannot change anything.</p>' + (d.items || []).map(function(s){
+      return '<div class="bl"><div>' + esc(s.email || s.user_id) + ' <span>' + esc(s.role) + ' &middot; added ' + esc(aD(s.added_at)) + (s.added_by ? ' by ' + esc(s.added_by) : '') + '</span></div>' + (isOwner() ? '<div class="adf" style="margin:0"><select data-act="astr" data-u="' + esc(s.user_id) + '" aria-label="Role"><option value="owner"' + (s.role === 'owner' ? ' selected' : '') + '>owner</option><option value="developer"' + (s.role === 'developer' ? ' selected' : '') + '>developer</option></select><button type="button" data-act="astx" data-u="' + esc(s.user_id) + '">Remove</button></div>' : '') + '</div>'; }).join('') + '</div>';
+    if(isOwner()) h += '<div class="box adbox"><h3>Add someone</h3><p class="hint">They must already have an account. Type the email they signed up with.</p><div class="adf"><input id="adem" type="email" placeholder="name@example.com" autocomplete="off"><select id="adrole"><option value="developer">developer</option><option value="owner">owner</option></select><button class="btn sm" type="button" data-act="astadd">Add</button></div></div>';
+    return h;
+  }
+  function admLog(d){
+    if(!d) return '<p class="hint">Loading...</p>';
+    var er = adm.d.errors && adm.d.errors.items;
+    return '<div class="box adbox"><h3>What staff did</h3><p class="hint">Newest first. This list cannot be edited from the panel.</p>' + ((d.items || []).length ? '<table class="adtbl"><tr><th>When</th><th>Who</th><th>What</th><th>Person</th></tr>' + d.items.map(function(x){ var dt = x.detail && Object.keys(x.detail).length ? ' <i>' + esc(JSON.stringify(x.detail)).slice(0, 90) + '</i>' : ''; return '<tr><td>' + esc(aT(x.at)) + '</td><td>' + esc(x.actor_email || '') + '</td><td>' + esc(x.action) + dt + '</td><td>' + esc(x.target_email || '') + '</td></tr>'; }).join('') + '</table>' : '<p class="hint">Nothing yet.</p>') + '</div>'
+      + '<div class="box adbox"><h3>App errors</h3><p class="hint">The last 60 problems the site and apps reported. No personal data.</p>' + (er && er.length ? '<table class="adtbl"><tr><th>When</th><th>App</th><th>Message</th></tr>' + er.map(function(x){ return '<tr><td>' + esc(aT(x.at)) + '</td><td>' + esc(x.app) + '</td><td>' + esc(x.msg) + '</td></tr>'; }).join('') + '</table>' : '<p class="hint">' + (er ? 'No errors reported.' : 'Loading...') + '</p>') + '</div>';
+  }
+  function admMfaView(){
+    var m = adm.mf || {}, h = '<div class="box adbox" style="max-width:520px"><h3>Two-step sign-in</h3>';
+    if(m.st === 'enrol') h += '<p class="hint">The panel can change money and delete accounts, so it needs a second lock. Scan this with an authenticator app (Google Authenticator, Authy, 1Password), then type the 6-digit code.</p><div class="adqr"><img alt="Setup code" src="' + esc(m.qr) + '" width="180" height="180"></div><p class="hint">Cannot scan? Enter this key by hand: <b style="word-break:break-all">' + esc(m.secret) + '</b></p>';
+    else if(m.st === 'code') h += '<p class="hint">Enter the 6-digit code from your authenticator app.</p>';
+    else if(m.st === 'fail') h += '<p class="err">' + esc(m.err) + '</p>';
+    else h += '<p class="hint">Checking...</p>';
+    if(m.st === 'enrol' || m.st === 'code') h += '<form id="admf" class="adf"><input id="amc" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" aria-label="6-digit code"><button class="btn sm" type="submit">Continue</button></form><p class="err">' + esc(m.err || '') + '</p>';
+    return h + '</div>';
+  }
+  function viewAdmin(){
+    var head = '<div class="vh"><div><h1>Control panel</h1><p class="sub">' + (adm.who && adm.who.role ? 'Signed in as ' + esc(adm.who.role) + '.' : 'Owners and developers only.') + '</p></div></div>';
+    if(!isAdmin) return head + '<div class="box"><p class="hint">Nothing to see here.</p></div>';
+    if(!adm.who) return head + '<p class="hint">Checking your access...</p>';
+    if(adm.who.none) return head + '<div class="box"><p class="err">' + esc(adm.err || 'No access.') + '</p></div>';
+    if(adm.who.mfa_required && adm.who.aal !== 'aal2') return head + admMfaView();
+    var T = [['overview', 'Overview'], ['people', 'People'], ['switches', 'Switches'], ['staff', 'Staff'], ['log', 'Log']];
+    var tabs = '<div class="adt" role="tablist">' + T.map(function(t){ return '<button type="button" role="tab" data-act="atab" data-t="' + t[0] + '" aria-selected="' + (adm.tab === t[0]) + '">' + t[1] + '</button>'; }).join('') + '<button type="button" class="adref" data-act="aref"' + (adm.busy ? ' disabled' : '') + '>' + (adm.busy ? 'Loading...' : 'Refresh') + '</button></div>';
+    var d = adm.d[adm.tab], body = adm.tab === 'overview' ? admOverview(d) : adm.tab === 'people' ? admPeople(d) : adm.tab === 'switches' ? admSwitches(d) : adm.tab === 'staff' ? admStaff(d) : admLog(d);
+    return head + tabs + (adm.err ? '<p class="err">' + esc(adm.err) + '</p>' : '') + body;
+  }
+  function admClick(a, b){
+    var u = b.dataset.u;
+    if(a === 'atab'){ adm.tab = b.dataset.t; adm.err = ''; render(); admLoad(true); }
+    else if(a === 'aref'){ admLoad(true); }
+    else if(a === 'apick'){ adm.sel = adm.sel === u ? '' : u; render(); }
+    else if(a === 'apg'){ adm.off = Math.max(0, adm.off + 25 * Number(b.dataset.d)); adm.sel = ''; admLoad(true); }
+    else if(a === 'agrant'){ var pl = $('agp').value, dy = Number($('agd').value); admDo({ a:'grant', user:u, plan:pl, days:pl === 'lifetime' ? null : dy }, 'Steady given').then(function(r){ if(r && !r.ok && r.j && r.j.error === 'has_paid_plan' && window.confirm('This person pays through Polar. Replace their paid plan with a free grant anyway?')) admDo({ a:'grant', user:u, plan:pl, days:pl === 'lifetime' ? null : dy, force:true }, 'Steady given'); }); }
+    else if(a === 'arevoke'){ if(window.confirm('Remove this free Steady?')) admDo({ a:'revoke', user:u }, 'Removed'); }
+    else if(a === 'aresend'){ admDo({ a:'resend', user:u, kind:b.dataset.k }, b.dataset.k === 'confirm' ? 'Confirmation email sent' : 'Password reset email sent'); }
+    else if(a === 'asus'){ if(b.dataset.k === 'unsuspend' || window.confirm('Suspend this account? They cannot sign in until you unsuspend.')) admDo({ a:b.dataset.k, user:u }, b.dataset.k === 'suspend' ? 'Suspended' : 'Unsuspended'); }
+    else if(a === 'adel'){ admDo({ a:'delete_schedule', user:u }, 'Deletion scheduled. You have 7 days to undo it.'); }
+    else if(a === 'adundo'){ admDo({ a:'delete_cancel', user:u }, 'Deletion cancelled'); }
+    else if(a === 'aflag'){ var k = b.dataset.k, v = b.dataset.v === 'true'; if(k === 'enforce_steady' && v && !window.confirm('Turn subscriptions ON? Free limits start applying to everyone.')) return; admDo({ a:'flag_set', key:k, value:v }, 'Saved'); }
+    else if(a === 'aban'){ admDo({ a:'flag_set', key:'banner', value:$('adban').value.trim().slice(0, 200) }, 'Saved'); }
+    else if(a === 'acap'){ admDo({ a:'flag_set', key:'lifetime_cap', value:Math.floor(Number($('adcap').value)) }, 'Saved'); }
+    else if(a === 'astadd'){ admDo({ a:'staff_add', email:$('adem').value.trim(), role:$('adrole').value }, 'Added'); }
+    else if(a === 'astx'){ if(window.confirm('Remove this person from the staff list?')) admDo({ a:'staff_remove', user:u }, 'Removed'); }
+  }
+  document.addEventListener('input', function(e){
+    var t = e.target; if(!t) return;
+    if(t.id === 'addel'){ var g = $('adelgo'); if(g) g.disabled = !(t.value.trim().toLowerCase() === t.dataset.want && t.dataset.want); }
+  });
+  document.addEventListener('change', function(e){
+    var t = e.target; if(t && t.dataset && t.dataset.act === 'astr'){ admDo({ a:'staff_set', user:t.dataset.u, role:t.value }, 'Role changed'); }
+  });
+  document.addEventListener('submit', function(e){
+    var f = e.target; if(!f) return;
+    if(f.id === 'adsf'){ e.preventDefault(); adm.q = $('adq').value.trim(); adm.off = 0; adm.sel = ''; admLoad(true); }
+    else if(f.id === 'admf'){ e.preventDefault(); var c = $('amc').value.replace(/\s/g, ''); if(/^\d{6}$/.test(c)) admMfaVerify(c); else { adm.mf.err = 'Enter the 6 digits.'; render(); } }
+  });
 
   /* ================= billing (inside the Steady page) ================= */
   var bill = { d:null, at:0, busy:false, ask:false, err:'' };
@@ -1699,7 +1911,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 
   /* ================= render + events ================= */
   function render(){
-    var rootEl = $('root'), y = window.scrollY, h0 = rootEl.offsetHeight, el = document.activeElement, keep = el && el.id && /^(fq|cn)$/.test(el.id) ? { id:el.id, s:el.selectionStart } : null;
+    var rootEl = $('root'), y = window.scrollY, h0 = rootEl.offsetHeight, el = document.activeElement, keep = el && el.id && /^(fq|cn|adq|adem|adban|adcap|amc|addel)$/.test(el.id) ? { id:el.id, s:el.selectionStart } : null;
     if(sess){ var rt0 = route(); if(rt0.v === 'lb'){ var nm0 = nameOf(rt0.app); if(nm0.preset && nm0.preset !== themeId){ themeId = nm0.preset; applyTheme(); } } }
     if(sess && y > 0) rootEl.style.minHeight = h0 + 'px';
     rootEl.innerHTML = sess ? shell() : landing();
@@ -1709,6 +1921,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     [].forEach.call(document.querySelectorAll('.hmw'), function(h){ h.scrollLeft = h.scrollWidth; });
     if(keep && $(keep.id)){ $(keep.id).focus({ preventScroll:true }); try{ $(keep.id).setSelectionRange(keep.s, keep.s); }catch(e){} }
     if(sess && $('bill')) billInit();
+    if(sess && route().v === 'admin') admInit();
     if(sess){ window.scrollTo({ top:y, left:0, behavior:'instant' }); rootEl.style.minHeight = ''; if(Math.abs(window.scrollY - y) > 1) requestAnimationFrame(function(){ window.scrollTo({ top:y, left:0, behavior:'instant' }); }); }
   }
   window.addEventListener('hashchange', function(){ if(sess){ filt = { q:'', m:'' }; render(); window.scrollTo({ top:0, left:0, behavior:'instant' }); } });
@@ -1759,8 +1972,9 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
         var ck = $('st18'), ee = $('sterr'); if(!ck || !ck.checked){ if(ee) ee.textContent = 'Please confirm you are 18 or older and agree to the Terms.'; return; }
         b.disabled = true; if(ee) ee.textContent = 'Opening checkout...';
         fresh().then(function(tk){ return fetch(SB + '/functions/v1/start-checkout', { method:'POST', headers:hdr(tk), body:JSON.stringify({ plan:stPlan }) }); }).then(j).then(function(r){
-          if(r.ok && r.j && r.j.url){ location.href = r.j.url; return; } throw new Error('x'); }).catch(function(){ b.disabled = false; if(ee) ee.textContent = 'Could not open checkout. Try again in a moment.'; });
+          if(r.ok && r.j && r.j.url){ location.href = r.j.url; return; } var ce = new Error('x'); ce.code = r.j && r.j.error; throw ce; }).catch(function(er){ b.disabled = false; if(ee) ee.textContent = er && er.code === 'paused' ? 'Checkout is paused for a moment. Please try again soon.' : er && er.code === 'sold_out' ? 'The Lifetime memberships are sold out. Yearly and Monthly are still open.' : 'Could not open checkout. Try again in a moment.'; });
       }
+      else if(a.charAt(0) === 'a' && /^(atab|aref|apick|apg|agrant|arevoke|aresend|asus|adel|adundo|aflag|aban|acap|astadd|astx)$/.test(a)){ admClick(a, b); }
       else if(a === 'recon' || a === 'recfix'){
         b.disabled = true; var ro = $('rcout'); ro.textContent = 'Checking...';
         fresh().then(function(tk){ return fetch(SB + '/functions/v1/reconcile', { method:'POST', headers:hdr(tk), body:JSON.stringify({ fix:a === 'recfix' }) }); }).then(j).then(function(r){
@@ -1877,6 +2091,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     if(pw.length < 8){ $('aerr').textContent = 'Use at least 8 characters for the password.'; return; }
     if(navigator.onLine === false){ $('aerr').textContent = 'You are offline.'; return; }
     if(mode !== 'in' && (!$('aag').checked || !$('aga').checked)){ $('aerr').textContent = 'Please confirm your age and agree to the Terms and Privacy Policy.'; return; }
+    if(mode !== 'in' && FL.signups_open === false){ $('aerr').textContent = 'New sign-ups are paused for a moment. Please try again later.'; return; }
     $('ab').disabled = true; lastEmail = em;
     fetch(mode === 'in' ? SB + '/auth/v1/token?grant_type=password' : SB + '/auth/v1/signup', { method:'POST', headers:hdr(), body:JSON.stringify(mode === 'in' ? { email:em, password:pw } : { email:em, password:pw, data:{ agreed_terms:3, agreed_at:new Date().toISOString(), min_age:16 } }) }).then(j).then(function(r){
       if(!r.ok){ $('ab').disabled = false; $('aerr').textContent = emsg(r); if(/confirm/i.test($('aerr').textContent)){ showVerify(em); } return; }
