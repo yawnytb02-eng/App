@@ -1685,7 +1685,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       var stale = fs.filter(function(f){ return f.status !== 'verified'; });
       return Promise.all(stale.map(function(f){ return fresh().then(function(t2){ return fetch(SB + '/auth/v1/factors/' + f.id, { method:'DELETE', headers:hdr(t2) }); }); })).then(fresh).then(function(t3){
         return fetch(SB + '/auth/v1/factors', { method:'POST', headers:hdr(t3), body:JSON.stringify({ factor_type:'totp', issuer:'Clean Routine Co.', friendly_name:'Admin ' + Date.now() }) }); }).then(j).then(function(e){
-        if(e.ok && e.j && e.j.totp) adm.mf = { st:'enrol', fid:e.j.id, qr:e.j.totp.qr_code, secret:e.j.totp.secret, err:'' };
+        if(e.ok && e.j && e.j.totp) adm.mf = { st:'enrol', fid:e.j.id, uri:e.j.totp.uri, qr:e.j.totp.qr_code, secret:e.j.totp.secret, err:'' };
         else adm.mf = { st:'fail', err:'Could not start two-step setup. In Supabase, check Authentication > Sign In / Providers > Multi-Factor: TOTP must be enabled.' };
         render(); });
     }).catch(function(){ adm.mf = { st:'fail', err:'Could not start two-step setup (code net).' }; render(); });
@@ -1802,7 +1802,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   }
   function admMfaView(){
     var m = adm.mf || {}, h = '<div class="box adbox" style="max-width:520px"><h3>Two-step sign-in</h3>';
-    if(m.st === 'enrol') h += '<p class="hint">The panel can change money and delete accounts, so it needs a second lock. Scan this with an authenticator app (Google Authenticator, Authy, 1Password), then type the 6-digit code.</p><div class="adqr"><img alt="Setup code" src="' + esc(m.qr) + '" width="180" height="180"></div><p class="hint">Cannot scan? Enter this key by hand: <b style="word-break:break-all">' + esc(m.secret) + '</b></p>';
+    if(m.st === 'enrol') h += '<p class="hint">The panel can change money and delete accounts, so it needs a second lock. Scan this with an authenticator app (Google Authenticator, Authy, 1Password), then type the 6-digit code.</p><div class="adqr" style="width:200px;height:200px;max-width:100%;box-sizing:border-box;background:#fff;padding:10px;border-radius:12px;margin:12px auto">' + (qrSvg(m.uri || '') || '<img alt="Setup code" src="' + esc(m.qr) + '" width="180" height="180">') + '</div><p class="hint">Cannot scan? Enter this key by hand: <b style="word-break:break-all">' + esc(m.secret) + '</b></p>';
     else if(m.st === 'code') h += '<p class="hint">Enter the 6-digit code from your authenticator app.</p>';
     else if(m.st === 'fail') h += '<p class="err">' + esc(m.err) + '</p>';
     else h += '<p class="hint">Checking...</p>';
