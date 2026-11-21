@@ -1560,6 +1560,25 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     window.addEventListener('load', function(){ setTimeout(function(){ try{ var nv = performance.getEntriesByType('navigation')[0], t = nv ? nv.duration : 0; if(t > 0) once(t < 1000 ? 'load_fast' : t < 3000 ? 'load_ok' : 'load_slow'); }catch(e){} }, 0); });
     window.addEventListener('beforeinstallprompt', function(){ once('install_offer'); });
     window.addEventListener('appinstalled', function(){ track('installed'); });
+    /* Visit shape, still anonymous: where the visit came from (a broad group, never the address), time of day, weekday, theme, connection, window size. */
+    var rf = ''; try{ rf = document.referrer ? new URL(document.referrer).hostname.toLowerCase() : ''; }catch(e){}
+    if(!rf) once('ref_direct'); else if(!/(^|\.)cleanroutineco\.app$/.test(rf)) once('ref_' + (/google|bing|duckduckgo|yahoo|baidu|coccoc|ecosia/.test(rf) ? 'search' : /facebook|fb\.|instagram|tiktok|youtube|youtu\.be|twitter|x\.com|t\.co|reddit|zalo|linkedin|pinterest|threads/.test(rf) ? 'social' : /mail|outlook/.test(rf) ? 'email' : 'other'));
+    var dt = new Date(); once('hr_' + ('0' + dt.getHours()).slice(-2)); once('wd_' + dt.getDay());
+    once('th_' + (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'));
+    var cn = navigator.connection && navigator.connection.effectiveType; if(cn) once('net_' + String(cn).replace(/[^a-z0-9]/g, ''));
+    once('vp_' + (innerWidth < 400 ? 'xs' : innerWidth < 600 ? 's' : innerWidth < 900 ? 'm' : innerWidth < 1280 ? 'l' : 'xl'));
+    /* Which buttons and pages get used. Counts per visit of the button's code name, never what was typed or saved. Staff screens are skipped. */
+    var T0 = Date.now(), PV = 1; addEventListener('hashchange', function(){ PV++; });
+    document.addEventListener('click', function(e){ try{
+      if(/^#\/admin/.test(location.hash) || !e.target.closest) return;
+      var o = e.target.closest('[data-open]'); if(o){ var m = String(o.getAttribute('data-open')).split(':'); once('open_' + (m[0] === 'p' ? String(m[1]).toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 14) : 'custom')); }
+      var b = e.target.closest('[data-act]'); if(!b) return; var a = b.getAttribute('data-act') || '';
+      if(/^(a[a-z]*|sadm|recon|recfix|sref|stats|refresh)$/.test(a)) return;
+      once('act_' + a.toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 14));
+      if(a === 'splan' && /^(monthly|yearly|lifetime)$/.test(b.dataset.p || '')) once('plan_' + b.dataset.p);
+    }catch(x){} }, true);
+    function bye(){ if(bye.d) return; bye.d = 1; var t = (Date.now() - T0) / 1000; track(t < 30 ? 'time_lt30s' : t < 180 ? 'time_30s_3m' : 'time_gt3m'); track(PV < 2 ? 'pv_1' : PV < 4 ? 'pv_2_3' : 'pv_4p'); }
+    document.addEventListener('visibilitychange', function(){ if(document.visibilityState === 'hidden') bye(); }); addEventListener('pagehide', bye);
   }catch(e){}
   var FL = {}, BANNER = '';
   function showBanner(){
@@ -1665,6 +1684,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   }
   function shell(){
     var rt = route(), v = rt.v, body;
+    if(v !== 'admin') once('pg_' + v);
     if(v === 'dash') body = viewDash();
     else if(v === 'lb') body = viewLb(rt.app);
     else if(v === 'library') body = '<div class="vh"><div><h1>Library</h1><p class="sub">Open one, or install it on your phone.</p></div></div>' + viewLibrary(true);
@@ -1748,7 +1768,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function aBars(list, label){
     var w = 600, h = 84, mx = Math.max.apply(null, list.map(function(x){ return x.n; }).concat([1])), bw = w / Math.max(list.length, 1);
     return '<svg viewBox="0 0 ' + w + ' ' + h + '" preserveAspectRatio="none" role="img" aria-label="' + esc(label) + '" class="adbars">' + list.map(function(x, i){
-      var bh = x.n ? Math.max(3, x.n / mx * (h - 6)) : 1; return '<rect x="' + (i * bw + 1.5) + '" y="' + (h - bh) + '" width="' + Math.max(bw - 3, 1) + '" height="' + bh + '" rx="2"><title>' + esc(aD(x.day)) + ': ' + x.n + '</title></rect>'; }).join('') + '</svg>';
+      var bh = x.n ? Math.max(3, x.n / mx * (h - 6)) : 1; return '<rect x="' + (i * bw + 1.5) + '" y="' + (h - bh) + '" width="' + Math.max(bw - 3, 1) + '" height="' + bh + '" rx="2"><title>' + esc(x.lbl || aD(x.day)) + ': ' + x.n + '</title></rect>'; }).join('') + '</svg>';
   }
   function aTile(v, l, sub){ return '<div class="adtile"><b>' + v + '</b><span>' + esc(l) + '</span>' + (sub ? '<i>' + sub + '</i>' : '') + '</div>'; }
   function aPct(a, b){ b = Number(b) || 0; return b ? Math.round((Number(a) || 0) / b * 100) + '%' : '-'; }
@@ -1763,6 +1783,10 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   }
   function aMeter(label, num, den, note){ var p = den ? Math.round(num / den * 100) : 0; return '<div class="admt"><div><span>' + esc(label) + '</span><b>' + (den ? p + '%' : '-') + '</b></div><div class="bar"><u style="width:' + p + '%"></u></div><i>' + esc(note) + '</i></div>'; }
   function aRows(list, key, val, max){ var mx = Math.max.apply(null, list.map(function(x){ return Number(x[val]) || 0; }).concat([1])); return list.length ? list.map(function(x){ var v = Number(x[val]) || 0; return '<div class="adfn"><span>' + esc(x[key]) + '</span><div><u style="width:' + Math.max(v / mx * 100, v ? 2 : 0) + '%"></u></div><b>' + aN(v) + '</b></div>'; }).join('') : '<p class="hint">Nothing yet.</p>'; }
+  var ACTN = { signout:'Sign out', mode:'Switch between sign in and sign up', forgot:'Forgot password', splan:'Pick a plan', spay:'Subscribe', sjoin:'Get Steady', smanage:'Manage plan', make:'Make a logbook' };
+  function aPref(tr, pre, map, lim){ var l = Object.keys(tr || {}).filter(function(k){ return k.indexOf(pre) === 0 && (Number(tr[k]) || 0) > 0; }).map(function(k){ var id = k.slice(pre.length); return { k:(map && map[id]) || id, n:Number(tr[k]) }; }).sort(function(a, b){ return b.n - a.n; }); return l.slice(0, lim || 12); }
+  function aHours(tr){ var out = []; for(var i = 0; i < 24; i++){ var k = ('0' + i).slice(-2); out.push({ day:'', lbl:k + ':00', n:Number(tr['hr_' + k]) || 0 }); } return out; }
+  function aWeek(tr){ var nm = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], out = []; for(var i = 0; i < 7; i++) out.push({ day:'', lbl:nm[i], n:Number(tr['wd_' + i]) || 0 }); return out; }
   function aSplit(tr, rows){ var tot = rows.reduce(function(n, r){ return n + (Number(tr[r[0]]) || 0); }, 0); return tot ? rows.map(function(r){ var v = Number(tr[r[0]]) || 0; return '<div class="adfn"><span>' + esc(r[1]) + '</span><div><u style="width:' + Math.max(v / tot * 100, v ? 2 : 0) + '%"></u></div><b>' + aPct(v, tot) + '</b></div>'; }).join('') : '<p class="hint">No data yet. It fills in as people visit.</p>'; }
   function admOverview(d){
     if(!d) return '<p class="hint">Loading...</p>';
@@ -1795,14 +1819,23 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     P.devices = aCard('Devices, systems and language', 'Anonymous, once per visit, last 30 days.', '<h4 class="adh4">Device</h4>' + aSplit(tr, [['dev_phone', 'Phone'], ['dev_tablet', 'Tablet'], ['dev_desktop', 'Computer']]) + '<h4 class="adh4">System</h4>' + aSplit(tr, [['os_ios', 'iPhone / iPad'], ['os_android', 'Android'], ['os_windows', 'Windows'], ['os_mac', 'Mac'], ['os_other', 'Other']]) + '<h4 class="adh4">Language</h4>' + aSplit(tr, [['lang_en', 'English'], ['lang_vi', 'Vietnamese'], ['lang_other', 'Other']]));
     P.speed = aCard('Page speed', 'How long the site takes to load for visitors.', aSplit(tr, [['load_fast', 'Under 1 second'], ['load_ok', '1 to 3 seconds'], ['load_slow', 'Over 3 seconds']]));
     P.upgrade = aCard('From Steady page to paying', 'Last 30 days. Payments come from the Polar records.', (function(){ var fn = [['Looked at the Steady page', tr.steady_view], ['Joined the waitlist', tr.steady_join], ['Pressed Subscribe', tr.checkout_start], ['Steady members (all time)', steady]], mx = Math.max.apply(null, fn.map(function(x){ return Number(x[1]) || 0; }).concat([1])); return fn.map(function(x){ var v = Number(x[1]) || 0; return '<div class="adfn"><span>' + esc(x[0]) + '</span><div><u style="width:' + Math.max(v / mx * 100, v ? 2 : 0) + '%"></u></div><b>' + aN(v) + '</b></div>'; }).join(''); })() + '<p class="hint">Page view to Subscribe: ' + aPct(tr.checkout_start, tr.steady_view) + '.</p>');
+    P.refs = aCard('Where visitors come from', 'Broad groups only. The website address is never stored. Last 30 days.', aSplit(tr, [['ref_direct', 'Typed or bookmarked'], ['ref_search', 'Search engines'], ['ref_social', 'Social apps'], ['ref_email', 'Email'], ['ref_other', 'Other websites']]));
+    P.hours = aCard('When people visit', 'Hour of the day on the visitor\'s own clock. Hover a bar for the hour.', aBars(aHours(tr), 'Visits by hour of day') + '<h4 class="adh4">Day of the week</h4>' + aBars(aWeek(tr), 'Visits by day of the week'));
+    P.pages = aCard('Pages people reach', 'Visits that reached each page.', aRows(aPref(tr, 'pg_', { dash:'Dashboard', lb:'A logbook page', library:'Library', create:'Create your own', account:'Account', steady:'Steady' }), 'k', 'n'));
+    P.clicks = aCard('What people press', 'Visits that used each button. Names are the button\'s code name where I have not given it a label.', aRows(aPref(tr, 'act_', ACTN, 14), 'k', 'n'));
+    P.opens = aCard('Logbooks opened', 'Opened from the Library or Dashboard.', aRows(aPref(tr, 'open_', null, 10).filter(function(x){ return x.k !== 'app' && x.k !== 'offline'; }), 'k', 'n'));
+    P.shape = aCard('How a visit goes', 'Counted when the person leaves.', '<h4 class="adh4">Time on the site</h4>' + aSplit(tr, [['time_lt30s', 'Under 30 seconds'], ['time_30s_3m', '30 seconds to 3 minutes'], ['time_gt3m', 'Over 3 minutes']]) + '<h4 class="adh4">Pages seen</h4>' + aSplit(tr, [['pv_1', 'One page only'], ['pv_2_3', '2 to 3 pages'], ['pv_4p', '4 or more']]) + '<h4 class="adh4">Sign-in attempts</h4>' + aSplit(tr, [['login_ok', 'Signed in'], ['auth_fail', 'Failed or refused']]));
+    P.tech = aCard('Screens and connection', 'Last 30 days.', '<h4 class="adh4">Window width</h4>' + aSplit(tr, [['vp_xs', 'Under 400 px'], ['vp_s', '400 to 600 px'], ['vp_m', '600 to 900 px'], ['vp_l', '900 to 1280 px'], ['vp_xl', 'Over 1280 px']]) + '<h4 class="adh4">Connection</h4>' + aSplit(tr, [['net_4g', 'Fast (4g or better)'], ['net_3g', '3g'], ['net_2g', '2g'], ['net_slow2g', 'Very slow']]) + '<h4 class="adh4">Look</h4>' + aSplit(tr, [['th_light', 'Light mode'], ['th_dark', 'Dark mode']]));
+    P.plan = aCard('Plans people look at', 'Which plan was picked on the Steady page.', aSplit(tr, [['plan_monthly', 'Monthly'], ['plan_yearly', 'Yearly'], ['plan_lifetime', 'Lifetime']]));
     var rg30 = '<div class="adrng" role="group" aria-label="Date range"><span class="hint">Charts show the last</span><button type="button" data-act="arng" data-d="30" aria-pressed="' + (rg === 30) + '">30 days</button><button type="button" data-act="arng" data-d="90" aria-pressed="' + (rg === 90) + '">90 days</button></div>';
-    var sec = ['growth', 'money', 'usage', 'health'].indexOf(adm.sec) >= 0 ? adm.sec : 'growth', pend = (d.pending || []).length;
+    var sec = ['growth', 'money', 'usage', 'aud', 'health'].indexOf(adm.sec) >= 0 ? adm.sec : 'growth', pend = (d.pending || []).length;
     var heads = '<div class="adhd">' + aTile(aN(u.total), 'People', aN(u.new7) + ' joined this week') + aTile(aN(u.wau), 'Active in 7 days', aPct(u.wau, u.total) + ' of everyone') + aTile(aN(steady), 'Steady members', rev ? aMoney(rv.mrr) + ' a month' : 'free for everyone') + aTile(aN(er.d7), 'App errors this week', aN(er.d1) + ' today') + '</div>';
-    var tabs = [['growth', 'Growth'], ['money', 'Money'], ['usage', 'Logbooks'], ['health', 'Health' + (pend ? ' (' + pend + ')' : '')]];
+    var tabs = [['growth', 'Growth'], ['money', 'Money'], ['usage', 'Logbooks'], ['aud', 'Audience'], ['health', 'Health' + (pend ? ' (' + pend + ')' : '')]];
     var nav = '<div class="adsec" role="tablist">' + tabs.map(function(t){ return '<button type="button" role="tab" data-act="asec" data-s="' + t[0] + '" aria-selected="' + (sec === t[0]) + '">' + esc(t[1]) + '</button>'; }).join('') + '</div>' + (sec === 'growth' ? rg30 : '');
     var body = '';
     if(sec === 'growth') body = G.people + '<div class="adcols">' + P.vis + P.newacc + P.seen + P.funnel + P.retn + P.installs + P.devices + P.cohort + P.sources + P.domains + P.speed + '</div>';
     else if(sec === 'money') body = G.money + '<div class="adcols">' + P.upgrade + P.plans + P.wait + '</div>';
+    else if(sec === 'aud') body = '<div class="adcols">' + P.refs + P.hours + P.pages + P.clicks + P.opens + P.shape + P.tech + P.plan + '</div>';
     else if(sec === 'usage') body = '<div class="adcols">' + P.sync + P.share + '</div>';
     else body = G.health + '<div class="adcols">' + P.errors + '</div>';
     if(sec === 'health' && pend) body += '<div class="box adbox"><h3>Waiting to be deleted</h3>' + d.pending.map(function(p){ return '<div class="bl"><div>' + esc(p.email || p.user) + ' <span>deleted on ' + esc(aD(p.due)) + '</span></div>' + (isOwner() ? '<button class="btn ghost sm" type="button" data-act="adundo" data-u="' + esc(p.user) + '">Undo</button>' : '') + '</div>'; }).join('') + '</div>';
@@ -2154,8 +2187,8 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     if(mode !== 'in' && FL.signups_open === false){ $('aerr').textContent = 'New sign-ups are paused for a moment. Please try again later.'; return; }
     $('ab').disabled = true; lastEmail = em;
     fetch(mode === 'in' ? SB + '/auth/v1/token?grant_type=password' : SB + '/auth/v1/signup', { method:'POST', headers:hdr(), body:JSON.stringify(mode === 'in' ? { email:em, password:pw } : { email:em, password:pw, data:{ agreed_terms:3, agreed_at:new Date().toISOString(), min_age:16 } }) }).then(j).then(function(r){
-      if(!r.ok){ $('ab').disabled = false; $('aerr').textContent = emsg(r); if(/confirm/i.test($('aerr').textContent)){ showVerify(em); } return; }
-      if(mode !== 'in') track('signup');
+      if(!r.ok){ track('auth_fail'); $('ab').disabled = false; $('aerr').textContent = emsg(r); if(/confirm/i.test($('aerr').textContent)){ showVerify(em); } return; }
+      if(mode !== 'in') track('signup'); else track('login_ok');
       if(r.j && r.j.access_token){ setSess(r.j); location.hash = '#/'; render(); load(false); pushPrefs(); resume(); }
       else { showVerify(em); }
     }, function(){ $('ab').disabled = false; $('aerr').textContent = 'Could not reach the server. Check your connection.'; });
