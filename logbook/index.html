@@ -543,6 +543,19 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
 }
 
 .cr-bnr{position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:9999;max-width:min(560px,92vw);background:#1B1712;color:#F4ECDD;border-radius:14px;padding:10px 16px;font:600 14px/1.4 system-ui,sans-serif;box-shadow:0 8px 28px rgba(0,0,0,.25);text-align:center;pointer-events:none}
+
+/* Phones: calmer Today page. A real photo in the top card, fewer stacked boxes. Desktop (900px and up) is untouched. */
+@media (max-width:899px){
+  .home-hero.ph{min-height:268px;display:flex;flex-direction:column;justify-content:flex-end;padding:22px 20px 18px;background:linear-gradient(180deg,rgba(14,10,6,.10) 0%,rgba(14,10,6,.18) 38%,rgba(14,10,6,.74) 100%),var(--ph) center/cover no-repeat,var(--hero-via)}
+  .home-hero.ph .brand{position:absolute;top:18px;left:20px;margin:0;padding:5px 10px;border-radius:999px;background:rgba(14,10,6,.38);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);font-size:10.5px}
+  .home-hero.ph .headline{text-shadow:0 1px 14px rgba(0,0,0,.35)}
+  .home-hero.ph .day-quote{max-width:30ch;opacity:.92}
+  .home-hero .day-quote{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .week-summary-card .week-summary-divider,.week-summary-card .week-summary-body{display:none}
+  .week-summary-card .week-summary-head{margin-top:12px}
+  .week-summary-card{padding-bottom:12px}
+  .focus-card .day-quote,.focus-card [class*="quote"]{font-size:16px}
+}
 </style>
 <script id="lb-glue">
 (function(){
@@ -682,6 +695,15 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
     return [m < 0 ? 'Saved on ' + here : m < 1 ? 'Saved · synced just now' : m < 60 ? 'Saved · synced ' + m + ' min ago' : 'Saved · synced ' + Math.round(m / 60) + ' h ago', 0];
   }
   function paintSaved(){ var el = document.querySelector('.lb-saved'); if(!el) return; var s = savedText(); el.className = 'lb-saved' + (s[1] ? ' w' : ''); el.lastChild.textContent = s[0]; }
+  /* Optional real-life photo for this logbook's top card: logbook/photos/<slug>.jpg. No file, no change. */
+  var PHOK = {};
+  function heroPhoto(hero){
+    var slug = ED && ED.slug; if(!slug || !/^[a-z0-9-]{1,40}$/.test(slug) || PHOK[slug] === false) return;
+    function on(){ var h = document.querySelector('.home-hero'); if(h){ h.style.setProperty('--ph', 'url(photos/' + slug + '.jpg)'); h.classList.add('ph'); } }
+    if(PHOK[slug] === true) return on();
+    if(PHOK[slug] === 'p') return; PHOK[slug] = 'p';
+    var im = new Image(); im.onload = function(){ PHOK[slug] = true; on(); }; im.onerror = function(){ PHOK[slug] = false; }; im.src = 'photos/' + slug + '.jpg';
+  }
   var UXOFF = !!(ED && ED.pv), lastDone = -1, lastKey = '';
   var r1 = window.render;
   window.render = function(){
@@ -693,6 +715,7 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
       if(hero && ROUTE.view === 'home'){
         var q = hero.querySelector('.day-quote') || hero.lastElementChild;
         q.insertAdjacentHTML('afterend', '<p class="lb-saved" role="status"><i></i><span></span></p>'); paintSaved();
+        heroPhoto(hero);
         var card = document.querySelector('.week-strip-row'), n = nudgeHtml();
         if(card && n && SELECTED_DATE === todayStr()) card.insertAdjacentHTML('afterend', n);
         var c = bxDayCounts(), key = todayStr();
