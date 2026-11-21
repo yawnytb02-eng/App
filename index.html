@@ -528,7 +528,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 .mbdl{display:grid;grid-template-columns:150px 1fr;gap:10px 16px;margin-top:12px;font-size:14.5px}.mbdl dt{color:var(--mute);font-weight:600}.mbdl dd{margin:0;font-weight:600}
 .adt{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px;border-bottom:1px solid var(--line);padding-bottom:10px}.adt button{font:700 14px/1 inherit;min-height:38px;padding:0 16px;border-radius:99px;border:1.5px solid transparent;background:none;color:var(--soft);cursor:pointer}.adt button[aria-selected=true]{background:var(--ink);color:var(--bg)}.adt .adref{margin-left:auto;border-color:var(--line2)}
 .adg{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px;margin-bottom:18px}.adtile{border:1px solid var(--line);border-radius:16px;background:var(--panel);padding:14px 16px}.adtile b{display:block;font-size:28px;line-height:1.1;letter-spacing:-.02em}.adtile span{display:block;color:var(--soft);font-size:13.5px;font-weight:600;margin-top:4px}.adtile i{display:block;color:var(--mute);font-size:12.5px;font-style:normal;margin-top:3px}
-.adgh{font-size:13px;color:var(--mute);font-weight:700;margin:18px 0 8px}.adfn span i{display:block;font-style:normal;color:var(--mute);font-size:12px}.adh4{font-size:12.5px;color:var(--mute);margin:12px 0 2px;font-weight:700}.adrng{display:flex;align-items:center;gap:8px;margin:2px 0 4px}.adrng button{border:1px solid var(--line);background:transparent;color:var(--soft);border-radius:99px;padding:5px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}.adrng button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.adgh{font-size:13px;color:var(--mute);font-weight:700;margin:18px 0 8px}.adfn span i{display:block;font-style:normal;color:var(--mute);font-size:12px}.adh4{font-size:12.5px;color:var(--mute);margin:12px 0 2px;font-weight:700}.askq{margin-bottom:16px}.askq h3{margin:0 0 4px}.chips{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 6px}.chip{border:1px solid var(--line);background:transparent;color:var(--ink);border-radius:99px;padding:8px 14px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}.chip:hover,.chip[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}.askq .lnk{border:0;background:none;color:var(--mute);font:inherit;font-size:13px;text-decoration:underline;cursor:pointer;padding:6px 0}.adrng{display:flex;align-items:center;gap:8px;margin:2px 0 4px}.adrng button{border:1px solid var(--line);background:transparent;color:var(--soft);border-radius:99px;padding:5px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}.adrng button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .adcols{display:grid;grid-template-columns:1fr;gap:16px;margin-top:18px}@media(min-width:960px){.adcols{grid-template-columns:1fr 1fr}.adc.wide{grid-column:1/-1}}.adcols .adbox{margin:0;min-width:0}.adscr{overflow-x:auto}
 .adline{display:block;width:100%;height:120px;margin-top:10px}.adline .g{stroke:var(--line);stroke-width:1;vector-effect:non-scaling-stroke}.adline polyline{fill:none;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke}.adline .a{stroke:var(--ink)}.adline .b{stroke:var(--acc)}
 .adleg{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--soft);margin-top:8px}.adleg u{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:6px;vertical-align:middle}.adleg u.a{background:var(--ink)}.adleg u.b{background:var(--acc)}.adleg .r{margin-left:auto;color:var(--mute)}
@@ -996,7 +996,25 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function dayLabel(k, o){ return new Date(k + 'T12:00:00').toLocaleDateString(undefined, o || { weekday:'short', month:'short', day:'numeric' }); }
 
   /* ================= views ================= */
-  function viewDash(){
+  /* ===== Short opt-in questions and the feedback box. Answers go in with no name and no account id. ===== */
+  var QS = [
+    { id:'use', q:'What will you use your logbook for?', o:[['chores', 'Chores and cleaning'], ['habits', 'Habits'], ['work', 'Work'], ['health', 'Health or fitness'], ['study', 'Studying'], ['other', 'Something else']] },
+    { id:'price', q:'What would feel like a fair monthly price to sync across your devices?', o:[['free', 'I would stay free'], ['p1_2', '$1 to $2'], ['p3_4', '$3 to $4'], ['p5_6', '$5 to $6'], ['p7_9', '$7 to $9'], ['p10_up', '$10 or more']] },
+    { id:'source', q:'How did you find us?', o:[['tiktok', 'TikTok'], ['instagram', 'Instagram'], ['youtube', 'YouTube'], ['friend', 'A friend'], ['search', 'Search'], ['other', 'Somewhere else']] }
+  ];
+  function qDone(){ try{ return JSON.parse(localStorage.getItem('cr-q') || '[]'); }catch(e){ return []; } }
+  function qMark(id){ try{ var l = qDone(); if(l.indexOf(id) < 0) l.push(id); localStorage.setItem('cr-q', JSON.stringify(l)); }catch(e){} }
+  function sendFb(kind, answer, contact){
+    return fetch(SB + '/rest/v1/rpc/send_feedback', { method:'POST', headers:hdr(), body:JSON.stringify({ p_kind:kind, p_answer:answer, p_contact:contact || '' }) }).then(function(r){ return r.ok ? r.json() : false; }).catch(function(){ return false; });
+  }
+  function askBox(){
+    if(!sess) return '';
+    try{ if(Date.now() < Number(localStorage.getItem('cr-qs') || 0)) return ''; }catch(e){}
+    var done = qDone(), q = QS.filter(function(x){ return done.indexOf(x.id) < 0; })[0]; if(!q) return '';
+    return '<div class="box askq" id="askq"><h3>' + esc(q.q) + '</h3><p class="hint">One tap. Nothing is tied to your name or email.</p><div class="chips">' + q.o.map(function(o){ return '<button type="button" class="chip" data-act="qans" data-q="' + q.id + '" data-a="' + o[0] + '">' + esc(o[1]) + '</button>'; }).join('') + '</div><button type="button" class="lnk" data-act="qskip">Not now</button></div>';
+  }
+  function viewDash(){ return askBox() + viewDash0(); }
+  function viewDash0(){
     if(loading && !rows) return '<div class="vh"><div><h1>Dashboard</h1></div></div><div class="kpis"><div class="sk"></div><div class="sk"></div><div class="sk"></div><div class="sk"></div></div><div class="cols two"><div class="sk" style="height:220px"></div><div class="sk" style="height:220px"></div></div>';
     if(loadErr && !rows) return '<div class="vh"><div><h1>Dashboard</h1></div></div><div class="empty"><h3>' + esc(loadErr) + '</h3><button class="btn" data-act="refresh" type="button">Try again</button></div>';
     var h = new Date().getHours(), greet = h < 5 ? 'Late night' : h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening';
@@ -1454,6 +1472,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       + (isAdmin ? '<div class="box"><h3>Control panel</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Stats, people, switches, staff and the action log.</p><a class="btn" href="#/admin" style="margin-top:14px">Open the control panel</a></div>' : '')
       + (isOwner() ? '<div class="box"><h3>Payment check (owner only)</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Compares what Polar says people paid with who has Steady here. Use it if a customer says they paid but have no access.</p><button class="btn ghost sm" type="button" data-act="recon" style="margin-top:14px">Check payments</button><div id="rcout" class="bill" style="margin-top:14px;border-top:0;padding-top:0"></div></div>' : '')
       + (isOwner() ? '<div class="box"><h3>Subscriptions (owner only)</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Right now: <b>' + (BILLING_LIVE ? 'subscriptions are ON. Free accounts have limits and people can pay.' : 'FREE for everyone. No limits, nobody can pay.') + '</b></p><button class="btn' + (BILLING_LIVE ? ' ghost' : '') + '" type="button" data-act="sadm" style="margin-top:16px">' + (BILLING_LIVE ? 'Turn subscriptions off (free for all)' : 'Turn subscriptions on') + '</button></div>' : '')
+      + '<div class="box"><h3>Tell us something</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Something missing or broken? We read every message. Your email is optional and only used to reply.</p><div class="adf" style="flex-direction:column;align-items:stretch;gap:8px;margin-top:12px"><select id="fbk"><option value="missing">Something is missing</option><option value="problem">Something is broken</option></select><textarea id="fbt" rows="4" maxlength="600" placeholder="Write it here"></textarea><input id="fbc" type="email" maxlength="120" placeholder="Email for a reply (optional)" autocomplete="off"><button class="btn" type="button" data-act="fbsend">Send</button></div></div>'
       + '<div class="box"><h3>Turn sync on</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Open a logbook on your phone, sign in with this account, then go to Settings and switch Sync on. Changes upload in the background and appear here.</p></div>'
       + '<div class="box"><h3>How your logbooks stay separate</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Every logbook has its own storage key, such as <b>readinggirl-logbook-v1</b>. On your phone that is its own private data, so one logbook never reads another. In your account each logbook is its own row, tied to you and locked so only you can read it. They share the same app and the same login, never the same data.</p></div></div>';
   }
@@ -1787,6 +1806,32 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function aPref(tr, pre, map, lim){ var l = Object.keys(tr || {}).filter(function(k){ return k.indexOf(pre) === 0 && (Number(tr[k]) || 0) > 0; }).map(function(k){ var id = k.slice(pre.length); return { k:(map && map[id]) || id, n:Number(tr[k]) }; }).sort(function(a, b){ return b.n - a.n; }); return l.slice(0, lim || 12); }
   function aHours(tr){ var out = []; for(var i = 0; i < 24; i++){ var k = ('0' + i).slice(-2); out.push({ day:'', lbl:k + ':00', n:Number(tr['hr_' + k]) || 0 }); } return out; }
   function aWeek(tr){ var nm = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'], out = []; for(var i = 0; i < 7; i++) out.push({ day:'', lbl:nm[i], n:Number(tr['wd_' + i]) || 0 }); return out; }
+  var FBL = { use:{ chores:'Chores and cleaning', habits:'Habits', work:'Work', health:'Health or fitness', study:'Studying', other:'Something else' }, price:{ free:'Would stay free', p1_2:'$1 to $2', p3_4:'$3 to $4', p5_6:'$5 to $6', p7_9:'$7 to $9', p10_up:'$10 or more' }, source:{ tiktok:'TikTok', instagram:'Instagram', youtube:'YouTube', friend:'A friend', search:'Search', other:'Somewhere else' }, exit:{ price:'Too expensive', missing:'Missing something', other_app:'Using another app', no_need:'No longer need it', privacy:'Privacy', other:'Other' } };
+  function aKb(v){ v = Number(v) || 0; return v >= 1024 ? (v / 1024).toFixed(1) + ' MB' : Math.round(v) + ' KB'; }
+  function admCsv(){
+    var d = adm.d.overview || {}, rows = [['section', 'day', 'name', 'value']];
+    (d.history || []).forEach(function(h){ Object.keys(h).forEach(function(k){ if(k !== 'day') rows.push(['history', h.day, k, h[k]]); }); });
+    (d.daily || []).forEach(function(x){ rows.push(['site_events', x.day, x.event, x.n]); });
+    (d.signups || []).forEach(function(x){ rows.push(['new_accounts', x.day, 'accounts', x.n]); });
+    ((d.feedback || {}).counts || []).forEach(function(x){ rows.push(['survey', '', x.kind + ':' + x.answer, x.n]); });
+    (d.cohorts || []).forEach(function(c){ ['joined', 'confirmed', 'returned', 'synced', 'steady'].forEach(function(k){ rows.push(['cohort', c.wk, k, c[k]]); }); });
+    var csv = rows.map(function(r){ return r.map(function(c){ c = String(c == null ? '' : c); return /[",\n]/.test(c) ? '"' + c.replace(/"/g, '""') + '"' : c; }).join(','); }).join('\n');
+    var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], { type:'text/csv' })); a.download = 'cleanroutine-data-' + new Date().toISOString().slice(0, 10) + '.csv'; document.body.appendChild(a); a.click(); setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  function INS(d, tr, rv){
+    var hs = d.history || [], lm = d.limits || {}, fb = d.feedback || {}, cnt = fb.counts || [];
+    function pick(kind){ var m = FBL[kind], got = {}; cnt.forEach(function(x){ if(x.kind === kind) got[x.answer] = Number(x.n); }); return Object.keys(m).map(function(k){ return { k:m[k], n:got[k] || 0 }; }); }
+    function votes(kind){ var l = pick(kind), t = l.reduce(function(n, x){ return n + x.n; }, 0); return t ? aRows(l, 'k', 'n') + '<p class="hint">' + t + ' answers.</p>' : '<p class="hint">No answers yet. A short question shows on each person\'s dashboard.</p>'; }
+    var hist = hs.length < 2 ? '<p class="hint">History starts today and adds one point a day. Come back in a few days for curves.</p>' : aLine(hs.map(function(h){ return { n:Number(h.people) || 0 }; }), hs.map(function(h){ return { n:Number(h.wau) || 0 }; }), 'People', 'Active in 7 days') + '<div class="adscr"><table class="adtbl"><tr><th>Day</th><th>People</th><th>Active 7d</th><th>Steady</th><th>Synced</th><th>Stored</th><th>Errors</th></tr>' + hs.slice(-10).reverse().map(function(h){ return '<tr><td>' + esc(aD(h.day)) + '</td><td>' + aN(h.people) + '</td><td>' + aN(h.wau) + '</td><td>' + aN(h.steady) + '</td><td>' + aN(h.sync_users) + '</td><td>' + aKb(h.sync_kb) + '</td><td>' + aN(h.errors) + '</td></tr>'; }).join('') + '</table></div>';
+    var lim = lm.users ? '<div class="adg">' + aTile(aKb(lm.p50), 'Typical person stores') + aTile(aKb(lm.p90), 'Top 10% store more than') + aTile(aKb(lm.max), 'Biggest') + '</div><h4 class="adh4">Logbooks per person</h4>' + aRows([{ k:'One', n:(lm.books || {}).one }, { k:'2 to 3', n:(lm.books || {}).two_three }, { k:'4 or more', n:(lm.books || {}).four_plus }], 'k', 'n') + '<h4 class="adh4">Devices per person</h4>' + aRows([{ k:'One', n:(lm.devices || {}).one }, { k:'Two', n:(lm.devices || {}).two }, { k:'Three or more', n:(lm.devices || {}).three_plus }], 'k', 'n') + '<p class="hint">Use these to decide where a free limit would feel fair.</p>' : '<p class="hint">Nobody syncs yet.</p>';
+    var msgs = (fb.recent || []).length ? fb.recent.map(function(m){ return '<div class="bl"><div>' + esc(m.answer) + '<span>' + esc(({ missing:'Missing', problem:'Broken', exit_note:'Leaving' })[m.kind] || m.kind) + ' &middot; ' + esc(aT(m.at)) + (m.contact ? ' &middot; ' + esc(m.contact) : '') + '</span></div></div>'; }).join('') : '<p class="hint">No messages yet. People can write from the Account page.</p>';
+    return '<div class="adcols">' + aCard('Growth history', 'One saved row per day, kept for good.', hist, true)
+      + aCard('Free-plan limits', 'What people actually store and use today.', lim)
+      + aCard('Fair monthly price', 'What people say, from the dashboard question.', votes('price'))
+      + aCard('What people use it for', '', votes('use')) + aCard('How they found us', '', votes('source')) + aCard('Why people leave Steady', 'Asked when someone cancels.', votes('exit'))
+      + aCard('Messages', 'Written by people from the Account page. Treat as private.', msgs, true)
+      + aCard('Download your data', 'Everything above as one spreadsheet file (CSV).', '<button class="btn" type="button" data-act="acsv">Download CSV</button>') + '</div>';
+  }
   function aSplit(tr, rows){ var tot = rows.reduce(function(n, r){ return n + (Number(tr[r[0]]) || 0); }, 0); return tot ? rows.map(function(r){ var v = Number(tr[r[0]]) || 0; return '<div class="adfn"><span>' + esc(r[1]) + '</span><div><u style="width:' + Math.max(v / tot * 100, v ? 2 : 0) + '%"></u></div><b>' + aPct(v, tot) + '</b></div>'; }).join('') : '<p class="hint">No data yet. It fills in as people visit.</p>'; }
   function admOverview(d){
     if(!d) return '<p class="hint">Loading...</p>';
@@ -1828,13 +1873,14 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     P.tech = aCard('Screens and connection', 'Last 30 days.', '<h4 class="adh4">Window width</h4>' + aSplit(tr, [['vp_xs', 'Under 400 px'], ['vp_s', '400 to 600 px'], ['vp_m', '600 to 900 px'], ['vp_l', '900 to 1280 px'], ['vp_xl', 'Over 1280 px']]) + '<h4 class="adh4">Connection</h4>' + aSplit(tr, [['net_4g', 'Fast (4g or better)'], ['net_3g', '3g'], ['net_2g', '2g'], ['net_slow2g', 'Very slow']]) + '<h4 class="adh4">Look</h4>' + aSplit(tr, [['th_light', 'Light mode'], ['th_dark', 'Dark mode']]));
     P.plan = aCard('Plans people look at', 'Which plan was picked on the Steady page.', aSplit(tr, [['plan_monthly', 'Monthly'], ['plan_yearly', 'Yearly'], ['plan_lifetime', 'Lifetime']]));
     var rg30 = '<div class="adrng" role="group" aria-label="Date range"><span class="hint">Charts show the last</span><button type="button" data-act="arng" data-d="30" aria-pressed="' + (rg === 30) + '">30 days</button><button type="button" data-act="arng" data-d="90" aria-pressed="' + (rg === 90) + '">90 days</button></div>';
-    var sec = ['growth', 'money', 'usage', 'aud', 'health'].indexOf(adm.sec) >= 0 ? adm.sec : 'growth', pend = (d.pending || []).length;
+    var sec = ['growth', 'money', 'usage', 'aud', 'ins', 'health'].indexOf(adm.sec) >= 0 ? adm.sec : 'growth', pend = (d.pending || []).length;
     var heads = '<div class="adhd">' + aTile(aN(u.total), 'People', aN(u.new7) + ' joined this week') + aTile(aN(u.wau), 'Active in 7 days', aPct(u.wau, u.total) + ' of everyone') + aTile(aN(steady), 'Steady members', rev ? aMoney(rv.mrr) + ' a month' : 'free for everyone') + aTile(aN(er.d7), 'App errors this week', aN(er.d1) + ' today') + '</div>';
-    var tabs = [['growth', 'Growth'], ['money', 'Money'], ['usage', 'Logbooks'], ['aud', 'Audience'], ['health', 'Health' + (pend ? ' (' + pend + ')' : '')]];
+    var tabs = [['growth', 'Growth'], ['money', 'Money'], ['usage', 'Logbooks'], ['aud', 'Audience'], ['ins', 'Insights'], ['health', 'Health' + (pend ? ' (' + pend + ')' : '')]];
     var nav = '<div class="adsec" role="tablist">' + tabs.map(function(t){ return '<button type="button" role="tab" data-act="asec" data-s="' + t[0] + '" aria-selected="' + (sec === t[0]) + '">' + esc(t[1]) + '</button>'; }).join('') + '</div>' + (sec === 'growth' ? rg30 : '');
     var body = '';
     if(sec === 'growth') body = G.people + '<div class="adcols">' + P.vis + P.newacc + P.seen + P.funnel + P.retn + P.installs + P.devices + P.cohort + P.sources + P.domains + P.speed + '</div>';
     else if(sec === 'money') body = G.money + '<div class="adcols">' + P.upgrade + P.plans + P.wait + '</div>';
+    else if(sec === 'ins') body = INS(d, tr, rv);
     else if(sec === 'aud') body = '<div class="adcols">' + P.refs + P.hours + P.pages + P.clicks + P.opens + P.shape + P.tech + P.plan + '</div>';
     else if(sec === 'usage') body = '<div class="adcols">' + P.sync + P.share + '</div>';
     else body = G.health + '<div class="adcols">' + P.errors + '</div>';
@@ -1923,6 +1969,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     else if(a === 'asus'){ if(b.dataset.k === 'unsuspend' || window.confirm('Suspend this account? They cannot sign in until you unsuspend.')) admDo({ a:b.dataset.k, user:u }, b.dataset.k === 'suspend' ? 'Suspended' : 'Unsuspended'); }
     else if(a === 'adel'){ admDo({ a:'delete_schedule', user:u }, 'Deletion scheduled. You have 7 days to undo it.'); }
     else if(a === 'asec'){ adm.sec = b.dataset.s; render(); }
+    else if(a === 'acsv'){ admCsv(); }
     else if(a === 'arng'){ adm.rng = Number(b.dataset.d) === 90 ? 90 : 30; render(); }
     else if(a === 'adundo'){ admDo({ a:'delete_cancel', user:u }, 'Deletion cancelled'); }
     else if(a === 'aflag'){ var k = b.dataset.k, v = b.dataset.v === 'true'; if(k === 'enforce_steady' && v && !window.confirm('Turn subscriptions ON? Free limits start applying to everyone.')) return; admDo({ a:'flag_set', key:k, value:v }, 'Saved'); }
@@ -1959,7 +2006,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       h += '<p class="bn">' + esc(sb.plan || 'Steady') + (sb.amount ? ' &middot; ' + esc(money(sb.amount, sb.currency)) + ' every ' + per : '')
         + '<small>' + (sb.cancel ? 'Ends on ' + esc(bdate(sb.end)) + '. It will not renew.' : 'Renews on ' + esc(bdate(sb.end)) + '.') + '</small></p>';
       if(bill.ask && !sb.cancel){
-        h += '<div class="bq">Cancel at the end of this period? You keep Steady until ' + esc(bdate(sb.end)) + '.<div class="bc"><button class="btn sm" type="button" data-act="bdo"' + (bill.busy ? ' disabled' : '') + '>Yes, cancel</button><button class="btn ghost sm" type="button" data-act="bkeep">Keep my plan</button></div></div>';
+        h += '<div class="bq">Cancel at the end of this period? You keep Steady until ' + esc(bdate(sb.end)) + '.<p class="hint" style="margin:10px 0 6px">Optional: why are you leaving?</p><div class="chips">' + [['price', 'Too expensive'], ['missing', 'Missing something'], ['other_app', 'Using another app'], ['no_need', 'No longer need it'], ['privacy', 'Privacy'], ['other', 'Other']].map(function(w){ return '<button type="button" class="chip" data-act="bwhy" data-w="' + w[0] + '" aria-pressed="' + (bill.why === w[0]) + '">' + w[1] + '</button>'; }).join('') + '</div><div class="bc"><button class="btn sm" type="button" data-act="bdo"' + (bill.busy ? ' disabled' : '') + '>Yes, cancel</button><button class="btn ghost sm" type="button" data-act="bkeep">Keep my plan</button></div></div>';
       } else {
         h += '<div class="bc">' + (sb.cancel ? '<button class="btn sm" type="button" data-act="bresume"' + (bill.busy ? ' disabled' : '') + '>Keep my plan</button>' : '<button class="btn ghost sm" type="button" data-act="bask">Cancel plan</button>')
           + '<button class="btn ghost sm" type="button" data-act="smanage">Update card</button></div><p class="hint">Updating your card opens Polar, our secure payment partner. Come back here after.</p>';
@@ -2004,7 +2051,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 
   /* ================= render + events ================= */
   function render(){
-    var rootEl = $('root'), y = window.scrollY, h0 = rootEl.offsetHeight, el = document.activeElement, keep = el && el.id && /^(fq|cn|adq|adem|adban|adcap|amc|addel)$/.test(el.id) ? { id:el.id, s:el.selectionStart } : null;
+    var rootEl = $('root'), y = window.scrollY, h0 = rootEl.offsetHeight, el = document.activeElement, keep = el && el.id && /^(fq|cn|adq|adem|adban|adcap|amc|addel|fbt|fbc)$/.test(el.id) ? { id:el.id, s:el.selectionStart } : null;
     if(sess){ var rt0 = route(); if(rt0.v === 'lb'){ var nm0 = nameOf(rt0.app); if(nm0.preset && nm0.preset !== themeId){ themeId = nm0.preset; applyTheme(); } } }
     if(sess && y > 0) rootEl.style.minHeight = h0 + 'px';
     rootEl.innerHTML = sess ? shell() : landing();
@@ -2067,7 +2114,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
         fresh().then(function(tk){ return fetch(SB + '/functions/v1/start-checkout', { method:'POST', headers:hdr(tk), body:JSON.stringify({ plan:stPlan }) }); }).then(j).then(function(r){
           if(r.ok && r.j && r.j.url){ location.href = r.j.url; return; } var ce = new Error('x'); ce.code = r.j && r.j.error; throw ce; }).catch(function(er){ b.disabled = false; if(ee) ee.textContent = er && er.code === 'paused' ? 'Checkout is paused for a moment. Please try again soon.' : er && er.code === 'sold_out' ? 'The Lifetime memberships are sold out. Yearly and Monthly are still open.' : 'Could not open checkout. Try again in a moment.'; });
       }
-      else if(a.charAt(0) === 'a' && /^(atab|aref|apick|apg|agrant|arevoke|aresend|asus|adel|adundo|arng|asec|aflag|aban|acap|astadd|astx)$/.test(a)){ admClick(a, b); }
+      else if(a.charAt(0) === 'a' && /^(atab|aref|apick|apg|agrant|arevoke|aresend|asus|adel|adundo|arng|asec|acsv|aflag|aban|acap|astadd|astx)$/.test(a)){ admClick(a, b); }
       else if(a === 'recon' || a === 'recfix'){
         b.disabled = true; var ro = $('rcout'); ro.textContent = 'Checking...';
         fresh().then(function(tk){ return fetch(SB + '/functions/v1/reconcile', { method:'POST', headers:hdr(tk), body:JSON.stringify({ fix:a === 'recfix' }) }); }).then(j).then(function(r){
@@ -2078,9 +2125,13 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
             + (g.length && a !== 'recfix' ? '<div class="bc"><button class="btn sm" type="button" data-act="recfix">Give them access now</button></div>' : '');
         }).catch(function(){ b.disabled = false; ro.innerHTML = '<p class="hint">Could not check (code net).</p>'; });
       }
+      else if(a === 'qans'){ var qa = b.dataset.q, an = b.dataset.a; qMark(qa); sendFb(qa, an).then(function(ok){ toast(ok ? 'Thank you. That helps.' : 'Could not send. Try again later.'); }); render(); }
+      else if(a === 'qskip'){ try{ localStorage.setItem('cr-qs', String(Date.now() + 3 * 864e5)); }catch(e){} render(); }
+      else if(a === 'fbsend'){ var ft = $('fbt'), fk = $('fbk'), fc = $('fbc'); if(!ft || ft.value.trim().length < 3){ toast('Write a few words first.'); return; } b.disabled = true; sendFb(fk.value, ft.value.trim(), fc ? fc.value.trim() : '').then(function(ok){ b.disabled = false; if(ok){ ft.value = ''; if(fc) fc.value = ''; toast('Sent. Thank you.'); } else toast('Could not send. Try again later.'); }); }
       else if(a === 'bask'){ bill.ask = true; billHtml(); }
       else if(a === 'bkeep'){ bill.ask = false; billHtml(); }
-      else if(a === 'bdo'){ if(!bill.busy && bill.d && bill.d.sub) billAct('cancel', bill.d.sub.id); }
+      else if(a === 'bwhy'){ bill.why = b.dataset.w; billHtml(); }
+      else if(a === 'bdo'){ if(!bill.busy && bill.d && bill.d.sub){ if(bill.why){ sendFb('exit', bill.why); bill.why = ''; } billAct('cancel', bill.d.sub.id); } }
       else if(a === 'bresume'){ if(!bill.busy && bill.d && bill.d.sub) billAct('resume', bill.d.sub.id); }
       else if(a === 'brc'){ var rid0 = b.dataset.id, w0 = null; try{ w0 = window.open('', '_blank'); if(w0) w0.opener = null; }catch(e){} b.disabled = true; billAct('receipt', rid0, w0).then(function(){ b.disabled = false; }); }
       else if(a === 'smanage'){
