@@ -597,7 +597,7 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
   try{ var EDO = window.__ED; if(EDO && EDO.ord && EDO.ord.length && typeof pagesList === 'function'){ var pl0 = pagesList; pagesList = function(){ var l = pl0.apply(this, arguments), o = EDO.ord; return l.map(function(p, i){ return [p, i]; }).sort(function(a, b){ var x = o.indexOf(a[0].id), y = o.indexOf(b[0].id); if(x < 0) x = 99; if(y < 0) y = 99; return (x - y) || (a[1] - b[1]); }).map(function(z){ return z[0]; }); }; } }catch(e){}
   /* No welcome tour and no setup wizard: a signed-in person lands on this logbook's own Today page. */
   var wideQ = window.matchMedia ? matchMedia('(min-width:900px)') : { matches:false };
-  function skipSetup(){ try{ if(!DB.onboarded) DB.onboarded = true; if(wideQ.matches && typeof HOME_REST_OPEN !== 'undefined' && !HOME_REST_OPEN) HOME_REST_OPEN = true; }catch(e){} }
+  function skipSetup(){ try{ if(!DB.onboarded && Object.keys(DB.days||{}).length) DB.onboarded = true; if(wideQ.matches && typeof HOME_REST_OPEN !== 'undefined' && !HOME_REST_OPEN) HOME_REST_OPEN = true; }catch(e){} }
   /* Look and feel from the studio: the line under the date, and renamed ready-made boxes */
   try{ if(ED && ED.tag){ QUOTES.length = 0; QUOTES.push(ED.tag); } (ED && ED.bt || []).forEach(function(x){ var p = x.split('~'); CORE_PAGES.forEach(function(pg){ if(pg.id === p[0] && p[1]) pg.name = p[1]; }); }); }catch(e){}
   skipSetup();
