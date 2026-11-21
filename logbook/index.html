@@ -572,6 +572,20 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
   .sr-name{font-size:16px}
   .page-tile .tile-status{font-size:12px}
 }
+
+.lb-rep{display:flex;align-items:center;justify-content:space-between;width:calc(100% - 32px);margin:10px 16px 0;padding:12px 16px;border-radius:16px;border:1px dashed var(--line);background:transparent;color:var(--ink-soft);font:600 14px/1 inherit;cursor:pointer}
+.lb-rep span{font-weight:500;font-size:12px;color:var(--muted)}
+.lb-rep-note{margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--ink-soft)}
+.lb-rep-row{display:flex;align-items:center;gap:12px;padding:13px 4px;border-bottom:1px solid var(--line);font-weight:600;color:var(--ink)}
+.lb-rep-row input{width:20px;height:20px;accent-color:var(--accent)}
+#app .onboard-skip,#app .onboard-ghost{display:none!important}
+
+.lb-recap{display:flex;align-items:center;gap:8px;margin:10px 16px 0;padding:12px 8px 12px 16px;border-radius:16px;background:var(--surface-2);color:var(--ink)}
+.lb-recap div{flex:1;display:flex;flex-direction:column;gap:2px;font-size:13px}.lb-recap b{font-size:14px}.lb-recap span{color:var(--muted)}
+.lb-recap button{border:0;background:var(--accent);color:var(--accent-ink);font:700 13px/1 inherit;padding:10px 14px;border-radius:12px;cursor:pointer}
+.lb-recap button.x{background:transparent;color:var(--muted);padding:10px}
+
+.lb-hint{margin:10px 22px 0;font-size:12.5px;color:var(--muted)}
 </style>
 <script id="lb-glue">
 (function(){
@@ -770,8 +784,10 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
   function tick(){
     try{
       paintSaved(); if(!remOn() || !lateAndEmpty() || jget(K_NF) === todayStr()) return;
+      var hh = new Date().getHours(); if(hh >= 22 || hh < 7) return; /* quiet hours: never ping at night */
       jset(K_NF, todayStr());
-      var o = { body:'Nothing logged yet today. It takes a minute.', tag:'lb-daily', icon:'./apple-touch-icon.png', data:{ url:location.pathname + location.search } };
+      var sk = (typeof DB !== 'undefined' && DB.streak) || 0, tone = sk > 1 ? 'Day ' + (sk + 1) + ' is waiting. One tap keeps your ' + sk + '-day streak.' : (hh < 12 ? 'Good morning. Log one thing to start the day.' : 'Nothing logged yet today. One quick entry is enough.');
+      var o = { body:tone, tag:'lb-daily', icon:'./apple-touch-icon.png', data:{ url:location.pathname + location.search } };
       if(navigator.serviceWorker && navigator.serviceWorker.ready) navigator.serviceWorker.ready.then(function(r){ r.showNotification(NAME, o); }); else new Notification(NAME, o);
     }catch(e){}
   }
@@ -891,6 +907,108 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
       var t = todayStr(), p = getPage(t, it.carry.box); if(p[it.carry.key] === undefined || p[it.carry.key] === '') p[it.carry.key] = it.carry.raw;
       markTouched(t, it.carry.box); buzz(12); try{ flashSaved('Logged'); }catch(x){} render();
     });
+  })();
+  /* ---- Fill from yesterday (you choose which boxes), light haptics, setup is not skippable ---- */
+  (function(){
+    function pad(n){ return String(n).padStart(2, '0'); }
+    function dstr(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function yest(){ var d = new Date(); d.setDate(d.getDate() - 1); return dstr(d); }
+    function realKeys(pg){ return Object.keys(pg || {}).filter(function(k){ return k.charAt(0) !== '_'; }); }
+    function copyable(v){ return v !== '' && v != null && !(typeof v === 'string' && (v.length > 30 || v.indexOf('data:') === 0)); }
+    function used(){ try{ var t = todayStr(); DB.copied = DB.copied || {}; var o = {}; o[t] = (DB.copied[t] || {}); DB.copied = o; return DB.copied[t]; }catch(e){ return {}; } }
+    function eligible(){
+      var out = [];
+      try{
+        var t = todayStr(), y = yest(), yd = DB.days && DB.days[y], td = DB.days && DB.days[t], u = used();
+        if(!yd) return out;
+        pagesList(t).forEach(function(p){
+          var yp = yd.pages && yd.pages[p.id]; if(!yp || !pageIsDone(y, p.id)) return;
+          var keys = realKeys(yp).filter(function(k){ return copyable(yp[k]); }); if(!keys.length) return;
+          var tp = td && td.pages && td.pages[p.id]; if(tp && realKeys(tp).length) return;
+          if(u[p.id]) return;
+          out.push({ id:p.id, name:(typeof nameOf === 'function' ? nameOf(p.id) : p.name) || p.id });
+        });
+      }catch(e){}
+      return out;
+    }
+    window.lbRepOpen = function(){
+      var list = eligible(); if(!list.length) return;
+      openSheet('<div class="sheet-title"><span>Fill from yesterday</span><button class="sheet-close" onclick="closeSheet()" aria-label="Close">' + icon('close', 15) + '</button></div>' +
+        '<div class="bx-form"><p class="lb-rep-note">Pick the boxes that went the same as yesterday. Each one fills once today, and still counts only when you tap Finish.</p>' +
+        list.map(function(b){ return '<label class="lb-rep-row"><input type="checkbox" value="' + esc(b.id) + '"><span>' + esc(b.name) + '</span></label>'; }).join('') +
+        '<div class="bx-actions"><button class="sec" onclick="closeSheet()">Cancel</button><button class="pri" onclick="lbRepGo()">Fill selected</button></div></div>');
+    };
+    window.lbRepGo = function(){
+      var ids = [].slice.call(document.querySelectorAll('.lb-rep-row input:checked')).map(function(i){ return i.value; });
+      if(!ids.length){ closeSheet(); return; }
+      var t = todayStr(), y = yest(), n = 0, u = used();
+      ids.forEach(function(id){
+        var yp = DB.days[y] && DB.days[y].pages && DB.days[y].pages[id]; if(!yp || u[id]) return;
+        var tp = getPage(t, id);
+        realKeys(yp).forEach(function(k){ if(copyable(yp[k])) tp[k] = JSON.parse(JSON.stringify(yp[k])); });
+        u[id] = 1; n++;
+      });
+      saveDB(); closeSheet(); render(); try{ flashSaved(n + (n === 1 ? ' box filled. Tap Finish to log it' : ' boxes filled. Tap Finish to log them')); }catch(e){}
+    };
+    var r3 = window.render;
+    window.render = function(){
+      var out = r3.apply(this, arguments);
+      try{
+        if(ROUTE.view === 'home' && SELECTED_DATE === todayStr() && !document.querySelector('.lb-rep')){
+          var n = eligible().length, row = document.querySelector('.week-strip-row');
+          if(n && row) row.insertAdjacentHTML('afterend', '<button class="lb-rep" onclick="lbRepOpen()">Fill from yesterday <span>' + n + (n === 1 ? ' box' : ' boxes') + '</span></button>');
+        }
+        if(ROUTE.view === 'home' && DB.onboarded && !document.querySelector('.lb-hint') && pagesList(todayStr()).length && !Object.keys(DB.finished || {}).length){
+          var hr = document.querySelector('.week-strip-row'); if(hr) hr.insertAdjacentHTML('afterend', '<p class="lb-hint">Tap a box to log it. Tap Finish when you are done.</p>');
+        }
+        var sub = document.querySelector('#app .onb-sub');
+        if(typeof ONSTEP !== 'undefined' && ONSTEP === 'welcome' && sub && /Skip any|Skip it/.test(sub.textContent)) sub.textContent = 'A minute of setup, once. It makes the app fit your day.';
+      }catch(e){}
+      return out;
+    };
+    /* light haptics where the phone supports them (Android; iPhone Safari ignores them) */
+    try{
+      var calm = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+      document.addEventListener('click', function(e){
+        if(calm || !navigator.vibrate) return;
+        var t = e.target.closest && e.target.closest('button,.pill,.scale-dot,.ui-chip,.week-day,label'); if(!t) return;
+        if(/^\s*Finish /.test(t.textContent || '')) navigator.vibrate([10, 40, 16]);
+        else if(t.matches('.pill,.scale-dot,.ui-chip,.week-day,.lb-rep,.lb-rep-row,.onboard-cta,.bx-chip')) navigator.vibrate(8);
+      }, true);
+    }catch(e){}
+  })();
+
+  /* ---- Weekly recap: Sunday and Monday only, once a week, easy to share ---- */
+  (function(){
+    function pad(n){ return String(n).padStart(2, '0'); }
+    function dstr(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function stats(){
+      var n = 0, boxes = 0, d = new Date();
+      for(var i = 1; i <= 7; i++){ var x = new Date(d); x.setDate(d.getDate() - i); var k = dstr(x), day = DB.days && DB.days[k], c = 0;
+        if(day && day.pages) Object.keys(day.pages).forEach(function(id){ if(pageIsDone(k, id)) c++; });
+        if(c){ n++; boxes += c; } }
+      return { days:n, boxes:boxes };
+    }
+    window.lbRecapShare = function(){
+      var s = stats(), txt = 'Last week: ' + s.days + ' of 7 days logged, ' + s.boxes + ' boxes done. ' + (DB.streak > 1 ? DB.streak + '-day streak. ' : '') + 'Clean Routine Co.';
+      try{ if(navigator.share){ navigator.share({ text:txt }).catch(function(){}); return; } navigator.clipboard.writeText(txt); flashSaved('Copied'); }catch(e){}
+    };
+    window.lbRecapHide = function(){ try{ DB.recapSeen = dstr(new Date()); saveDB(); var c = document.querySelector('.lb-recap'); if(c) c.remove(); }catch(e){} };
+    var r4 = window.render;
+    window.render = function(){
+      var out = r4.apply(this, arguments);
+      try{
+        var wd = new Date().getDay();
+        if(ROUTE.view === 'home' && (wd === 0 || wd === 1) && !document.querySelector('.lb-recap') && DB.onboarded){
+          var s = stats(), mon = new Date(); mon.setDate(mon.getDate() - ((wd + 6) % 7)); var wk = dstr(mon);
+          if(s.days && DB.recapSeen !== wk && (DB.recapSeen || '') < wk){
+            var row = document.querySelector('.week-strip-row');
+            if(row) row.insertAdjacentHTML('afterend', '<div class="lb-recap"><div><b>Last week</b><span>' + s.days + ' of 7 days logged, ' + s.boxes + ' boxes done</span></div><button onclick="lbRecapShare()">Share</button><button class="x" onclick="lbRecapHide()" aria-label="Hide">' + icon('close', 14) + '</button></div>');
+          }
+        }
+      }catch(e){}
+      return out;
+    };
   })();
   render();
 })();
