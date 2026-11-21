@@ -556,6 +556,13 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
   .week-summary-card{padding-bottom:12px}
   .focus-card .day-quote,.focus-card [class*="quote"]{font-size:16px}
 }
+
+@media (max-width:899px){
+  .pg-photo{height:104px;margin:0 0 12px;border-radius:22px;background:var(--surface-2) center/cover no-repeat;box-shadow:var(--shadow-sm)}
+  .pill-row.ui-chips:has(.pill:nth-child(7)){flex-wrap:nowrap;overflow-x:auto;scroll-snap-type:x proximity;margin-right:-16px;padding-right:16px;scrollbar-width:none;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
+  .pill-row.ui-chips:has(.pill:nth-child(7))::-webkit-scrollbar{display:none}
+  .pill-row.ui-chips:has(.pill:nth-child(7))>.pill{flex:0 0 auto;scroll-snap-align:start}
+}
 </style>
 <script id="lb-glue">
 (function(){
@@ -704,6 +711,13 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
     if(PHOK[slug] === 'p') return; PHOK[slug] = 'p';
     var im = new Image(); im.onload = function(){ PHOK[slug] = true; on(); }; im.onerror = function(){ PHOK[slug] = false; }; im.src = 'photos/' + slug + '.jpg';
   }
+  function pagePhoto(){
+    var slug = ED && ED.slug; if(!slug || !/^[a-z0-9-]{1,40}$/.test(slug) || PHOK[slug] === false) return;
+    function put(){ var pb = document.querySelector('.page-body'); if(pb && !pb.querySelector('.pg-photo')) pb.insertAdjacentHTML('afterbegin', '<div class="pg-photo" role="img" aria-hidden="true" style="background-image:url(photos/' + slug + '.jpg)"></div>'); }
+    if(PHOK[slug] === true) return put();
+    if(PHOK[slug] === 'p') return; PHOK[slug] = 'p';
+    var im = new Image(); im.onload = function(){ PHOK[slug] = true; put(); }; im.onerror = function(){ PHOK[slug] = false; }; im.src = 'photos/' + slug + '.jpg';
+  }
   var UXOFF = !!(ED && ED.pv), lastDone = -1, lastKey = '';
   var r1 = window.render;
   window.render = function(){
@@ -711,6 +725,7 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
     if(UXOFF) return out;
     try{
       if(ROUTE.view === 'page' && ROUTE.pageId) jset(K_WH, { p:ROUTE.pageId, d:SELECTED_DATE, t:Date.now() }); else if(ROUTE.view === 'home') jset(K_WH, null);
+      if(ROUTE.view === 'page') pagePhoto();
       var hero = document.querySelector('.home-hero');
       if(hero && ROUTE.view === 'home'){
         var q = hero.querySelector('.day-quote') || hero.lastElementChild;
