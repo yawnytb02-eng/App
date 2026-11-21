@@ -81,48 +81,6 @@ html[data-tone=night] .intro video{filter:invert(1);mix-blend-mode:screen;opacit
 .si .lede2{margin-top:16px;color:var(--soft);font-size:18px;max-width:40ch}
 .si .feats{display:grid;grid-template-columns:1fr;gap:18px;padding:30px 0 0}
 #signin{scroll-margin-top:84px}
-
-/* ===== Mobile landing (phones): a photo-led first screen, short text, swipe rows. Desktop keeps its own layout. ===== */
-.mob{display:none}
-@media(max-width:700px){
-  main#top{display:flex;flex-direction:column}
-  .dk{display:none!important}
-  .mob{display:block}
-  .mhero{order:1;padding-top:64px}.msteps{order:2}.mphone{order:3}.stage{order:4}.band{order:5}.signin-sec{order:6}
-  .mh-photo{position:relative;margin:0 14px;height:min(62svh,520px);border-radius:28px;overflow:hidden;background:radial-gradient(120% 90% at 85% 10%,color-mix(in srgb,var(--acc) 40%,transparent),transparent 60%),linear-gradient(160deg,var(--tint),var(--bg2,var(--tint)))}
-  .mh-photo .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  .mh-photo:after{content:"";position:absolute;inset:auto 0 0 0;height:38%;background:linear-gradient(transparent,rgba(0,0,0,.28));pointer-events:none}
-  .mh-phone{position:absolute;z-index:2;right:18px;bottom:-26px;width:44%;max-width:190px;transform:rotate(4deg);border-radius:15% / 7%;background:#0b0b0b;padding:2.6%;box-shadow:0 30px 50px -22px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.14) inset}
-  .mh-phone img{display:block;width:100%;height:auto;aspect-ratio:520/1126;object-fit:cover;border-radius:12.5% / 5.8%;background:#fff}
-  .mhero .wrap{padding-top:44px}
-  .mhero h1{font-size:clamp(36px,11vw,46px);line-height:.98;letter-spacing:-.05em;max-width:none}
-  .mhero .lede{margin-top:14px;font-size:17px;line-height:1.45;color:var(--soft);max-width:30ch}
-  .mhero .row{display:flex;gap:10px;margin-top:22px}.mhero .row .btn{flex:1;justify-content:center}
-  .pills{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:18px 0 0;padding:0}.pills li{font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:99px;background:var(--tint);color:var(--ink)}
-  .mhero .dots7{margin-top:18px}
-  .msteps,.mphone{padding:44px 0 0}.msteps h2,.mphone h2{font-size:28px;letter-spacing:-.04em;margin:0}.mphone .sub{margin-top:6px;font-size:15px;color:var(--soft)}
-  .mswipe{display:flex;gap:12px;overflow-x:auto;scroll-snap-type:x mandatory;padding:16px 28px 6px;scrollbar-width:none;-webkit-overflow-scrolling:touch}.mswipe::-webkit-scrollbar{display:none}
-  .mstep{flex:none;width:72vw;max-width:300px;scroll-snap-align:center;background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:10px 10px 18px}
-  .mst-img{position:relative;height:150px;border-radius:14px;overflow:hidden;background:linear-gradient(150deg,var(--tint),color-mix(in srgb,var(--acc) 22%,var(--tint)))}
-  .mst-img .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  .mst-img b{position:absolute;z-index:2;left:10px;top:10px;width:28px;height:28px;border-radius:50%;background:var(--ink);color:var(--bg);display:grid;place-items:center;font-size:14px}
-  .mstep h3{margin:14px 8px 4px;font-size:18px}.mstep p{margin:0 8px;font-size:14.5px;line-height:1.4;color:var(--soft)}
-  .mph{flex:none;width:58vw;max-width:250px;scroll-snap-align:center;margin:0}
-  .mph .ph2{width:100%;margin:0}
-  .mph figcaption{margin-top:12px;text-align:center}.mph figcaption b{display:block;font-size:16px}.mph figcaption span{display:block;font-size:13.5px;color:var(--soft);line-height:1.35;margin-top:2px}
-  .stage{margin-top:48px;padding-top:40px}
-  .stage svg.mo{display:none}
-  .stage .wrap>h2{font-size:28px!important}.stage .wrap>.sub{font-size:15px;max-width:30ch}
-  .st-pick{margin-left:-28px;margin-right:-28px;-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}
-  .st-photo{position:relative;height:210px;margin-top:22px;border-radius:22px;overflow:hidden;background:linear-gradient(150deg,color-mix(in srgb,var(--acc2) 30%,var(--bg2)),var(--bg2))}
-  .st-photo .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-  .st-row{margin-top:22px;gap:14px}.st-name{font-size:clamp(46px,15vw,64px)}.st-side{max-width:none;width:100%}.st-side .acts .btn{flex:1;justify-content:center}.st-side p{font-size:16px}
-  .st-ph{margin-top:28px}
-  .band{padding:44px 0}.band h2{font-size:28px!important}.band .sub{font-size:15px;margin-bottom:16px}
-  .band .mbtn{width:100%;justify-content:center;display:flex}.band .bld{display:none}.band.open .bld{display:block;margin-top:18px}
-  .signin-sec{padding:44px 0 28px}.signin-sec h2{font-size:28px}.signin-sec .lede2{font-size:15px}.signin-sec .feats{display:none}
-  .ft .wrap{gap:6px}
-}
 @media(prefers-reduced-motion:reduce){.intro{height:auto}.intro .pin{position:relative;height:auto;min-height:90vh}.beat.b2,.beat.b3,.cue,.intro .prog{display:none}.beat.b1{position:relative;top:auto;transform:none;left:auto;right:auto;padding:0 28px}.intro .copy{position:relative;min-height:90vh}.intro .vid{transform:none!important}}
 
 
@@ -793,12 +751,12 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var th = stTh(stageId), p = PRESETS.filter(function(x){ return x.id === stageId; })[0];
     var pills = PRESETS.map(function(x){ return '<button type="button" data-st="' + x.id + '" aria-pressed="' + (x.id === stageId) + '">' + esc(x.n) + '</button>'; }).join('');
     return '<section class="stage" id="choose" style="' + themeVars(th) + '">' + motif(th.mo, th.acc) + '<div class="wrap"><h2 style="font-size:clamp(28px,4vw,42px)">Choose a logbook</h2><p class="sub" style="color:inherit;opacity:.8">Seven starting points. Same engine, its own look and its own set of boxes. These are the real screens.</p><div class="st-pick" role="group" aria-label="Logbooks">' + pills + '</div>'
-      + '<div class="mob st-photo" id="stph">' + PH(p.id, p.n) + '</div><div class="st-row"><div class="st-name" id="stn">' + stName(p) + '</div><div class="st-side"><p id="stt">' + esc(p.t) + '</p><div class="acts"><a class="btn" id="sto" data-open="p:' + p.id + '" href="logbook/?l=' + p.id + '">Open ' + esc(p.n) + '</a><button class="btn ghost" id="sti" type="button" data-act="inst" data-i="' + p.id + '">Install</button></div></div></div>'
+      + '<div class="st-row"><div class="st-name" id="stn">' + stName(p) + '</div><div class="st-side"><p id="stt">' + esc(p.t) + '</p><div class="acts"><a class="btn" id="sto" data-open="p:' + p.id + '" href="logbook/?l=' + p.id + '">Open ' + esc(p.n) + '</a><button class="btn ghost" id="sti" type="button" data-act="inst" data-i="' + p.id + '">Install</button></div></div></div>'
       + '<div class="st-ph" id="stp">' + stPhones(p) + '</div></div></section>';
   }
   function stName(p){ var w = p.n.split(' '); return w.length > 1 ? esc(w[0]) + '<br><em>' + esc(w.slice(1).join(' ')) + '</em>' : '<em>' + esc(p.n) + '</em>'; }
   function stPhones(p){ return ['home','food','time','stats'].map(function(s){ return '<div class="ph2"><img src="logbook/shots/' + p.id + '/' + s + '.jpg" alt="' + esc(p.n) + ' ' + ({home:'home',food:'box',time:'timetable',stats:'tracker'})[s] + ' screen" width="520" height="1126" decoding="async"></div>'; }).join(''); }
-  function walkSwap(){ var s = $('wks'); if(s){ s.innerHTML = walkImgs(); } var ms = $('mws'); if(ms) ms.innerHTML = mWalk(); var mn = $('mwn'); if(mn) mn.textContent = PRESETS.filter(function(x){ return x.id === themeId; })[0].n; var mh = document.querySelector('.mh-phone img'); if(mh) mh.src = 'logbook/shots/' + themeId + '/home.jpg'; var n = $('wkn'); if(n) n.textContent = PRESETS.filter(function(x){ return x.id === themeId; })[0].n; }
+  function walkSwap(){ var s = $('wks'); if(s){ s.innerHTML = walkImgs(); } var n = $('wkn'); if(n) n.textContent = PRESETS.filter(function(x){ return x.id === themeId; })[0].n; }
   function syncDots(){ [].forEach.call(document.querySelectorAll('.dots7 [data-st]'), function(b){ b.setAttribute('aria-pressed', b.dataset.st === themeId); }); }
   function setStage(id){
     var el = document.getElementById('choose'); if(!el || id === stageId) return; stageId = id;
@@ -807,7 +765,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     el.classList.add('swp');
     setTimeout(function(){
       el.setAttribute('style', themeVars(th)); var old = el.querySelector('svg.mo'); if(old) old.outerHTML = motif(th.mo, th.acc);
-      $('stn').innerHTML = stName(p); $('stt').textContent = p.t; $('sto').href = 'logbook/?l=' + p.id; $('sto').setAttribute('data-open', 'p:' + p.id); $('sto').textContent = 'Open ' + p.n; $('sti').dataset.i = p.id; $('stp').innerHTML = stPhones(p); if($('stph')) $('stph').innerHTML = PH(p.id, p.n);
+      $('stn').innerHTML = stName(p); $('stt').textContent = p.t; $('sto').href = 'logbook/?l=' + p.id; $('sto').setAttribute('data-open', 'p:' + p.id); $('sto').textContent = 'Open ' + p.n; $('sti').dataset.i = p.id; $('stp').innerHTML = stPhones(p);
       [].forEach.call(el.querySelectorAll('[data-st]'), function(b){ b.setAttribute('aria-pressed', b.dataset.st === id); });
       var imgs = [].slice.call($('stp').querySelectorAll('img')), n = 0, go = function(){ if(++n >= imgs.length) el.classList.remove('swp'); };
       imgs.forEach(function(im){ if(im.complete) go(); else { im.onload = go; im.onerror = go; } }); setTimeout(function(){ el.classList.remove('swp'); }, 900);
@@ -1486,7 +1444,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       + '<aside class="s-p" aria-label="Live preview"><div class="s-sticky"><div class="phone big"><div class="scr" id="pvs"><iframe id="pvf" title="Live preview of your logbook" loading="lazy" tabindex="-1"></iframe><div class="pvld" aria-hidden="true"><i></i></div></div></div></div></aside>'
       + '<div class="mine s-d" id="mine">' + mineHtml() + '</div></div></div>';
   }
-  function mineHtml(){ return sess && saved.length ? '<h3>Your logbooks</h3>' + saved.map(function(o, i){ return '<div class="mswipe"><span class="dot" style="background:' + esc(o.a) + '"></span><b>' + esc(o.n) + '</b><a class="btn sm" data-open="m:' + i + '" href="' + esc(urlFor(o)) + '">Open</a><button class="btn ghost sm" type="button" data-act="medit" data-i="' + i + '">Edit</button><button class="btn ghost sm" type="button" data-act="minst" data-i="' + i + '">Install</button><button class="x" type="button" data-act="mdel" data-i="' + i + '" aria-label="Remove ' + esc(o.n) + ' from this list">Remove</button></div>'; }).join('') : ''; }
+  function mineHtml(){ return sess && saved.length ? '<h3>Your logbooks</h3>' + saved.map(function(o, i){ return '<div class="mrow"><span class="dot" style="background:' + esc(o.a) + '"></span><b>' + esc(o.n) + '</b><a class="btn sm" data-open="m:' + i + '" href="' + esc(urlFor(o)) + '">Open</a><button class="btn ghost sm" type="button" data-act="medit" data-i="' + i + '">Edit</button><button class="btn ghost sm" type="button" data-act="minst" data-i="' + i + '">Install</button><button class="x" type="button" data-act="mdel" data-i="' + i + '" aria-label="Remove ' + esc(o.n) + ' from this list">Remove</button></div>'; }).join('') : ''; }
   function darken(hex){ var r = parseInt(hex.substr(1,2),16), g2 = parseInt(hex.substr(3,2),16), b = parseInt(hex.substr(5,2),16), l = (Math.max(r,g2,b) + Math.min(r,g2,b)) / 510, f = l > .34 ? .34 / l : 1; return 'rgb(' + Math.round(r*f) + ',' + Math.round(g2*f) + ',' + Math.round(b*f) + ')'; }
   var pvT = 0, pvLast = '';
   function pvUrlO(o, k){
@@ -1536,35 +1494,23 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       + '<button class="btn" id="ab" type="submit" style="width:100%">' + (mode === 'in' ? 'Sign in' : 'Create account') + '</button><p class="err" id="aerr" role="alert"></p>'
       + '<p class="tog">' + (mode === 'in' ? 'New here?' : 'Already have an account?') + ' <button type="button" data-act="mode">' + (mode === 'in' ? 'Create an account' : 'Sign in') + '</button></p></form>';
   }
-  /* Real-life photo slot: shows photos/<name>.jpg when the file exists, otherwise the coloured panel behind it stays. */
-  function PH(name, alt){ return '<img class="ph" src="photos/' + name + '.jpg" alt="' + esc(alt || '') + '" decoding="async" onerror="this.remove()">'; }
-  function mWalk(){ return WALK.map(function(w){ return '<figure class="mph"><div class="ph2"><img src="logbook/shots/' + themeId + '/' + w[0] + '.jpg" alt="' + esc(w[1]) + '" width="520" height="1126" loading="lazy" decoding="async"></div><figcaption><b>' + w[1] + '</b><span>' + w[2] + '</span></figcaption></figure>'; }).join(''); }
-  function mobileTop(dots){
-    return '<section class="mob mhero" id="mhero" aria-label="Introduction"><div class="mh-photo">' + PH('hero', 'Someone ticking off their morning routine on a phone') + '<div class="mh-phone"><img src="logbook/shots/' + themeId + '/home.jpg" alt="" width="520" height="1126" decoding="async"></div></div>'
-      + '<div class="wrap"><h1>Pick a logbook. Make it yours.</h1><p class="lede">Small daily logbooks for your phone. Tap what you did and watch your streak grow.</p><div class="row"><a class="btn" href="#choose">Choose a logbook</a><a class="btn ghost" href="#signin">Sign in</a></div>'
-      + '<ul class="pills"><li>Free</li><li>Works offline</li><li>Your data stays yours</li></ul><div class="dots7" role="group" aria-label="Page colours"><span>Colours</span>' + dots + '</div></div></section>'
-      + '<section class="mob msteps" aria-label="How it works"><div class="wrap"><h2>How it works</h2></div><div class="mswipe">'
-      + [['1', 'step1', 'Pick a logbook', 'Choose one that fits, or build your own.'], ['2', 'step2', 'Put it on your phone', 'Open a link. No app store.'], ['3', 'step3', 'Log your day', 'Tap, done. Streaks build themselves.']].map(function(x){ return '<article class="mstep"><div class="mst-img"><b>' + x[0] + '</b>' + PH(x[1], '') + '</div><h3>' + x[2] + '</h3><p>' + x[3] + '</p></article>'; }).join('')
-      + '</div></section>'
-      + '<section class="mob mphone" aria-label="What the app looks like"><div class="wrap"><h2>See it</h2><p class="sub"><span id="mwn">' + esc(PRESETS.filter(function(x){ return x.id === themeId; })[0].n) + '</span>, swipe through the real screens.</p></div><div class="mswipe" id="mws">' + mWalk() + '</div></section>';
-  }
   function landing(){
     var dots = PRESETS.map(function(x){ return '<button type="button" data-st="' + x.id + '" aria-label="' + esc(x.n) + ' colours" aria-pressed="' + (x.id === themeId) + '" style="background:' + PAL[x.id].d[3] + '"></button>'; }).join('');
     return '<header class="top"><div class="wrap"><a class="brand" href="#top"><i aria-hidden="true"></i>Clean Routine Co.</a><div class="rt"><nav class="links" aria-label="Sections"><a href="#what">What is it</a><a href="#choose">Logbooks</a><a href="#create">Create your own</a><a href="#signin">Sign in</a></nav>' + MODEBTN + '</div></div></header>'
-      + '<main id="top">' + mobileTop(dots) + '<section class="intro dk" id="intro" aria-label="Introduction"><div class="pin"><div class="vid" id="ivw"><video id="iv" muted playsinline preload="auto" poster="intro-poster.jpg" aria-hidden="true" tabindex="-1"><source src="intro.mp4" type="video/mp4"><source src="intro.webm" type="video/webm"></video></div><div class="glow"></div><div class="fade"></div>'
+      + '<main id="top"><section class="intro" id="intro" aria-label="Introduction"><div class="pin"><div class="vid" id="ivw"><video id="iv" muted playsinline preload="auto" poster="intro-poster.jpg" aria-hidden="true" tabindex="-1"><source src="intro.mp4" type="video/mp4"><source src="intro.webm" type="video/webm"></video></div><div class="glow"></div><div class="fade"></div>'
       + '<div class="copy"><div class="wrap">'
       + '<div class="beat b1" id="bt1"><h1><span class="ln"><span>Pick a logbook.</span></span><span class="ln"><span>Make it yours.</span></span></h1><p class="lede">Small daily logbooks for your phone. Pick one for the habit you care about, tap what you did today, and watch your streak grow.</p><div class="row"><a class="btn" href="#signin">Sign in</a><a class="btn ghost" href="#choose">Choose a logbook</a></div><div class="dots7" role="group" aria-label="Page colours"><span>Colours</span>' + dots + '</div></div>'
       + '<div class="beat b2" id="bt2"><h2>Made for your phone.</h2><p class="lede">Install it from a link. It opens in a blink, works with no signal, and keeps your streak.</p></div>'
       + '<div class="beat b3" id="bt3"><h2>All of it, in one place.</h2><p class="lede">Sign in and every logbook you have synced shows up on a single dashboard.</p><div class="row"><a class="btn" href="#signin">Sign in</a></div></div>'
       + '</div></div><div class="prog" aria-hidden="true"><i class="on"></i><i></i><i></i></div><div class="cue" id="cue" aria-hidden="true"><span>Scroll</span><i></i></div></div></section>'
-      + '<section class="what dk" id="what" aria-label="What this is"><div class="wrap"><h2>What is this?</h2><p class="big">Clean Routine Co. makes small daily logbooks for your phone. Each one is built around a single habit: staying sober, reading, a morning routine, running a business. You tap what you did today, it takes under a minute, and the logbook builds your streaks and charts for you.</p><div class="how"><div><b class="n">1</b><h3>Pick a logbook</h3><p>Choose one that fits, or build your own with the boxes you want.</p></div><div><b class="n">2</b><h3>Put it on your phone</h3><p>Scan a code or open a link. No app store, and it works with no signal.</p></div><div><b class="n">3</b><h3>Log your day</h3><p>Sign in and turn on sync, and every logbook shows up here with real analysis.</p></div></div><div class="facts"><span>Free to use</span><span>Works offline</span><span>Your data stays yours: download it any time</span></div></div></section>'
-      + '<section class="walk dk" id="walk" aria-label="What the app looks like"><div class="pin2"><div class="wrap wk"><div class="wk-copy"><p class="wk-kick"><i></i><span id="wkn">' + esc(PRESETS.filter(function(x){ return x.id === themeId; })[0].n) + '</span></p><ol id="wkl">' + WALK.map(function(w, i){ return '<li' + (i === 0 ? ' class="on"' : '') + '><b>' + w[1] + '</b><p>' + w[2] + '</p></li>'; }).join('') + '</ol></div><div class="wk-ph"><div class="phone" id="wkp"><div class="scr"><div class="wkstrip" id="wks">' + walkImgs() + '</div></div></div></div></div></div></section>'
+      + '<section class="what" id="what" aria-label="What this is"><div class="wrap"><h2>What is this?</h2><p class="big">Clean Routine Co. makes small daily logbooks for your phone. Each one is built around a single habit: staying sober, reading, a morning routine, running a business. You tap what you did today, it takes under a minute, and the logbook builds your streaks and charts for you.</p><div class="how"><div><b class="n">1</b><h3>Pick a logbook</h3><p>Choose one that fits, or build your own with the boxes you want.</p></div><div><b class="n">2</b><h3>Put it on your phone</h3><p>Scan a code or open a link. No app store, and it works with no signal.</p></div><div><b class="n">3</b><h3>Log your day</h3><p>Sign in and turn on sync, and every logbook shows up here with real analysis.</p></div></div><div class="facts"><span>Free to use</span><span>Works offline</span><span>Your data stays yours: download it any time</span></div></div></section>'
+      + '<section class="walk" id="walk" aria-label="What the app looks like"><div class="pin2"><div class="wrap wk"><div class="wk-copy"><p class="wk-kick"><i></i><span id="wkn">' + esc(PRESETS.filter(function(x){ return x.id === themeId; })[0].n) + '</span></p><ol id="wkl">' + WALK.map(function(w, i){ return '<li' + (i === 0 ? ' class="on"' : '') + '><b>' + w[1] + '</b><p>' + w[2] + '</p></li>'; }).join('') + '</ol></div><div class="wk-ph"><div class="phone" id="wkp"><div class="scr"><div class="wkstrip" id="wks">' + walkImgs() + '</div></div></div></div></div></div></section>'
       + '<section class="signin-sec"><div class="wrap"><div class="si"><div><h2>Welcome back.</h2><p class="lede2">Sign in to see everything your logbooks have synced. New here? Create an account in a few seconds.</p>'
       + '<div class="feats"><div class="feat"><b>One dashboard</b><p>Streaks, heat maps and every day you logged, across all your logbooks.</p></div><div class="feat"><b>Works offline</b><p>Install it on your phone. No signal needed once it has opened.</p></div><div class="feat"><b>Your data stays yours</b><p>Each logbook is stored on its own, locked to your account, and you can download it any time.</p></div></div></div>'
       + '<div class="panel lift" id="signin">' + authForm() + '</div></div></div></section>'
       + stageHtml()
-      + '<section class="sec dk" id="all"><div class="wrap"><h2>All seven</h2><p class="sub">Open one to try it, or install it on your phone.</p>' + viewLibrary(false) + '</div></section>'
-      + '<section class="band" id="create"><div class="wrap wide"><h2 style="font-size:clamp(28px,4vw,42px)">Create your own</h2><p class="sub">Make your own boxes and fields, put them in the order you want, and watch your phone update. Then package it into one link.</p><button class="btn mob mbtn" type="button" data-act="mbuild">Open the builder</button><div class="bld">' + viewCreate() + '</div></div></section></main>'
+      + '<section class="sec" id="all"><div class="wrap"><h2>All seven</h2><p class="sub">Open one to try it, or install it on your phone.</p>' + viewLibrary(false) + '</div></section>'
+      + '<section class="band" id="create"><div class="wrap wide"><h2 style="font-size:clamp(28px,4vw,42px)">Create your own</h2><p class="sub">Make your own boxes and fields, put them in the order you want, and watch your phone update. Then package it into one link.</p>' + viewCreate() + '</div></section></main>'
       + '<footer class="ft"><div class="wrap"><span>&copy; 2026 Clean Routine Co. All rights reserved.</span><span>Made in Ho Chi Minh City</span><span style="opacity:.6">Version 15 Nov, with Steady</span><a href="legal.html#terms">Terms</a><a href="legal.html#privacy">Privacy</a><a href="mailto:hello@cleanroutineco.app">hello@cleanroutineco.app</a></div></footer>';
   }
 
@@ -2179,7 +2125,6 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
             + (g.length && a !== 'recfix' ? '<div class="bc"><button class="btn sm" type="button" data-act="recfix">Give them access now</button></div>' : '');
         }).catch(function(){ b.disabled = false; ro.innerHTML = '<p class="hint">Could not check (code net).</p>'; });
       }
-      else if(a === 'mbuild'){ var bd = $('create'); if(bd){ var o = bd.classList.toggle('open'); b.textContent = o ? 'Close the builder' : 'Open the builder'; } }
       else if(a === 'qans'){ var qa = b.dataset.q, an = b.dataset.a; qMark(qa); sendFb(qa, an).then(function(ok){ toast(ok ? 'Thank you. That helps.' : 'Could not send. Try again later.'); }); render(); }
       else if(a === 'qskip'){ try{ localStorage.setItem('cr-qs', String(Date.now() + 3 * 864e5)); }catch(e){} render(); }
       else if(a === 'fbsend'){ var ft = $('fbt'), fk = $('fbk'), fc = $('fbc'); if(!ft || ft.value.trim().length < 3){ toast('Write a few words first.'); return; } b.disabled = true; sendFb(fk.value, ft.value.trim(), fc ? fc.value.trim() : '').then(function(ok){ b.disabled = false; if(ok){ ft.value = ''; if(fc) fc.value = ''; toast('Sent. Thank you.'); } else toast('Could not send. Try again later.'); }); }
