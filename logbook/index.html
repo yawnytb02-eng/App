@@ -563,6 +563,15 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
   .pill-row.ui-chips:has(.pill:nth-child(7))::-webkit-scrollbar{display:none}
   .pill-row.ui-chips:has(.pill:nth-child(7))>.pill{flex:0 0 auto;scroll-snap-align:start}
 }
+
+/* Phones: fewer words when choosing things. Hints and long descriptions go; names stay. */
+@media (max-width:899px){
+  .cu-tip,.fc-footnote,.vb-count,.onb-note,.lk-help{display:none!important}
+  .sr-desc,.tile-status{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+  .sr-desc{font-size:12px;opacity:.8}
+  .sr-name{font-size:16px}
+  .page-tile .tile-status{font-size:12px}
+}
 </style>
 <script id="lb-glue">
 (function(){
