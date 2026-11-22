@@ -645,7 +645,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     else { var key = JSON.stringify(cfgOf(o)); job = edCache[key] ? Promise.resolve(edCache[key]) : rpc('make_edition', { p_cfg:cfgOf(o) }).then(function(id){ if(typeof id !== 'string' || !/^[a-z0-9]{6}$/.test(id)) throw new Error('id'); track('install_link'); return (edCache[key] = base + '?e=' + id); }).catch(function(){ return urlFor(o); }); }
     return job.then(function(u){
       if(!withCode || !sess) return u;
-      return rpc('make_handoff').then(function(c){ return typeof c === 'string' && /^[a-z0-9]{10}$/.test(c) ? u + (u.indexOf('?') > -1 ? '&' : '?') + 'i=' + c : u; }).catch(function(){ return u; });
+      return rpc('make_handoff').then(function(c){ return typeof c === 'string' && /^[a-z0-9]{10}$/.test(c) ? u + (u.indexOf('?') > -1 ? '&' : '?') + 'i=' + c + '&u=' + String(sess.id || '').replace(/-/g, '').slice(0, 8).toLowerCase() : u; }).catch(function(){ return u; });
     });
   }
   /* Open buttons: mint a fresh one-time code, then open the logbook in a new tab already signed in. */

@@ -1124,6 +1124,47 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
       return out;
     };
   })();
+
+  /* ---- Opened from the website as a different account than this logbook is signed in as ---- */
+  (function(){
+    var code = (window.__INST && window.__INST.code) || '', want = '';
+    try{ want = (new URL(location.href).searchParams.get('u') || '').toLowerCase(); }catch(e){}
+    if(!code || !/^[0-9a-f]{8}$/.test(want)) return;
+    function clean(){ try{ var u = new URL(location.href); u.searchParams.delete('i'); u.searchParams.delete('u'); history.replaceState(null, '', u.pathname + u.search + u.hash); }catch(e){} }
+    function short(id){ return String(id || '').replace(/-/g, '').slice(0, 8).toLowerCase(); }
+    function say(m){ try{ flashSaved(m); }catch(e){} }
+    function sheet(){
+      var em = (CLOUD.email && CLOUD.email()) || 'another account';
+      var d = document.createElement('div'); d.className = 'lb-inst'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-label', 'Different account');
+      d.innerHTML = '<h2>Different account</h2><p>This logbook is signed in as <b>' + esc(em) + '</b>. You opened it from the website as a different account.</p><p>If you switch, what is on this phone now is kept as a safe copy, and it stays in ' + esc(em) + '\'s cloud.</p><div class="r"><button type="button" class="p" data-s="sw">Switch account</button><button type="button" data-s="no">Stay signed in</button></div>';
+      d.addEventListener('click', function(e){
+        var b = e.target.closest('[data-s]'); if(!b) return;
+        if(b.getAttribute('data-s') === 'no'){ clean(); d.remove(); return; }
+        b.disabled = true; var A = CLOUD.userId();
+        CLOUD.signOut().then(function(){
+          try{ /* keep a safe copy of this phone's data, then start clean for the new account */
+            var ks = []; for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(k && k.indexOf('lb-stash-') === 0) ks.push(k); }
+            ks.sort(); while(ks.length > 2) localStorage.removeItem(ks.shift());
+            localStorage.setItem('lb-stash-' + Date.now().toString(36) + '-' + short(A), JSON.stringify(DB));
+          }catch(e){ say('Not enough room on this phone to switch safely.'); d.remove(); return null; }
+          DB = normalizeDB({}); try{ saveDB(); }catch(e){}
+          return CLOUD.handoff(code);
+        }).then(function(r){
+          if(r === null) return;
+          clean(); d.remove();
+          if(r && r.ok){ location.reload(); } else say('That link has expired. Sign in with your email and password.');
+        });
+      });
+      document.body.appendChild(d);
+    }
+    var n = 0;
+    (function poll(){
+      var ph = CLOUD.phase();
+      if(ph === 'in'){ if(short(CLOUD.userId()) !== want) sheet(); else clean(); return; }
+      if(ph === 'out' || ++n > 40) return;
+      setTimeout(poll, 500);
+    })();
+  })();
   render();
 })();
 </script>
