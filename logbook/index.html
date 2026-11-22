@@ -588,6 +588,8 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
 .lb-hint{margin:10px 22px 0;font-size:12.5px;color:var(--muted)}
 
 @media (max-width:899px){ .settings-row>div:first-child{min-width:0;flex:1} .settings-row .sr-desc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} }
+
+.lb-links{margin:10px 16px 0}
 </style>
 <script id="lb-glue">
 (function(){
@@ -1008,6 +1010,70 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
             if(row) row.insertAdjacentHTML('afterend', '<div class="lb-recap"><div><b>Last week</b><span>' + s.days + ' of 7 days logged, ' + s.boxes + ' boxes done</span></div><button onclick="lbRecapShare()">Share</button><button class="x" onclick="lbRecapHide()" aria-label="Hide">' + icon('close', 14) + '</button></div>');
           }
         }
+      }catch(e){}
+      return out;
+    };
+  })();
+
+  /* ---- Linked notes on Home: pending links show where people actually look; unticked ones roll over for 3 days ---- */
+  (function(){
+    function B(){ return window.BOXLINKS; }
+    function pad(n){ return String(n).padStart(2, '0'); }
+    function dstr(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function ago(n){ var d = new Date(); d.setDate(d.getDate() - n); return dstr(d); }
+    function roll(){
+      var t = todayStr(), min = ago(3), ch = false;
+      B().list().forEach(function(l){ if(!l.done && l.ds < t && l.ds >= min){ l.ds = t; l.rolled = (l.rolled || 0) + 1; ch = true; } });
+      if(ch) saveDB();
+    }
+    var r5 = window.render;
+    window.render = function(){
+      var out = r5.apply(this, arguments);
+      try{
+        if(B() && ROUTE.view === 'home' && DB.onboarded && SELECTED_DATE === todayStr() && !document.querySelector('.lb-links')){
+          roll();
+          var t = todayStr(), list = B().list().filter(function(l){ return l.ds === t; });
+          var open = list.filter(function(l){ return !l.done; });
+          if(open.length){
+            var row = document.querySelector('.week-strip-row');
+            var nm = function(id){ try{ return bxBoxName(id); }catch(e){ return id; } };
+            var html = '<div class="lb-links lk-card"><div class="lk-h">' + icon('link', 14) + ' Linked for today</div>' + open.map(function(l){
+              return '<div class="lk-row"><button type="button" class="lk-tick" data-lk="tick" data-id="' + esc(l.id) + '" aria-label="Tick">' + icon('check', 15) + '</button>' +
+                '<div class="lk-t"><b>' + esc(l.text) + '</b><small>on ' + esc(nm(l.to)) + ', from ' + esc(nm(l.from)) + (l.srcDs && l.srcDs !== t ? ', ' + (l.rolled ? 'carried over' : 'earlier') : '') + '</small></div>' +
+                '<button type="button" class="lk-x" onclick="openPage(\'' + esc(l.to) + '\')" aria-label="Open box">' + icon('chevright', 14) + '</button></div>';
+            }).join('') + '</div>';
+            if(row) row.insertAdjacentHTML('afterend', html);
+          }
+        }
+      }catch(e){}
+      return out;
+    };
+  })();
+
+  /* ---- One-tap "Repeat tomorrow" next to Link a reminder ---- */
+  (function(){
+    function pad(n){ return String(n).padStart(2, '0'); }
+    function dstr(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function plus(ds, n){ var d = new Date(ds + 'T00:00:00'); d.setDate(d.getDate() + n); return dstr(d); }
+    function okv(v){ return (typeof v === 'string' && v.trim() && v.length <= 40 && v.indexOf('data:') !== 0) || (typeof v === 'number' && isFinite(v)) || v === true; }
+    document.addEventListener('click', function(e){
+      var b = e.target.closest && e.target.closest('[data-lkq]'); if(!b) return;
+      e.preventDefault(); e.stopPropagation();
+      var ds = b.getAttribute('data-ds'), box = b.getAttribute('data-box'), tom = plus(ds, 1);
+      var ls = window.BOXLINKS.list();
+      if(ls.some(function(l){ return l.from === box && l.to === box && l.ds === tom && l.srcDs === ds && l.text === 'Do this again'; })){ try{ flashSaved('Already set for tomorrow'); }catch(x){} return; }
+      var pg = getPage(ds, box), fill = [];
+      Object.keys(pg).forEach(function(k){ if(k.charAt(0) !== '_' && okv(pg[k])) fill.push({ sk:k, tk:k, label:String(k).replace(/^cf_/, '').replace(/[_-]+/g, ' ') }); });
+      var l = { id:'lk' + Date.now().toString(36) + Math.floor(1e3 * Math.random()), from:box, to:box, ds:tom, srcDs:ds, text:'Do this again', done:false };
+      if(fill.length) l.fill = fill.slice(0, 8);
+      ls.push(l); saveDB(); try{ flashSaved('Pinned for tomorrow'); }catch(x){} render();
+    }, true);
+    var r6 = window.render;
+    window.render = function(){
+      var out = r6.apply(this, arguments);
+      try{
+        var a = document.querySelector('.lk-add');
+        if(a && !document.querySelector('.lk-quick')) a.insertAdjacentHTML('afterend', '<button type="button" class="lk-add lk-quick" data-lkq="1" data-ds="' + a.getAttribute('data-ds') + '" data-box="' + a.getAttribute('data-box') + '">' + icon('link', 15) + ' Repeat tomorrow</button>');
       }catch(e){}
       return out;
     };
