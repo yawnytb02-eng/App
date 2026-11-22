@@ -590,6 +590,9 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
 @media (max-width:899px){ .settings-row>div:first-child{min-width:0;flex:1} .settings-row .sr-desc{overflow:hidden;text-overflow:ellipsis;white-space:nowrap} }
 
 .lb-links{margin:10px 16px 0}
+
+.lk-rule{display:flex;align-items:center;justify-content:space-between;margin:6px 0 0;padding:8px 12px;border-radius:12px;background:var(--surface-2);font-size:13px;color:var(--ink-soft)}
+.lk-rule button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:4px}
 </style>
 <script id="lb-glue">
 (function(){
@@ -791,6 +794,7 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
       var hh = new Date().getHours(); if(hh >= 22 || hh < 7) return; /* quiet hours: never ping at night */
       jset(K_NF, todayStr());
       var sk = (typeof DB !== 'undefined' && DB.streak) || 0, tone = sk > 1 ? 'Day ' + (sk + 1) + ' is waiting. One tap keeps your ' + sk + '-day streak.' : (hh < 12 ? 'Good morning. Log one thing to start the day.' : 'Nothing logged yet today. One quick entry is enough.');
+      try{ var nl = (window.BOXLINKS ? window.BOXLINKS.list() : []).filter(function(l){ return !l.done && l.ds === todayStr(); }).length; if(nl) tone += ' ' + nl + (nl === 1 ? ' linked note is' : ' linked notes are') + ' waiting.'; }catch(e){}
       var o = { body:tone, tag:'lb-daily', icon:'./apple-touch-icon.png', data:{ url:location.pathname + location.search } };
       if(navigator.serviceWorker && navigator.serviceWorker.ready) navigator.serviceWorker.ready.then(function(r){ r.showNotification(NAME, o); }); else new Notification(NAME, o);
     }catch(e){}
@@ -1074,6 +1078,48 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
       try{
         var a = document.querySelector('.lk-add');
         if(a && !document.querySelector('.lk-quick')) a.insertAdjacentHTML('afterend', '<button type="button" class="lk-add lk-quick" data-lkq="1" data-ds="' + a.getAttribute('data-ds') + '" data-box="' + a.getAttribute('data-box') + '">' + icon('link', 15) + ' Repeat tomorrow</button>');
+      }catch(e){}
+      return out;
+    };
+  })();
+
+  /* ---- Weekly repeats: "Every Monday, pin Do this again on this box" ---- */
+  (function(){
+    var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    function rules(){ return Array.isArray(DB.rules) ? DB.rules : (DB.rules = []); }
+    function bn(id){ try{ return bxBoxName(id); }catch(e){ return id; } }
+    function ensure(){
+      var t = todayStr(), dow = new Date().getDay(), ch = false, ls = window.BOXLINKS.list();
+      rules().forEach(function(r){
+        if(r.dow !== dow || r.last === t) return;
+        var id = 'rw' + r.id + t;
+        if(!ls.some(function(l){ return l.id === id; })) ls.push({ id:id, from:r.box, to:r.box, ds:t, srcDs:t, text:r.text || 'Do this again', done:false, rule:r.id });
+        r.last = t; ch = true;
+      });
+      if(ch) saveDB();
+    }
+    document.addEventListener('click', function(e){
+      var b = e.target.closest && e.target.closest('[data-lkw],[data-lkwx]'); if(!b) return;
+      e.preventDefault(); e.stopPropagation();
+      if(b.hasAttribute('data-lkwx')){ DB.rules = rules().filter(function(r){ return r.id !== b.getAttribute('data-lkwx'); }); saveDB(); render(); return; }
+      var box = b.getAttribute('data-box'), dow = new Date().getDay();
+      if(rules().some(function(r){ return r.box === box && r.dow === dow; })){ try{ flashSaved('Already repeats every ' + DAYS[dow]); }catch(x){} return; }
+      if(rules().length >= 20){ try{ flashSaved('That is plenty of repeats. Remove one first.'); }catch(x){} return; }
+      rules().push({ id:Date.now().toString(36) + Math.floor(Math.random() * 99), box:box, dow:dow, text:'Do this again', last:todayStr() });
+      saveDB(); try{ flashSaved('Repeats every ' + DAYS[dow]); }catch(x){} render();
+    }, true);
+    var r7 = window.render;
+    window.render = function(){
+      try{ if(window.BOXLINKS && DB.onboarded) ensure(); }catch(e){}
+      var out = r7.apply(this, arguments);
+      try{
+        var q = document.querySelector('.lk-quick');
+        if(q && !document.querySelector('.lk-weekly')){
+          var box = q.getAttribute('data-box'), dow = new Date().getDay();
+          var mine = rules().filter(function(r){ return r.box === box; });
+          q.insertAdjacentHTML('afterend', '<button type="button" class="lk-add lk-weekly" data-lkw="1" data-box="' + esc(box) + '">' + icon('link', 15) + ' Repeat every ' + DAYS[dow] + '</button>' +
+            mine.map(function(r){ return '<div class="lk-rule"><span>Every ' + DAYS[r.dow] + ': ' + esc(r.text) + '</span><button type="button" data-lkwx="' + esc(r.id) + '" aria-label="Stop repeating">' + icon('close', 12) + '</button></div>'; }).join(''));
+        }
       }catch(e){}
       return out;
     };

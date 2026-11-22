@@ -973,6 +973,12 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function pageName(id, data){ if(BN[id]) return BN[id]; var b = data && data.bx && data.bx.boxes && data.bx.boxes[id]; if(b && b.name) return b.name; return ({ fit:'Fit of the Day', lane:'Canvas', timetable:'Timetable', bucket:'Vision Board' })[id] || id; }
   function streakOf(set){ var d = new Date(), c = 0; if(!set[ymd(d)]) d.setDate(d.getDate() - 1); while(set[ymd(d)]){ c++; d.setDate(d.getDate() - 1); } return c; }
   function bestOf(keys){ var best = 0, run = 0, prev = null; keys.forEach(function(k){ var t = new Date(k + 'T12:00:00'); if(prev && Math.round((t - prev) / 864e5) === 1) run++; else run = 1; if(run > best) best = run; prev = t; }); return best; }
+  /* Logbooks made on this website that have not synced anything under this account yet (new, or last signed in as someone else). */
+  function pendingCards(){
+    return (saved || []).filter(function(o){ return o && o.k && !(rows || []).some(function(r){ return String(r.app).indexOf('custom-' + o.k + '-') === 0; }); }).map(function(o){
+      return '<div class="lbc" style="--acc2:' + esc(o.a) + ';border-style:dashed;opacity:.85"><div class="t"><span class="dot" style="background:' + esc(o.a) + '"></span><b>' + esc(o.n) + '</b></div><p class="hint" style="margin:8px 0 0">Not synced under ' + esc((sess && sess.email) || 'this account') + ' yet. Open it, check Settings > Account shows this same email, and it appears here.</p></div>';
+    }).join('');
+  }
   function prep(r){
     var data = r.data || {}, days = data.days || {}, keys = [], cnt = {}, use = {}, tot = 0;
     Object.keys(days).sort().forEach(function(k){ var t = touched(days[k]); if(t.length){ keys.push(k); cnt[k] = t.length; tot += t.length; t.forEach(function(p){ use[p] = (use[p] || 0) + 1; }); } });
@@ -1037,7 +1043,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     var fl = feed.slice(0, 9).map(function(f){ var dd = new Date(f.k + 'T12:00:00'); return '<li><div class="d"><b>' + dd.getDate() + '</b><span>' + dd.toLocaleDateString(undefined, { month:'short' }) + '</span></div><div class="w"><b><span class="dot" style="background:' + esc(f.r.name.acc) + '"></span>' + esc(f.r.name.n) + '</b><p>' + esc(touched(f.r.days[f.k]).map(function(p){ return pageName(p, f.r.data); }).join(', ')) + '</p></div></li>'; }).join('');
     return head + kp
       + '<div class="cols two"><div class="box"><h3>Last ' + freeWeeks() + ' weeks</h3><p class="hint">Boxes filled per day, all logbooks together' + weeksNote() + '</p>' + hm + '</div><div class="box"><h3>This week</h3><p class="hint">' + (top && top.n ? 'Busiest day: ' + dayLabel(top.k, { weekday:'long' }) + ' (' + top.n + ')' : 'Boxes filled each day') + '</p>' + chart + '</div></div>'
-      + '<div class="vh" style="margin:30px 0 0"><div><h2 style="font-size:24px">Your logbooks</h2></div></div><div class="lbgrid">' + cards + '</div>'
+      + '<div class="vh" style="margin:30px 0 0"><div><h2 style="font-size:24px">Your logbooks</h2></div></div><div class="lbgrid">' + cards + pendingCards() + '</div>'
       + '<div class="cols eq"><div class="box"><h3>Recent activity</h3><p class="hint">Latest days, newest first</p><ul class="feed">' + fl + '</ul></div><div class="box"><h3>Where it lives</h3><p class="hint">Every logbook has its own storage on your phone and its own copy in your account. They never mix.</p><ul class="feed">' + rows.map(function(r){ return '<li><div class="w" style="flex:1"><b><span class="dot" style="background:' + esc(r.name.acc) + '"></span>' + esc(r.name.n) + '</b><p style="word-break:break-all">' + esc(r.app) + ' · ' + Math.max(1, Math.round(r.size / 1024)) + ' KB</p></div></li>'; }).join('') + '</ul></div></div>';
   }
 
