@@ -794,7 +794,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function toast(m){ var t = $('toast'); t.textContent = m; t.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(function(){ t.classList.remove('on'); }, 2400); }
   function store(k, v){ try{ if(v === undefined) return JSON.parse(localStorage.getItem(k) || 'null'); if(v === null) localStorage.removeItem(k); else localStorage.setItem(k, JSON.stringify(v)); }catch(e){} return null; }
   function urlFor(o){
-    var base = new URL('logbook/', location.href.split('#')[0].split('?')[0]).href;
+    var base = siteBase();
     if(o.preset) return base + '?l=' + o.preset;
     var u = base + '?l=custom&n=' + encodeURIComponent(o.n) + '&a=' + encodeURIComponent(o.a) + '&k=' + o.k + '&b=' + o.b.join(',') + (o.o && o.o.length ? '&o=' + o.o.join(',') : '');
     var hh = (o.h || []).filter(function(f){ return o.b.indexOf(f.split('.')[0]) > -1; }), rr = Object.keys(o.r || {}).filter(function(f){ return o.b.indexOf(f.split('.')[0]) > -1 && o.r[f]; }).map(function(f){ return f + '~' + encodeURIComponent(o.r[f]); });
@@ -822,7 +822,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   /* A short address for a logbook. withCode adds a one-time sign-in code, so the phone or computer that opens it is already signed in.
      If the account service cannot make one, it falls back to the long address (the person then signs in once inside the logbook). */
   function linkFor(o, withCode){
-    var base = new URL('logbook/', location.href.split('#')[0].split('?')[0]).href, job;
+    var base = siteBase(), job;
     if(o.preset) job = Promise.resolve(base + '?l=' + o.preset);
     else { var key = JSON.stringify(cfgOf(o)); job = edCache[key] ? Promise.resolve(edCache[key]) : rpc('make_edition', { p_cfg:cfgOf(o) }).then(function(id){ if(typeof id !== 'string' || !/^[a-z0-9]{6}$/.test(id)) throw new Error('id'); track('install_link'); return (edCache[key] = base + '?e=' + id); }).catch(function(){ return urlFor(o); }); }
     return job.then(function(u){
@@ -2394,6 +2394,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
       lvDo(function(d){ d.bx = d.bx || {}; d.bx.boxes = d.bx.boxes || {}; var id = 'cx_' + rid(); d.bx.boxes[id] = { id:id, custom:true, name:nm.slice(0, 24), icon:'pen', from:t, until:null, order:Object.keys(d.bx.boxes).length + 2, labels:{}, hidden:{}, fields:[fieldOf(lab2, ty2, [])] }; }, 'Made. It shows on your phone after the next sync.'); }
   });
 
+  function siteBase(){ try{ return new URL('logbook/', location.href.split('#')[0].split('?')[0]).href; }catch(e){ return 'https://cleanroutineco.app/logbook/'; } }
   function rid(){ return Math.random().toString(36).slice(2, 8); }
   function appRow(a){ return (rows || []).filter(function(x){ return x.app === a; })[0]; }
   document.addEventListener('click', function(e){
