@@ -604,6 +604,11 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
 .lk-group .lk-chev{display:flex;transition:transform .2s;color:var(--muted)}
 .lk-group[open] .lk-chev{transform:rotate(90deg)}
 .lk-group .lk-body{padding:0 12px 12px;display:grid;gap:8px}
+
+#lb-flow{position:fixed;inset:0;z-index:9000;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch}
+#lb-flow .lbf-top{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:10px;padding:calc(10px + env(safe-area-inset-top)) 14px 10px;background:var(--bg);border-bottom:1px solid var(--line);font-size:16px}
+#lb-flow .lbf-back{width:42px;height:42px;border-radius:99px;border:1px solid var(--line);background:var(--surface);color:var(--ink);display:flex;align-items:center;justify-content:center;cursor:pointer}
+#lb-flow .lbf-body{max-width:900px;margin:0 auto;padding:16px 16px calc(40px + env(safe-area-inset-bottom))}
 </style>
 <script id="lb-glue">
 (function(){
@@ -927,6 +932,177 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
       markTouched(t, it.carry.box); buzz(12); try{ flashSaved('Logged'); }catch(x){} render();
     });
   })();
+/* ---- Links and repeats board: shared by the logbook (Settings) and the website (Studio). Pure DOM, no app globals. ---- */
+(function(){
+  if(window.LBFlow) return;
+  var ORDER = [1, 2, 3, 4, 5, 6, 0], SHORT = { 0:'Sun', 1:'Mon', 2:'Tue', 3:'Wed', 4:'Thu', 5:'Fri', 6:'Sat' }, FULL = { 0:'Sunday', 1:'Monday', 2:'Tuesday', 3:'Wednesday', 4:'Thursday', 5:'Friday', 6:'Saturday' };
+  function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); }
+  function rid(){ return 'f' + Date.now().toString(36) + Math.floor(Math.random() * 1296).toString(36); }
+  function active(map){ return Object.keys(map || {}).map(function(k){ return map[k]; }).filter(function(f){ return f && f.id && !f.off && Array.isArray(f.dows); }); }
+  function daysText(d){
+    var s = d.slice().sort(function(a, b){ return ORDER.indexOf(a) - ORDER.indexOf(b); }).join(',');
+    if(s === '1,2,3,4,5,6,0') return 'Every day';
+    if(s === '1,2,3,4,5') return 'Weekdays';
+    if(s === '6,0') return 'Weekends';
+    return d.slice().sort(function(a, b){ return ORDER.indexOf(a) - ORDER.indexOf(b); }).map(function(x){ return SHORT[x]; }).join(', ');
+  }
+  var CSS = '.fb{--fa:var(--accent,#835F1F);--fl:var(--line,#E4DACB);--fi:var(--ink,#241d14);--fm:var(--muted,#7d7367);--fs:var(--surface,#fff);--fs2:var(--surface-2,#F3ECE0);font:inherit;color:var(--fi);user-select:none;-webkit-user-select:none}' +
+    '.fb h4{margin:18px 0 8px;font:700 13px/1.2 inherit;color:var(--fm)}.fb h4:first-child{margin-top:0}' +
+    '.fb-hint{margin:0 0 12px;font-size:13px;line-height:1.5;color:var(--fm)}' +
+    '.fb-pal{display:flex;flex-wrap:wrap;gap:8px}' +
+    '.fb-box{display:inline-flex;align-items:center;gap:6px;padding:10px 14px;border-radius:99px;background:var(--fs);border:1.5px solid var(--fl);font:600 14px/1 inherit;color:var(--fi);cursor:grab;touch-action:manipulation;min-height:42px}' +
+    '.fb-box.sel{border-color:var(--fa);box-shadow:0 0 0 3px color-mix(in srgb,var(--fa) 22%,transparent)}.fb-box.over{border-color:var(--fa);background:color-mix(in srgb,var(--fa) 12%,var(--fs))}' +
+    '.fb-ghost{position:fixed;z-index:99999;pointer-events:none;opacity:.92;transform:translate(-50%,-60%) scale(1.04);box-shadow:0 10px 28px rgba(0,0,0,.22)}' +
+    '.fb-bar{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--fa) 12%,var(--fs));font-size:13px;line-height:1.4;display:flex;align-items:center;justify-content:space-between;gap:10px}' +
+    '.fb-bar button{border:0;background:none;color:var(--fa);font:700 13px/1 inherit;cursor:pointer;padding:6px}' +
+    '.fb-week{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:8px}' +
+    '.fb-day{min-height:96px;padding:8px;border-radius:14px;border:1.5px dashed var(--fl);background:var(--fs2);display:flex;flex-direction:column;gap:6px;cursor:pointer}' +
+    '.fb-day.over{border-color:var(--fa);background:color-mix(in srgb,var(--fa) 12%,var(--fs))}.fb-day.today{border-style:solid}' +
+    '.fb-dn{font:700 12px/1 inherit;color:var(--fm)}' +
+    '.fb-chip{display:block;width:100%;text-align:left;padding:7px 8px;border-radius:10px;border:1px solid var(--fl);background:var(--fs);font:600 12px/1.25 inherit;color:var(--fi);cursor:pointer;overflow-wrap:anywhere}' +
+    '.fb-chip.on{border-color:var(--fa)}.fb-chip small{display:block;font-weight:500;color:var(--fm);margin-top:2px}' +
+    '.fb-list{display:grid;gap:8px}.fb-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:14px;border:1px solid var(--fl);background:var(--fs);cursor:pointer;font-size:14px}' +
+    '.fb-row b{font-weight:700}.fb-row small{color:var(--fm);margin-left:auto;text-align:right}' +
+    '.fb-ed{margin-top:16px;padding:16px;border-radius:16px;border:1.5px solid var(--fa);background:var(--fs);display:grid;gap:12px}' +
+    '.fb-ed label{display:grid;gap:6px;font:600 13px/1.2 inherit;color:var(--fm)}' +
+    '.fb-ed input[type=text],.fb-ed input[type=date],.fb-ed select{width:100%;box-sizing:border-box;padding:11px 12px;border-radius:12px;border:1.5px solid var(--fl);background:var(--fs);font:500 15px/1.2 inherit;color:var(--fi)}' +
+    '.fb-days{display:flex;gap:6px;flex-wrap:wrap}.fb-days button{min-width:44px;min-height:40px;border-radius:12px;border:1.5px solid var(--fl);background:var(--fs);font:700 13px/1 inherit;color:var(--fi);cursor:pointer}.fb-days button.on{background:var(--fa);border-color:var(--fa);color:#fff}' +
+    '.fb-pre{display:flex;gap:6px;flex-wrap:wrap}.fb-pre button{border:0;background:var(--fs2);border-radius:99px;padding:8px 12px;font:600 12px/1 inherit;color:var(--fi);cursor:pointer}' +
+    '.fb-chk{display:flex!important;align-items:center;gap:10px;font-weight:600;color:var(--fi)!important}.fb-chk input{width:20px;height:20px;accent-color:var(--fa)}' +
+    '.fb-act{display:flex;gap:10px;justify-content:space-between}.fb-act button{min-height:42px;padding:0 18px;border-radius:12px;border:1.5px solid var(--fl);background:var(--fs);font:700 14px/1 inherit;color:var(--fi);cursor:pointer}.fb-act .pri{background:var(--fa);border-color:var(--fa);color:#fff}.fb-act .del{color:#B3261E}' +
+    '.fb-empty{padding:14px;border-radius:14px;background:var(--fs2);color:var(--fm);font-size:13px;line-height:1.5}' +
+    '@media (max-width:640px){.fb-week{grid-template-columns:1fr}.fb-day{min-height:0;flex-direction:row;flex-wrap:wrap;align-items:center}.fb-dn{width:44px}.fb-chip{width:auto;max-width:100%}}';
+  function css(){ if(document.getElementById('fb-css')) return; var s = document.createElement('style'); s.id = 'fb-css'; s.textContent = CSS; document.head.appendChild(s); }
+
+  /* o: { boxes:[{id,name}], flows:{id:flow}, adv:bool, onChange:function(map) } */
+  function mount(el, o){
+    css();
+    var map = o.flows || (o.flows = {}), sel = '', edit = '', adv = !!o.adv;
+    var nm = {}; (o.boxes || []).forEach(function(b){ nm[b.id] = b.name; });
+    function name(id){ return nm[id] || 'A box that was removed'; }
+    function save(){ try{ o.onChange && o.onChange(map); }catch(e){} }
+    function todayDow(){ return new Date().getDay(); }
+    function addDay(box, dow){
+      var mine = active(map).filter(function(f){ return f.from === box && f.to === box; })[0];
+      if(mine){ if(mine.dows.indexOf(dow) < 0){ mine.dows.push(dow); mine.at = Date.now(); save(); } edit = mine.id; }
+      else { var id = rid(); map[id] = { id:id, from:box, to:box, dows:[dow], text:'Do this again', fill:true, at:Date.now() }; edit = id; save(); }
+      sel = ''; draw();
+    }
+    function link(a, b){
+      if(a === b) return;
+      var id = rid(); map[id] = { id:id, from:a, to:b, dows:ORDER.slice(), text:'From ' + name(a), fill:false, at:Date.now() }; edit = id; sel = ''; save(); draw();
+    }
+    function draw(){
+      var fl = active(map), t = todayDow(), h = '';
+      h += '<p class="fb-hint">Drag a box onto a day to repeat it every week. Drag a box onto another box to link them. Or tap a box, then tap a day or another box.</p>';
+      h += '<h4>Your boxes</h4><div class="fb-pal">' + (o.boxes || []).map(function(b){ return '<button type="button" class="fb-box' + (sel === b.id ? ' sel' : '') + '" data-box="' + esc(b.id) + '">' + esc(b.name) + '</button>'; }).join('') + '</div>';
+      if(sel) h += '<div class="fb-bar"><span>' + esc(name(sel)) + ' selected. Tap a day to repeat it, or tap another box to link it.</span><button type="button" data-fb="clear">Cancel</button></div>';
+      h += '<h4>Week</h4><div class="fb-week">' + ORDER.map(function(d){
+        var here = fl.filter(function(f){ return f.dows.indexOf(d) > -1; });
+        return '<div class="fb-day' + (d === t ? ' today' : '') + '" data-dow="' + d + '" role="group" aria-label="' + FULL[d] + '"><span class="fb-dn">' + SHORT[d] + '</span>' + here.map(function(f){
+          return '<button type="button" class="fb-chip' + (edit === f.id ? ' on' : '') + '" data-fid="' + esc(f.id) + '">' + esc(name(f.from)) + (f.to !== f.from ? ' → ' + esc(name(f.to)) : '') + (f.text && f.to !== f.from ? '<small>' + esc(f.text) + '</small>' : '') + '</button>';
+        }).join('') + '</div>';
+      }).join('') + '</div>';
+      var links = fl.filter(function(f){ return f.to !== f.from; });
+      h += '<h4>Links between boxes</h4>' + (links.length ? '<div class="fb-list">' + links.map(function(f){ return '<div class="fb-row" data-fid="' + esc(f.id) + '"><b>' + esc(name(f.from)) + ' → ' + esc(name(f.to)) + '</b><small>' + esc(daysText(f.dows)) + '</small></div>'; }).join('') + '</div>' : '<div class="fb-empty">No links yet. Drag one box onto another, and a note from the first shows up on the second.</div>');
+      if(!fl.length) h += '<div class="fb-empty" style="margin-top:12px">Nothing repeats yet. Drag a box onto the day you want it to come back.</div>';
+      var f = edit && map[edit] && !map[edit].off ? map[edit] : null;
+      if(f){
+        var isLink = f.to !== f.from;
+        h += '<div class="fb-ed" data-edit="' + esc(f.id) + '"><b style="font-size:15px">' + esc(name(f.from)) + (isLink ? ' → ' + esc(name(f.to)) : ' repeats') + '</b>' +
+          '<div><label>Days</label><div class="fb-days">' + ORDER.map(function(d){ return '<button type="button" data-d="' + d + '" class="' + (f.dows.indexOf(d) > -1 ? 'on' : '') + '" aria-pressed="' + (f.dows.indexOf(d) > -1) + '">' + SHORT[d] + '</button>'; }).join('') + '</div>' +
+          '<div class="fb-pre" style="margin-top:8px"><button type="button" data-pre="every">Every day</button><button type="button" data-pre="week">Weekdays</button><button type="button" data-pre="end">Weekends</button></div></div>' +
+          '<label>Note shown on ' + esc(name(f.to)) + '<input type="text" maxlength="60" data-k="text" value="' + esc(f.text || '') + '"></label>' +
+          (isLink ? '<label>Show it on<select data-k="to">' + (o.boxes || []).filter(function(b){ return b.id !== f.from; }).map(function(b){ return '<option value="' + esc(b.id) + '"' + (b.id === f.to ? ' selected' : '') + '>' + esc(b.name) + '</option>'; }).join('') + '</select></label>' : '') +
+          '<label class="fb-chk"><input type="checkbox" data-k="fill"' + (f.fill ? ' checked' : '') + '> Fill in the last values from ' + esc(name(f.from)) + '</label>' +
+          (adv ? '<label class="fb-chk"><input type="checkbox" data-k="skip"' + (f.skip ? ' checked' : '') + '> Skip it if ' + esc(name(f.from)) + ' is already logged today</label><label>Stop after<input type="date" data-k="until" value="' + esc(f.until || '') + '"></label>' : '') +
+          '<div class="fb-act"><button type="button" class="del" data-fb="del">Remove</button><button type="button" class="pri" data-fb="done">Done</button></div></div>';
+      }
+      el.innerHTML = '<div class="fb">' + h + '</div>';
+    }
+    /* ---- clicks (tap path, also keyboard) ---- */
+    el.addEventListener('click', function(e){
+      if(el.__dragged){ el.__dragged = false; return; }
+      var t = e.target, b;
+      if((b = t.closest('[data-fb]'))){
+        var a = b.getAttribute('data-fb');
+        if(a === 'clear'){ sel = ''; draw(); }
+        else if(a === 'done'){ edit = ''; draw(); }
+        else if(a === 'del' && map[edit]){ map[edit].off = Date.now(); map[edit].at = Date.now(); edit = ''; save(); draw(); }
+        return;
+      }
+      if((b = t.closest('.fb-ed [data-d]'))){
+        var f = map[edit]; if(!f) return; var d = +b.getAttribute('data-d'), i = f.dows.indexOf(d);
+        if(i > -1){ if(f.dows.length > 1) f.dows.splice(i, 1); } else f.dows.push(d);
+        f.at = Date.now(); save(); draw(); return;
+      }
+      if((b = t.closest('[data-pre]'))){
+        var g = map[edit]; if(!g) return; var p = b.getAttribute('data-pre');
+        g.dows = p === 'every' ? ORDER.slice() : p === 'week' ? [1, 2, 3, 4, 5] : [6, 0]; g.at = Date.now(); save(); draw(); return;
+      }
+      if((b = t.closest('.fb-box'))){
+        var id = b.getAttribute('data-box');
+        if(sel && sel !== id){ link(sel, id); return; }
+        sel = sel === id ? '' : id; draw(); return;
+      }
+      if((b = t.closest('.fb-chip,.fb-row'))){ edit = b.getAttribute('data-fid'); sel = ''; draw(); return; }
+      if((b = t.closest('.fb-day'))){ if(sel) addDay(sel, +b.getAttribute('data-dow')); return; }
+    });
+    el.addEventListener('input', function(e){
+      var i = e.target; var k = i.getAttribute && i.getAttribute('data-k'); var f = map[edit]; if(!k || !f) return;
+      if(k === 'text') f.text = i.value.slice(0, 60); else if(k === 'until') f.until = i.value || ''; else return;
+      f.at = Date.now(); save();
+    });
+    el.addEventListener('change', function(e){
+      var i = e.target; var k = i.getAttribute && i.getAttribute('data-k'); var f = map[edit]; if(!k || !f) return;
+      if(k === 'fill') f.fill = i.checked; else if(k === 'skip') f.skip = i.checked; else if(k === 'to'){ f.to = i.value; if(/^From /.test(f.text || '')) f.text = 'From ' + name(f.from); } else return;
+      f.at = Date.now(); save(); draw();
+    });
+    /* ---- drag and drop: mouse drags at once; touch drags after a short hold so the page can still scroll ---- */
+    var drag = null;
+    function target(x, y){ var n = document.elementFromPoint(x, y); return n && n.closest ? (n.closest('.fb-day') || n.closest('.fb-box')) : null; }
+    function clearOver(){ [].forEach.call(el.querySelectorAll('.over'), function(n){ n.classList.remove('over'); }); }
+    function stopScroll(ev){ if(drag && drag.on) ev.preventDefault(); }
+    el.addEventListener('pointerdown', function(e){
+      var b = e.target.closest && e.target.closest('.fb-box'); if(!b || (e.button && e.button !== 0)) return;
+      drag = { id:b.getAttribute('data-box'), el:b, x:e.clientX, y:e.clientY, on:false, touch:e.pointerType !== 'mouse', ghost:null, timer:0 };
+      if(drag.touch) drag.timer = setTimeout(function(){ if(drag) begin(drag.x, drag.y); }, 220);
+    });
+    function begin(x, y){
+      if(!drag || drag.on) return; drag.on = true;
+      var g = drag.el.cloneNode(true); g.className = 'fb-box fb-ghost'; g.style.left = x + 'px'; g.style.top = y + 'px'; document.body.appendChild(g); drag.ghost = g;
+      try{ navigator.vibrate && navigator.vibrate(8); }catch(e){}
+    }
+    document.addEventListener('touchmove', stopScroll, { passive:false });
+    function move(e){
+      if(!drag) return;
+      if(!drag.on){
+        var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+        if(Math.abs(dx) + Math.abs(dy) > 8){ if(drag.touch){ clearTimeout(drag.timer); drag = null; return; } begin(e.clientX, e.clientY); } else return;
+      }
+      drag.ghost.style.left = e.clientX + 'px'; drag.ghost.style.top = e.clientY + 'px';
+      clearOver(); var t = target(e.clientX, e.clientY); if(t && !(t.classList.contains('fb-box') && t === drag.el)) t.classList.add('over');
+    }
+    document.addEventListener('pointermove', move);
+    function end(e){
+      if(!drag) return; clearTimeout(drag.timer); var d = drag; drag = null;
+      if(!d.on) return;
+      el.__dragged = true; setTimeout(function(){ el.__dragged = false; }, 60);
+      if(d.ghost) d.ghost.remove(); clearOver();
+      var t = target(e.clientX, e.clientY); if(!t) return;
+      if(t.classList.contains('fb-day')) addDay(d.id, +t.getAttribute('data-dow'));
+      else if(t.classList.contains('fb-box') && t.getAttribute('data-box') !== d.id) link(d.id, t.getAttribute('data-box'));
+    }
+    document.addEventListener('pointerup', end);
+    function cancel(){ if(drag){ clearTimeout(drag.timer); if(drag.ghost) drag.ghost.remove(); clearOver(); drag = null; } }
+    document.addEventListener('pointercancel', cancel);
+    el.addEventListener('contextmenu', function(e){ if(e.target.closest && e.target.closest('.fb-box')) e.preventDefault(); });
+    draw();
+    return { destroy:function(){ document.removeEventListener('touchmove', stopScroll); document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', end); document.removeEventListener('pointercancel', cancel); },
+      redraw:draw, setBoxes:function(b){ o.boxes = b; nm = {}; b.forEach(function(x){ nm[x.id] = x.name; }); draw(); }, flows:function(){ return map; } };
+  }
+  window.LBFlow = { mount:mount, active:active, daysText:daysText, FULL:FULL };
+})();
   /* ---- Fill from yesterday (you choose which boxes), light haptics, setup is not skippable ---- */
   (function(){
     function pad(n){ return String(n).padStart(2, '0'); }
@@ -1095,30 +1271,43 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
     };
   })();
 
-  /* ---- Weekly repeats: "Every Monday, pin Do this again on this box" ---- */
+  /* ---- Repeats and links that come back on chosen weekdays (DB.flows, a map so two devices merge cleanly) ---- */
   (function(){
-    var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-    function rules(){ return Array.isArray(DB.rules) ? DB.rules : (DB.rules = []); }
+    function flows(){ return (DB.flows && typeof DB.flows === 'object' && !Array.isArray(DB.flows)) ? DB.flows : (DB.flows = {}); }
+    function act(){ return window.LBFlow ? window.LBFlow.active(flows()) : []; }
     function bn(id){ try{ return bxBoxName(id); }catch(e){ return id; } }
+    function pad(n){ return String(n).padStart(2, '0'); }
+    function dstr(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+    function okv(v){ return (typeof v === 'string' && v.trim() && v.length <= 40 && v.indexOf('data:') !== 0) || (typeof v === 'number' && isFinite(v)) || v === true; }
+    function lastDay(box, t){
+      for(var i = 1; i <= 14; i++){ var d = new Date(t + 'T00:00:00'); d.setDate(d.getDate() - i); var ds = dstr(d), pg = getPage(ds, box); if(pg && pg._touched) return { ds:ds, pg:pg }; }
+      return null;
+    }
     function ensure(){
       var t = todayStr(), dow = new Date().getDay(), ch = false, ls = window.BOXLINKS.list();
-      rules().forEach(function(r){
-        if(r.dow !== dow || r.last === t) return;
-        var id = 'rw' + r.id + t;
-        if(!ls.some(function(l){ return l.id === id; })) ls.push({ id:id, from:r.box, to:r.box, ds:t, srcDs:t, text:r.text || 'Do this again', done:false, rule:r.id });
-        r.last = t; ch = true;
+      act().forEach(function(f){
+        if(f.dows.indexOf(dow) < 0 || f.last === t) return;
+        if(f.until && f.until < t) return;
+        var id = 'rw' + f.id + t; f.last = t; ch = true;
+        if(f.skip){ try{ var pg0 = getPage(t, f.from); if(pg0 && pg0._touched) return; }catch(e){} }
+        if(ls.some(function(l){ return l.id === id; })) return;
+        var l = { id:id, from:f.from, to:f.to, ds:t, srcDs:t, text:f.text || 'Do this again', done:false, rule:f.id };
+        if(f.fill){ var ld = lastDay(f.from, t); if(ld){ var fill = []; Object.keys(ld.pg).forEach(function(k){ if(k.charAt(0) !== '_' && okv(ld.pg[k])) fill.push({ sk:k, tk:k, label:String(k).replace(/^cx_/, '').replace(/^cf_/, '').replace(/[_-]+/g, ' ') }); }); if(fill.length){ l.fill = fill.slice(0, 8); l.srcDs = ld.ds; } } }
+        ls.push(l);
       });
       if(ch) saveDB();
     }
+    window.lbFlows = { map:flows, active:act, ensure:ensure };
     document.addEventListener('click', function(e){
       var b = e.target.closest && e.target.closest('[data-lkw],[data-lkwx]'); if(!b) return;
       e.preventDefault(); e.stopPropagation();
-      if(b.hasAttribute('data-lkwx')){ DB.rules = rules().filter(function(r){ return r.id !== b.getAttribute('data-lkwx'); }); saveDB(); render(); return; }
-      var box = b.getAttribute('data-box'), dow = new Date().getDay();
-      if(rules().some(function(r){ return r.box === box && r.dow === dow; })){ try{ flashSaved('Already repeats every ' + DAYS[dow]); }catch(x){} return; }
-      if(rules().length >= 20){ try{ flashSaved('That is plenty of repeats. Remove one first.'); }catch(x){} return; }
-      rules().push({ id:Date.now().toString(36) + Math.floor(Math.random() * 99), box:box, dow:dow, text:'Do this again', last:todayStr() });
-      saveDB(); try{ flashSaved('Repeats every ' + DAYS[dow]); }catch(x){} render();
+      if(b.hasAttribute('data-lkwx')){ var f0 = flows()[b.getAttribute('data-lkwx')]; if(f0){ f0.off = Date.now(); f0.at = Date.now(); } saveDB(); render(); return; }
+      var box = b.getAttribute('data-box'), dow = new Date().getDay(), mine = act().filter(function(f){ return f.from === box && f.to === box; })[0];
+      if(mine && mine.dows.indexOf(dow) > -1){ try{ flashSaved('Already repeats every ' + window.LBFlow.FULL[dow]); }catch(x){} return; }
+      if(act().length >= 40){ try{ flashSaved('That is plenty of repeats. Remove one first.'); }catch(x){} return; }
+      if(mine){ mine.dows.push(dow); mine.at = Date.now(); }
+      else { var id = 'f' + Date.now().toString(36) + Math.floor(Math.random() * 99); flows()[id] = { id:id, from:box, to:box, dows:[dow], text:'Do this again', fill:true, last:todayStr(), at:Date.now() }; }
+      saveDB(); try{ flashSaved('Repeats every ' + window.LBFlow.FULL[dow]); }catch(x){} render();
     }, true);
     var r7 = window.render;
     window.render = function(){
@@ -1128,9 +1317,10 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
         var q = document.querySelector('.lk-quick');
         if(q && !document.querySelector('.lk-weekly')){
           var box = q.getAttribute('data-box'), dow = new Date().getDay();
-          var mine = rules().filter(function(r){ return r.box === box; });
-          q.insertAdjacentHTML('afterend', '<button type="button" class="lk-add lk-weekly" data-lkw="1" data-box="' + esc(box) + '">' + icon('link', 15) + ' Repeat every ' + DAYS[dow] + '</button>' +
-            mine.map(function(r){ return '<div class="lk-rule"><span>Every ' + DAYS[r.dow] + ': ' + esc(r.text) + '</span><button type="button" data-lkwx="' + esc(r.id) + '" aria-label="Stop repeating">' + icon('close', 12) + '</button></div>'; }).join(''));
+          var mine = act().filter(function(f){ return f.from === box; });
+          q.insertAdjacentHTML('afterend', '<button type="button" class="lk-add lk-weekly" data-lkw="1" data-box="' + esc(box) + '">' + icon('link', 15) + ' Repeat every ' + window.LBFlow.FULL[dow] + '</button>' +
+            '<button type="button" class="lk-add lk-board" onclick="lbFlowOpen()">' + icon('link', 15) + ' Open the links and repeats board</button>' +
+            mine.map(function(f){ return '<div class="lk-rule"><span>' + esc(window.LBFlow.daysText(f.dows)) + (f.to !== f.from ? ' to ' + esc(bn(f.to)) : '') + ': ' + esc(f.text || '') + '</span><button type="button" data-lkwx="' + esc(f.id) + '" aria-label="Stop repeating">' + icon('close', 12) + '</button></div>'; }).join(''));
         }
         /* fold everything into one closed-by-default section */
         var foot = document.querySelector('.lk-foot');
@@ -1145,8 +1335,25 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
           foot.appendChild(det);
           det.addEventListener('toggle', function(){ window.__lkOpen = det.open; });
         }
+        /* Settings: one row to open the board */
+        if(ROUTE.view === 'settings' && !document.querySelector('.lb-flowrow')){
+          var row = document.querySelector('[data-sync-row]') || document.querySelector('.settings-row');
+          if(row) row.insertAdjacentHTML('beforebegin', '<button class="settings-row lb-flowrow" onclick="lbFlowOpen()"><div><div class="sr-name">Links and repeats</div><div class="sr-desc">Drag boxes onto days, or onto each other</div></div><div class="sr-ico">' + icon('chevright', 16) + '</div></button>');
+        }
       }catch(e){}
       return out;
+    };
+    /* The board, full screen */
+    window.lbFlowOpen = function(){
+      if(document.getElementById('lb-flow') || !window.LBFlow) return;
+      var d = document.createElement('div'); d.id = 'lb-flow'; d.setAttribute('role', 'dialog'); d.setAttribute('aria-modal', 'true'); d.setAttribute('aria-label', 'Links and repeats');
+      d.innerHTML = '<div class="lbf-top"><button type="button" class="lbf-back" aria-label="Back">' + icon('chevleft', 18) + '</button><b>Links and repeats</b></div><div class="lbf-body"></div>';
+      document.body.appendChild(d); document.documentElement.style.overflow = 'hidden';
+      var boxes = []; try{ boxes = pagesList(todayStr()).map(function(p){ return { id:p.id, name:p.name }; }); }catch(e){}
+      var board = window.LBFlow.mount(d.querySelector('.lbf-body'), { boxes:boxes, flows:flows(), adv:false, onChange:function(){ saveDB(); } });
+      function close(){ if(board && board.destroy) board.destroy(); d.remove(); document.documentElement.style.overflow = ''; try{ render(); }catch(e){} }
+      d.querySelector('.lbf-back').addEventListener('click', close);
+      d.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
     };
   })();
 
