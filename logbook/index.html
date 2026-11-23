@@ -595,6 +595,15 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
 .lk-rule button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:4px}
 
 .lk-lbl{margin:14px 4px 6px;font-size:12.5px;font-weight:600;color:var(--muted)}
+
+.lk-group{border:1px solid var(--line);border-radius:16px;background:var(--surface);overflow:hidden}
+.lk-group>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:13px 16px;font-weight:700;font-size:14px;color:var(--ink-soft);cursor:pointer;min-height:46px}
+.lk-group>summary::-webkit-details-marker{display:none}
+.lk-group>summary span{display:flex;align-items:center;gap:8px;flex:1}
+.lk-group>summary em{font-style:normal;font-size:12px;font-weight:700;background:var(--accent);color:#fff;border-radius:99px;padding:2px 8px}
+.lk-group .lk-chev{display:flex;transition:transform .2s;color:var(--muted)}
+.lk-group[open] .lk-chev{transform:rotate(90deg)}
+.lk-group .lk-body{padding:0 12px 12px;display:grid;gap:8px}
 </style>
 <script id="lb-glue">
 (function(){
@@ -1122,6 +1131,19 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
           var mine = rules().filter(function(r){ return r.box === box; });
           q.insertAdjacentHTML('afterend', '<button type="button" class="lk-add lk-weekly" data-lkw="1" data-box="' + esc(box) + '">' + icon('link', 15) + ' Repeat every ' + DAYS[dow] + '</button>' +
             mine.map(function(r){ return '<div class="lk-rule"><span>Every ' + DAYS[r.dow] + ': ' + esc(r.text) + '</span><button type="button" data-lkwx="' + esc(r.id) + '" aria-label="Stop repeating">' + icon('close', 12) + '</button></div>'; }).join(''));
+        }
+        /* fold everything into one closed-by-default section */
+        var foot = document.querySelector('.lk-foot');
+        if(foot && !foot.querySelector('.lk-group')){
+          var lbl = foot.querySelector('.lk-lbl'); if(lbl) lbl.remove();
+          var n = foot.querySelectorAll('.lk-out,.lk-rule').length;
+          var det = document.createElement('details'); det.className = 'lk-group';
+          if(window.__lkOpen) det.open = true;
+          det.innerHTML = '<summary><span>' + icon('link', 14) + ' Links and repeats</span>' + (n ? '<em>' + n + '</em>' : '') + '<i class="lk-chev">' + icon('chevright', 14) + '</i></summary><div class="lk-body"></div>';
+          var body = det.querySelector('.lk-body');
+          while(foot.firstChild) body.appendChild(foot.firstChild);
+          foot.appendChild(det);
+          det.addEventListener('toggle', function(){ window.__lkOpen = det.open; });
         }
       }catch(e){}
       return out;
