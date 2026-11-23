@@ -1165,6 +1165,39 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
       setTimeout(poll, 500);
     })();
   })();
+
+  /* ---- Settings: bring back the safe copy saved when switching accounts (only for the account it came from) ---- */
+  (function(){
+    function mine(){
+      try{
+        var me = String(CLOUD.userId() || '').replace(/-/g, '').slice(0, 8).toLowerCase(), out = null;
+        if(!me) return null;
+        for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); var m = k && /^lb-stash-([a-z0-9]+)-([0-9a-f]{8})$/.exec(k);
+          if(m && m[2] === me){ var at = parseInt(m[1], 36); if(!out || at > out.at) out = { key:k, at:at }; } }
+        return out;
+      }catch(e){ return null; }
+    }
+    window.lbRestoreAsk = function(){
+      var s = mine(); if(!s) return;
+      openSheet('<div class="sheet-title"><span>Restore saved copy</span><button class="sheet-close" onclick="closeSheet()" aria-label="Close">' + icon('close', 15) + '</button></div><div class="bx-form"><p class="lb-rep-note">This puts back the copy saved on ' + esc(new Date(s.at).toLocaleDateString()) + ' when you switched accounts. It replaces what is on this phone now.</p><div class="bx-actions"><button class="sec" onclick="closeSheet()">Cancel</button><button class="pri" onclick="lbRestoreGo()">Restore</button></div></div>');
+    };
+    window.lbRestoreGo = function(){
+      var s = mine(); if(!s) return;
+      try{ var d = JSON.parse(localStorage.getItem(s.key)); DB = normalizeDB(d); saveDB(); localStorage.removeItem(s.key); closeSheet(); render(); flashSaved('Saved copy restored'); }
+      catch(e){ closeSheet(); try{ flashSaved('That copy could not be restored'); }catch(x){} }
+    };
+    var r8 = window.render;
+    window.render = function(){
+      var out = r8.apply(this, arguments);
+      try{
+        if(ROUTE.view === 'settings' && !document.querySelector('.lb-restore') && mine()){
+          var row = document.querySelector('[data-sync-row]') || document.querySelector('.settings-row');
+          if(row) row.insertAdjacentHTML('afterend', '<button class="settings-row lb-restore" onclick="lbRestoreAsk()"><div><div class="sr-name">Restore saved copy</div><div class="sr-desc">From when you switched accounts</div></div><div class="sr-ico">' + icon('chevright', 16) + '</div></button>');
+        }
+      }catch(e){}
+      return out;
+    };
+  })();
   render();
 })();
 </script>
