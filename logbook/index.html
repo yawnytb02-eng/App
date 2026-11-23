@@ -593,6 +593,8 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
 
 .lk-rule{display:flex;align-items:center;justify-content:space-between;margin:6px 0 0;padding:8px 12px;border-radius:12px;background:var(--surface-2);font-size:13px;color:var(--ink-soft)}
 .lk-rule button{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:4px}
+
+.lk-lbl{margin:14px 4px 6px;font-size:12.5px;font-weight:600;color:var(--muted)}
 </style>
 <script id="lb-glue">
 (function(){
@@ -1077,6 +1079,7 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
       var out = r6.apply(this, arguments);
       try{
         var a = document.querySelector('.lk-add');
+        if(a && !document.querySelector('.lk-lbl')) a.insertAdjacentHTML('beforebegin', '<p class="lk-lbl">Links and repeats</p>');
         if(a && !document.querySelector('.lk-quick')) a.insertAdjacentHTML('afterend', '<button type="button" class="lk-add lk-quick" data-lkq="1" data-ds="' + a.getAttribute('data-ds') + '" data-box="' + a.getAttribute('data-box') + '">' + icon('link', 15) + ' Repeat tomorrow</button>');
       }catch(e){}
       return out;
