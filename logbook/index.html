@@ -215,7 +215,7 @@
         if(xh.status === 200){ cfg = JSON.parse(xh.responseText); if(cfg && typeof cfg === 'object') try{ localStorage.setItem('lbe-' + eid, JSON.stringify(cfg)); }catch(e){} else cfg = null; }
       }catch(e){}
     }
-    if(cfg){ q.l = 'custom'; ['n','a','k','b','o','h','r','f','c','th','m','g','bt','lk'].forEach(function(k){ if(cfg[k] != null) q[k] = String(cfg[k]); }); if(cfg.lk != null) q.lk = typeof cfg.lk === 'string' ? cfg.lk : JSON.stringify(cfg.lk); if(cfg.x != null) q.x = typeof cfg.x === 'string' ? cfg.x : JSON.stringify(cfg.x); }
+    if(cfg){ q.l = 'custom'; ['n','a','k','b','o','h','r','f','c','th','m','g','bt','lk'].forEach(function(k){ if(cfg[k] != null) q[k] = String(cfg[k]); }); if(cfg.lk != null) q.lk = typeof cfg.lk === 'string' ? cfg.lk : JSON.stringify(cfg.lk); if(cfg.x != null) q.x = typeof cfg.x === 'string' ? cfg.x : JSON.stringify(cfg.x); if(cfg.fl != null) q.fl = typeof cfg.fl === 'string' ? cfg.fl : JSON.stringify(cfg.fl); }
     else edFail = true;
   }
   /* Install code: ?i=<10 chars> signs the installed app in once. iPhone keeps a home-screen app's storage apart from Safari, so Safari must not spend the code. */
@@ -281,6 +281,16 @@
         P.lk.push(o);
       });
     }catch(e){}
+    /* fl = repeats and links between boxes: [{f:from, t:to, d:[0-6 weekdays], x:note, i:1 to bring last values}] */
+    P.fl = [];
+    try{
+      var FB = /^(cx_[a-z0-9]{1,6}|[a-z]+)$/, fr = JSON.parse(q.fl || '[]');
+      if(Array.isArray(fr)) fr.slice(0,12).forEach(function(l){
+        if(!l || !FB.test(l.f) || !FB.test(l.t)) return;
+        var d = (Array.isArray(l.d) ? l.d : []).map(Number).filter(function(n, i, a2){ return n >= 0 && n <= 6 && n % 1 === 0 && a2.indexOf(n) === i; }).slice(0,7); if(!d.length) return;
+        P.fl.push({ f:l.f, t:l.t, d:d, x:String(l.x || '').replace(/[<>"&]/g,'').trim().slice(0,60), i:l.i ? 1 : 0 });
+      });
+    }catch(e){}
     /* o = the order the owner arranged the boxes in: ready-made ids and cx_<k> for their own */
     P.o = (q.o||'').split(',').filter(function(x){ return /^(cx_[a-z0-9]{1,6}|[a-z]+)$/.test(x); }).slice(0,14);
     /* Look and feel: typeface (f), corners (c), default mode (th), home-screen mark (m), the line under the date (g), renamed ready-made boxes (bt) */
@@ -293,7 +303,7 @@
     if(q.pv){ P.key = 'pv-'+id+'-v1'; }
   }
   if(P && !edFail){
-    ed = { slug:slug, n:P.n, key:P.key, boxes:P.b||null, icon:P.icon||'flag', custom:slug==='custom', hide:P.h||[], ren:P.r||[], x:P.x||[], lk:P.lk||[], ord:P.o||[], pv:!!(q.pv && slug==='custom'), font:P.f||'sans', corner:P.c||'soft', theme:P.th||'light', mk:P.m||'reticle', tag:P.g||'', bt:P.bt||[] };
+    ed = { slug:slug, n:P.n, key:P.key, boxes:P.b||null, icon:P.icon||'flag', custom:slug==='custom', hide:P.h||[], ren:P.r||[], x:P.x||[], lk:P.lk||[], fl:P.fl||[], ord:P.o||[], pv:!!(q.pv && slug==='custom'), font:P.f||'sans', corner:P.c||'soft', theme:P.th||'light', mk:P.m||'reticle', tag:P.g||'', bt:P.bt||[] };
     if(ed.pv){
       /* Studio preview: a throwaway, signed-out copy of the real app (fresh every load, no account gate, no cloud). */
       try{ localStorage.removeItem('lb-seeded-'+P.key); localStorage.setItem('cb-welcomed-'+P.key,'1'); localStorage.setItem(P.key, JSON.stringify({ onboarded:true, days:{} })); }catch(e){}
@@ -946,7 +956,7 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
     if(s === '6,0') return 'Weekends';
     return d.slice().sort(function(a, b){ return ORDER.indexOf(a) - ORDER.indexOf(b); }).map(function(x){ return SHORT[x]; }).join(', ');
   }
-  var CSS = '.fb{--fa:var(--accent,#835F1F);--fl:var(--line,#E4DACB);--fi:var(--ink,#241d14);--fm:var(--muted,#7d7367);--fs:var(--surface,#fff);--fs2:var(--surface-2,#F3ECE0);font:inherit;color:var(--fi);user-select:none;-webkit-user-select:none}' +
+  var CSS = '.fb-wrap{container:fbx/inline-size}.fb{--fa:var(--accent,#835F1F);--fl:var(--line,#E4DACB);--fi:var(--ink,#241d14);--fm:var(--muted,#7d7367);--fs:var(--surface,#fff);--fs2:var(--surface-2,#F3ECE0);font:inherit;color:var(--fi);user-select:none;-webkit-user-select:none}' +
     '.fb h4{margin:18px 0 8px;font:700 13px/1.2 inherit;color:var(--fm)}.fb h4:first-child{margin-top:0}' +
     '.fb-hint{margin:0 0 12px;font-size:13px;line-height:1.5;color:var(--fm)}' +
     '.fb-pal{display:flex;flex-wrap:wrap;gap:8px}' +
@@ -971,7 +981,7 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
     '.fb-chk{display:flex!important;align-items:center;gap:10px;font-weight:600;color:var(--fi)!important}.fb-chk input{width:20px;height:20px;accent-color:var(--fa)}' +
     '.fb-act{display:flex;gap:10px;justify-content:space-between}.fb-act button{min-height:42px;padding:0 18px;border-radius:12px;border:1.5px solid var(--fl);background:var(--fs);font:700 14px/1 inherit;color:var(--fi);cursor:pointer}.fb-act .pri{background:var(--fa);border-color:var(--fa);color:#fff}.fb-act .del{color:#B3261E}' +
     '.fb-empty{padding:14px;border-radius:14px;background:var(--fs2);color:var(--fm);font-size:13px;line-height:1.5}' +
-    '@media (max-width:640px){.fb-week{grid-template-columns:1fr}.fb-day{min-height:0;flex-direction:row;flex-wrap:wrap;align-items:center}.fb-dn{width:44px}.fb-chip{width:auto;max-width:100%}}';
+    '@container fbx (max-width:680px){.fb-week{grid-template-columns:1fr}.fb-day{min-height:0;flex-direction:row;flex-wrap:wrap;align-items:center}.fb-dn{width:44px}.fb-chip{width:auto;max-width:100%}}';
   function css(){ if(document.getElementById('fb-css')) return; var s = document.createElement('style'); s.id = 'fb-css'; s.textContent = CSS; document.head.appendChild(s); }
 
   /* o: { boxes:[{id,name}], flows:{id:flow}, adv:bool, onChange:function(map) } */
@@ -1018,7 +1028,7 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
           (adv ? '<label class="fb-chk"><input type="checkbox" data-k="skip"' + (f.skip ? ' checked' : '') + '> Skip it if ' + esc(name(f.from)) + ' is already logged today</label><label>Stop after<input type="date" data-k="until" value="' + esc(f.until || '') + '"></label>' : '') +
           '<div class="fb-act"><button type="button" class="del" data-fb="del">Remove</button><button type="button" class="pri" data-fb="done">Done</button></div></div>';
       }
-      el.innerHTML = '<div class="fb">' + h + '</div>';
+      el.innerHTML = '<div class="fb-wrap"><div class="fb">' + h + '</div></div>';
     }
     /* ---- clicks (tap path, also keyboard) ---- */
     el.addEventListener('click', function(e){
@@ -1355,6 +1365,18 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
       d.querySelector('.lbf-back').addEventListener('click', close);
       d.addEventListener('keydown', function(e){ if(e.key === 'Escape') close(); });
     };
+  })();
+
+  /* ---- A new install of an edition starts with the repeats and links its owner set up in the Studio ---- */
+  (function(){
+    try{
+      var E = window.__ED; if(!E || !E.fl || !E.fl.length) return;
+      var FK = 'lb-flseed-' + STORAGE_KEY;
+      if(!E.pv){ if(localStorage.getItem(FK)) return; localStorage.setItem(FK, '1'); if(Object.keys(DB.days || {}).length || DB.onboarded) return; }
+      var m = (DB.flows && typeof DB.flows === 'object' && !Array.isArray(DB.flows)) ? DB.flows : (DB.flows = {});
+      E.fl.forEach(function(l, i){ var id = 'sd' + i; if(m[id]) return; m[id] = { id:id, from:l.f, to:l.t, dows:l.d.slice(), text:l.x || (l.f === l.t ? 'Do this again' : 'From ' + (function(){ try{ return bxBoxName(l.f); }catch(e){ return l.f; } })()), fill:!!l.i, at:Date.now() }; });
+      saveDB();
+    }catch(e){}
   })();
 
   /* ---- Pull the newest copy when the logbook opens, and every few minutes while it stays open (so website edits arrive without waiting for a change here) ---- */
