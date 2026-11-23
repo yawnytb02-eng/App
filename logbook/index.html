@@ -1357,6 +1357,14 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
     };
   })();
 
+  /* ---- Pull the newest copy when the logbook opens, and every few minutes while it stays open (so website edits arrive without waiting for a change here) ---- */
+  (function(){
+    var tries = 0;
+    function go(){ try{ if(window.SYNC && SYNC.state().on) SYNC.now(); }catch(e){} }
+    (function wait(){ var ph = CLOUD.phase(); if(ph === 'in'){ setTimeout(go, 600); return; } if(ph === 'out' || ++tries > 40) return; setTimeout(wait, 500); })();
+    setInterval(function(){ if(!document.hidden) go(); }, 180000);
+  })();
+
   /* ---- Opened from the website as a different account than this logbook is signed in as ---- */
   (function(){
     var code = (window.__INST && window.__INST.code) || '', want = '';
