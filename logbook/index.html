@@ -198,11 +198,19 @@
     'sober-girl':  { n:'Sober Girl',  key:'sobergirl-logbook-v1',  a:'#6E5F77', d:'#AE8EB7', bg:'#F6F1F5', bgd:'#1F171F', b:['night','mindfocus','workout','journal','dashboard'] }
   };
   var q = {}; try{ new URLSearchParams(location.search).forEach(function(v,k){ q[k]=v; }); }catch(e){}
-  /* A home-screen app that is launched with no edition in its address (older installs, or a phone that dropped the query) goes back to the logbook it was last used as, never to Clean Boy. */
+  /* No edition in the address (a bookmark, an old install, a link that lost its end, a phone that dropped the query):
+     go back to the logbook this device used last, in the browser or the home-screen app. Never quietly show Clean Boy to someone who chose another logbook. */
   var inApp = !!(navigator.standalone || (window.matchMedia && matchMedia('(display-mode: standalone)').matches));
-  if(inApp && !q.l && !q.e){
-    try{ var mem = localStorage.getItem('lb-edition') || ''; if(/^\?[A-Za-z0-9_=&%.,~*'()!+-]{3,4000}$/.test(mem)){ new URLSearchParams(mem).forEach(function(v,k){ q[k] = v; }); history.replaceState(null, '', location.pathname + mem + location.hash); } }catch(e){}
-  }
+  var pick = '';
+  if(!q.l && !q.e){
+    var back = false;
+    try{ var mem = localStorage.getItem('lb-edition') || ''; if(/^\?[A-Za-z0-9_=&%.,~*'()!+-]{3,4000}$/.test(mem)){ new URLSearchParams(mem).forEach(function(v,k){ if(k !== 'i' && k !== 'p' && k !== 'u') q[k] = v; }); history.replaceState(null, '', location.pathname + mem.replace(/([?&])(i|p|u)=[^&]*/g, '$1').replace(/[?&]+$/, '').replace(/^&/, '?') + location.hash); back = true; } }catch(e){}
+    if(!back){
+      /* Nothing remembered. If exactly one logbook has data on this device, that is the one. Otherwise ask, do not guess. */
+      var have = []; Object.keys(PRE).forEach(function(s){ try{ if(localStorage.getItem(PRE[s].key)) have.push(s); }catch(e){} });
+      if(have.length === 1) q.l = have[0]; else pick = 'bare';
+    }
+  } else if(q.l && !PRE[q.l] && q.l !== 'custom'){ pick = 'unknown'; }
   /* Short link: ?e=abc123 is a custom logbook saved to the owner's account. Keep it on this device after the first look so it opens offline. */
   var SB = 'https://itkuknjylgqhrjysarre.supabase.co', SK = 'sb_publishable_EtleRuUUnLTHw6xmymBDUA_FByfgd0A', edFail = false;
   if(/^[a-z0-9]{6}$/i.test(q.e || '')){
@@ -227,6 +235,14 @@
   if(edFail){
     document.title = 'Logbook';
     document.write('<meta name="viewport" content="width=device-width,initial-scale=1"><body style="font:16px/1.5 system-ui,sans-serif;margin:0;padding:48px 24px;text-align:center;background:#f7f2e7;color:#1b1712"><h1 style="font-size:20px;margin:0 0 8px">This logbook could not load</h1><p style="margin:0 0 20px">Check your connection, then try again.</p><button onclick="location.reload()" style="font:inherit;font-weight:700;padding:12px 22px;border-radius:12px;border:0;background:#1b1712;color:#f7f2e7">Try again</button></body>');
+    window.stop();
+  }
+  if(pick && !edFail){
+    var esc1 = function(s){ return String(s).replace(/[&<>"']/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]; }); };
+    var keep = new URLSearchParams(location.search); keep.delete('l'); keep.delete('e');
+    var rows = Object.keys(PRE).map(function(s){ var u = new URLSearchParams(keep.toString()); u.set('l', s); return '<a href="?' + esc1(u.toString()) + '" style="display:flex;align-items:center;gap:12px;padding:14px 16px;margin:0 0 10px;border-radius:14px;border:1.5px solid #d9d0bd;background:#fffdf8;color:#1b1712;text-decoration:none;font-weight:700"><span style="width:14px;height:14px;border-radius:50%;background:' + (PRE[s].a || '#C81212') + '"></span>' + esc1(PRE[s].n) + '</a>'; }).join('');
+    document.title = 'Which logbook?';
+    document.write('<meta name="viewport" content="width=device-width,initial-scale=1"><body style="font:16px/1.5 system-ui,sans-serif;margin:0;padding:40px 20px;background:#f7f2e7;color:#1b1712"><div style="max-width:420px;margin:0 auto"><h1 style="font-size:22px;margin:0 0 6px">Which logbook is this?</h1><p style="margin:0 0 20px;color:#5a5244">' + (pick === 'unknown' ? 'That link is not one we know.' : 'This address does not say which logbook to open.') + ' Pick yours. We remember it on this device.</p>' + rows + '<p style="margin:18px 0 0;font-size:14px;color:#5a5244">Made your own on the website? Open it from your Dashboard there.</p></div></body>');
     window.stop();
   }
   var slug = q.l || 'clean-boy', ed = null;
@@ -322,7 +338,7 @@
     window.__EDKEY = P.key;
   }
   window.__ED = ed;
-  if(ed && inApp){ try{ var ms = new URLSearchParams(location.search); ms.delete('i'); var mq = ms.toString(); if(mq) localStorage.setItem('lb-edition', '?' + mq); }catch(e){} }
+  if(ed && !ed.pv){ try{ var ms = new URLSearchParams(location.search); ms.delete('i'); ms.delete('p'); ms.delete('u'); var mq = ms.toString(); if(mq) localStorage.setItem('lb-edition', '?' + mq); }catch(e){} }
   window.__EDAPPLY = function(cfg){
     if(!ed) return cfg;
     var b = cfg.brand; b.name = ed.n+' Logbook'; b.shortName = ed.n; b.nameLines = [ed.n,'Logbook']; b.wordmark = ed.n+' · Logbook'; b.markIcon = ed.icon;
@@ -644,7 +660,7 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
   try{ var EDO = window.__ED; if(EDO && EDO.ord && EDO.ord.length && typeof pagesList === 'function'){ var pl0 = pagesList; pagesList = function(){ var l = pl0.apply(this, arguments), o = EDO.ord; return l.map(function(p, i){ return [p, i]; }).sort(function(a, b){ var x = o.indexOf(a[0].id), y = o.indexOf(b[0].id); if(x < 0) x = 99; if(y < 0) y = 99; return (x - y) || (a[1] - b[1]); }).map(function(z){ return z[0]; }); }; } }catch(e){}
   /* No welcome tour and no setup wizard: a signed-in person lands on this logbook's own Today page. */
   var wideQ = window.matchMedia ? matchMedia('(min-width:900px)') : { matches:false };
-  function skipSetup(){ try{ if(!DB.onboarded && Object.keys(DB.days||{}).length) DB.onboarded = true; if(wideQ.matches && typeof HOME_REST_OPEN !== 'undefined' && !HOME_REST_OPEN) HOME_REST_OPEN = true; }catch(e){} }
+  var __sd = false; function skipSetup(){ try{ if(!__sd){ __sd = true; if(!DB.onboarded && Object.keys(DB.days||{}).length && !localStorage.getItem(ONBOARD_KEY)) DB.onboarded = true; } if(wideQ.matches && typeof HOME_REST_OPEN !== 'undefined' && !HOME_REST_OPEN) HOME_REST_OPEN = true; }catch(e){} }
   /* Look and feel from the studio: the line under the date, and renamed ready-made boxes */
   try{ if(ED && ED.tag){ QUOTES.length = 0; QUOTES.push(ED.tag); } (ED && ED.bt || []).forEach(function(x){ var p = x.split('~'); CORE_PAGES.forEach(function(pg){ if(pg.id === p[0] && p[1]) pg.name = p[1]; }); }); }catch(e){}
   skipSetup();
@@ -834,6 +850,24 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
       fetch('https://itkuknjylgqhrjysarre.supabase.co/rest/v1/rpc/log_client_error', { method:'POST', keepalive:true, headers:{ 'Content-Type':'application/json', apikey:'sb_publishable_EtleRuUUnLTHw6xmymBDUA_FByfgd0A' }, body:JSON.stringify({ p_app:UXK, p_msg:m, p_src:String(s || '').slice(0, 200), p_ua:navigator.userAgent.slice(0, 160) }) }).catch(function(){}); }catch(e){} };
     window.addEventListener('error', function(e){ report(e.message, (e.filename || '').split('/').pop() + ':' + e.lineno); });
     window.addEventListener('unhandledrejection', function(e){ report(e.reason && (e.reason.message || e.reason), 'promise'); }); }
+
+  /* ---- Idle-hour lines: the built-in ones are written for Clean Boy. Every other logbook gets lines that fit it, so nothing from another logbook ever shows up. ---- */
+  (function(){
+    try{
+      if(typeof IDLE_QUOTES === 'undefined' || !ED || !ED.slug || ED.slug === 'clean-boy') return;
+      var neutral = ['Free hour. Hydrate.', 'Nothing scheduled right now.', 'Calm is a flex.', 'Open hour. Take it easy.', 'Nothing to prove right now.', 'Clear slate, clear head.', 'Breathe. Nothing is due.', 'A quiet hour, all yours.', 'Plans folded, pressure off.'];
+      var reading = ['Open hour. Open book.', 'Free hour. One more chapter?', 'Bookmark in, calendar empty.', 'Quiet hour, loud ideas.', 'Nothing scheduled. Read something.', 'A good page is waiting.', 'Tea, book, no plans.', 'Slow hour. Slow reading.', 'Clear shelf, clear head.'];
+      var IQ = {
+        'clean-girl': ['Fresh skin, empty calendar.', 'Outfit sorted. Now exist.', 'Smell good, do nothing.', 'Free hour. Hydrate, queen.', 'Calm is a flex.', 'Nothing to prove right now.', 'Hair done, plans folded.', 'Perfume on, pressure off.', 'Clean slate, clean sheets.'],
+        'hustler': ['Free hour. Make it count.', 'Quiet hour. Sharpen something.', 'Nothing scheduled. Plan the next move.', 'Space on the calendar. Use it.', 'Rest is part of the work.', 'Reset, then go again.', 'An open hour is an advantage.', 'No meeting. Do the hard thing.', 'Clear desk, clear head.'],
+        'reading-boy': reading, 'reading-girl': reading,
+        'sober-boy': ['Clear head, open hour.', 'One day at a time.', 'Free hour. Breathe.', 'Nothing to prove right now.', 'Calm is a strength.', 'An open hour is a win.', 'Water, walk, repeat.', 'Steady beats loud.', 'Clean slate, clear mind.']
+      };
+      IQ['sober-girl'] = IQ['sober-boy'];
+      var set = IQ[ED.slug] || neutral;
+      IDLE_QUOTES.length = 0; set.forEach(function(s){ IDLE_QUOTES.push(s); });
+    }catch(e){}
+  })();
   /* ---- Links: connect fields, boxes and days. Shared by the phone and the web dashboard. ---- */
   var LK = (function(){
     function pd(s){ var p = s.split('-'); return new Date(+p[0], +p[1] - 1, +p[2], 12); }
@@ -1367,6 +1401,26 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
     };
   })();
 
+  /* ---- Pickers update live, and Deep work adds up its own total ---- */
+  (function(){
+    document.addEventListener('click', function(e){
+      var b = e.target.closest && e.target.closest('[data-ui="put"],[data-ui="step"],[data-ui="pickset"],[data-ui="set"]'); if(!b) return;
+      var pid = b.getAttribute('data-pid'), key = b.getAttribute('data-key'), ds = b.getAttribute('data-ds'), inSheet = !!b.closest('.sheet');
+      setTimeout(function(){
+        try{
+          if(pid === 'mindfocus' && /^hrs\d$/.test(key || '')){
+            var pg = getPage(ds, pid), tot = 0; for(var i = 0; i < 4; i++) tot += parseFloat(pg['hrs' + i]) || 0;
+            if(tot > 0 && String(pg.totalHrs) !== String(Math.round(tot * 100) / 100)){ pg.totalHrs = String(Math.round(tot * 100) / 100); markTouched(ds, pid); saveDB(); render(); }
+          }
+          if(inSheet && document.querySelector('.sheet') && key){
+            var op = document.querySelector('[data-ui="openpick"][data-pid="' + pid + '"][data-key="' + key + '"]');
+            if(op) op.click();
+          }
+        }catch(x){}
+      }, 0);
+    }, false);
+  })();
+
   /* ---- A new install of an edition starts with the repeats and links its owner set up in the Studio ---- */
   (function(){
     try{
@@ -1385,6 +1439,49 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
     function go(){ try{ if(window.SYNC && SYNC.state().on) SYNC.now(); }catch(e){} }
     (function wait(){ var ph = CLOUD.phase(); if(ph === 'in'){ setTimeout(go, 600); return; } if(ph === 'out' || ++tries > 40) return; setTimeout(wait, 500); })();
     setInterval(function(){ if(!document.hidden) go(); }, 180000);
+  })();
+
+  /* ---- One account per copy: a logbook copy on this device belongs to the account that used it. A different account that signs in gets its own clean copy; the other one is kept safe and comes back only for its own account. ---- */
+  (function(){
+    var OWN = STORAGE_KEY + '-owner', busy = false;
+    function short(id){ return String(id || '').replace(/-/g, '').slice(0, 8).toLowerCase(); }
+    function stash(prev){
+      try{
+        var ks = []; for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i); if(k && k.indexOf('lb-stash-') === 0) ks.push(k); }
+        ks.sort(); while(ks.length > 4) localStorage.removeItem(ks.shift());
+        var nm = Date.now().toString(36) + '-' + short(prev);
+        localStorage.setItem('lb-stash-' + nm, JSON.stringify(DB));
+        var sm = localStorage.getItem(STORAGE_KEY + '-sync'); if(sm) localStorage.setItem('lb-stashsync-' + nm, sm);
+        return true;
+      }catch(e){ return false; }
+    }
+    /* The account's own earlier copy on this device, if it left one: take it back automatically. */
+    function takeBack(u){
+      try{
+        var best = null; for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i), m = k && /^lb-stash-([a-z0-9]+)-([0-9a-f]{8})$/.exec(k); if(m && m[2] === short(u)){ var at = parseInt(m[1], 36); if(!best || at > best.at) best = { key:k, at:at, nm:k.slice(9) }; } }
+        if(!best) return false;
+        var d = JSON.parse(localStorage.getItem(best.key)); DB = normalizeDB(d);
+        var sm = localStorage.getItem('lb-stashsync-' + best.nm); if(sm) localStorage.setItem(STORAGE_KEY + '-sync', sm);
+        localStorage.removeItem(best.key); localStorage.removeItem('lb-stashsync-' + best.nm);
+        return true;
+      }catch(e){ return false; }
+    }
+    function check(){
+      if(busy) return;
+      var ph = CLOUD.phase(), u = CLOUD.userId && CLOUD.userId();
+      if(ph !== 'in' || !u) return;
+      var owner = ''; try{ owner = localStorage.getItem(OWN) || ''; }catch(e){}
+      if(!owner){ try{ var m = JSON.parse(localStorage.getItem(STORAGE_KEY + '-sync') || 'null'); if(m && m.uid) owner = m.uid; }catch(e){} }
+      if(!owner || owner === u){ try{ localStorage.setItem(OWN, u); }catch(e){} return; }
+      busy = true;
+      if(!stash(owner)){ busy = false; try{ flashSaved('Not enough room on this phone to switch accounts safely.'); }catch(e){} return; }
+      try{ localStorage.removeItem(STORAGE_KEY + '-sync'); localStorage.setItem(OWN, u); }catch(e){}
+      if(!takeBack(u)) DB = normalizeDB({});
+      try{ saveDB(); }catch(e){}
+      location.reload();
+    }
+    window.lbOwnerCheck = check;
+    check(); setInterval(check, 1000);
   })();
 
   /* ---- Opened from the website as a different account than this logbook is signed in as ---- */

@@ -958,7 +958,11 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 
   /* ================= state ================= */
   var saved = store('lbs-custom') || [];
-  var sess = store('lbs-sess');
+  /* One sign-in for the whole device: the website and every logbook keep it in the same place (the logbook's own sign-in storage). */
+  var SKEY = 'sb-' + SB.replace(/^https?:\/\//, '').split('.')[0] + '-auth-token';
+  function sharedRead(){ try{ var o = JSON.parse(localStorage.getItem(SKEY) || 'null'); if(o && o.access_token && o.refresh_token && o.user && o.user.id) return { at:o.access_token, rt:o.refresh_token, exp:(o.expires_at ? o.expires_at * 1000 : 0), id:o.user.id, email:o.user.email }; }catch(e){} return null; }
+  function sharedWrite(o){ try{ localStorage.setItem(SKEY, JSON.stringify({ access_token:o.access_token, token_type:'bearer', expires_in:o.expires_in || 3600, expires_at:o.expires_at || (Math.floor(Date.now() / 1000) + (o.expires_in || 3600)), refresh_token:o.refresh_token, user:o.user })); }catch(e){} }
+  var sess = (function(){ var s = sharedRead(); if(s) { store('lbs-sess', s); return s; } return store('lbs-sess'); })();
   var rows = null, loadErr = '', loading = false, lastLoad = 0;
   var cs = { f:'sans', c:'soft', th:'light', m:'reticle', g:'', bt:{}, n:'My Routine', a:SWATCH[0], ord:['dashboard','workout','mindfocus','night'], b:['dashboard','workout','mindfocus','night'], h:[], r:{}, x:[], lk:[], fl:[], edit:null, sel:'home', pg:'home' };
   var mode = 'in', filt = { q:'', m:'' };
@@ -1112,15 +1116,39 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     return m || 'Something went wrong. Try again.';
   }
   function setSess(o){
-    if(o && o.access_token){ sess = { at:o.access_token, rt:o.refresh_token, exp:(o.expires_at ? o.expires_at * 1000 : Date.now() + (o.expires_in || 3600) * 1000), id:o.user && o.user.id, email:o.user && o.user.email }; store('lbs-sess', sess); }
-    else { sess = null; rows = null; ent = null; store('lbs-sess', null); }
+    if(o && o.access_token){ sess = { at:o.access_token, rt:o.refresh_token, exp:(o.expires_at ? o.expires_at * 1000 : Date.now() + (o.expires_in || 3600) * 1000), id:o.user && o.user.id, email:o.user && o.user.email }; store('lbs-sess', sess); if(o.user && o.user.id) sharedWrite(o); }
+    else { sess = null; rows = null; ent = null; store('lbs-sess', null); try{ localStorage.removeItem(SKEY); }catch(e){} }
   }
+  /* Take what another tab (or the logbook) already refreshed, instead of using a refresh token that has since been replaced. */
+  function adopt(s){ sess = { at:s.at, rt:s.rt, exp:s.exp, id:s.id, email:s.email }; store('lbs-sess', sess); }
+  function withLock(fn){ try{ if(navigator.locks && navigator.locks.request) return navigator.locks.request('lock:' + SKEY, fn); }catch(e){} return fn(); }
+  var refreshing = null;
   function fresh(){
     if(!sess) return Promise.reject(new Error('out'));
+    var s0 = sharedRead(); if(s0 && s0.id === sess.id && s0.exp >= sess.exp && s0.rt !== sess.rt) adopt(s0);
     if(sess.exp - Date.now() > 60000) return Promise.resolve(sess.at);
-    return fetch(SB + '/auth/v1/token?grant_type=refresh_token', { method:'POST', headers:hdr(), body:JSON.stringify({ refresh_token:sess.rt }) }).then(j).then(function(r){
-      if(!r.ok || !r.j || !r.j.access_token){ if(r.status >= 400 && r.status < 500){ setSess(null); } throw new Error('out'); } setSess(r.j); return sess.at; });
+    if(refreshing) return refreshing;
+    refreshing = withLock(function(){
+      var s = sharedRead(); if(s && s.id === sess.id && s.exp - Date.now() > 60000){ adopt(s); return sess.at; }
+      var rt = (s && s.id === sess.id && s.rt) || sess.rt;
+      return fetch(SB + '/auth/v1/token?grant_type=refresh_token', { method:'POST', headers:hdr(), body:JSON.stringify({ refresh_token:rt }) }).then(j).then(function(r){
+        if(r.ok && r.j && r.j.access_token){ setSess(r.j); return sess.at; }
+        /* Rejected: another tab may have replaced the token a moment ago. Only sign out when nothing newer exists. */
+        var s2 = sharedRead(); if(s2 && s2.rt !== rt && s2.exp - Date.now() > 0){ adopt(s2); return sess.at; }
+        if(r.status === 400 || r.status === 401 || r.status === 403) setSess(null);
+        throw new Error('out');
+      });
+    }).then(function(v){ refreshing = null; return v; }, function(e){ refreshing = null; throw e; });
+    return refreshing;
   }
+  /* Signed in or out in another tab, or in a logbook: follow it, so one sign-in covers everything on this device. */
+  window.addEventListener('storage', function(e){
+    if(e.key !== SKEY) return;
+    var s = sharedRead();
+    if(!s){ if(sess){ sess = null; rows = null; ent = null; store('lbs-sess', null); render(); } return; }
+    if(!sess || sess.id !== s.id){ adopt(s); rows = null; ent = null; render(); load(true); return; }
+    if(s.rt !== sess.rt && s.exp >= sess.exp) adopt(s);
+  });
   function api(path, opt){ return fresh().then(function(t){ opt = opt || {}; var pf = opt.prefer; delete opt.prefer; opt.headers = hdr(t); if(pf) opt.headers.Prefer = pf; return fetch(SB + '/rest/v1/' + path, opt).then(j); }); }
   function pushPrefs(){
     if(!sess) return;
@@ -1136,7 +1164,8 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     if(!sess || loading) return; loading = true; if(!ent) loadEnt(); if(!rows) loadErr = ''; if(force || !rows) render();
     api('logbook_sync?select=app,data,rev,updated_at,device&order=updated_at.desc').then(function(r){
       loading = false;
-      if(r.status === 401){ setSess(null); render(); return; }
+      if(r.status === 401){ if(!load.retried){ load.retried = true; sess.exp = 0; loading = false; load(true); return; } load.retried = false; setSess(null); render(); return; }
+      load.retried = false;
       if(!r.ok || !Array.isArray(r.j)){ loadErr = 'Could not load your data right now.'; render(); return; }
       loadErr = ''; pullPrefs(r.j); rows = r.j.filter(function(x){ return x.app !== 'site-prefs'; }).map(prep); lastLoad = Date.now(); render(); if(force) toast('Up to date');
     }, function(err){ loading = false; if(err && err.message === 'out'){ render(); return; } loadErr = 'You look offline. Connect and try Refresh.'; render(); });
@@ -2262,7 +2291,8 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
   function render(){
     var rootEl = $('root'), y = window.scrollY, h0 = rootEl.offsetHeight, el = document.activeElement, keep = el && el.id && /^(fq|cn|adq|adem|adban|adcap|amc|addel|fbt|fbc)$/.test(el.id) ? { id:el.id, s:el.selectionStart } : null;
     if(sess){ var rt0 = route(); if(rt0.v === 'lb'){ var nm0 = nameOf(rt0.app); if(nm0.preset && nm0.preset !== themeId){ themeId = nm0.preset; applyTheme(); } } }
-    if(sess && y > 0) rootEl.style.minHeight = h0 + 'px';
+    /* Hold the page height steady while it redraws, signed in or out. A viewer that sizes itself to the page (and always reports scroll 0) would otherwise see it shrink and jump to the top. */
+    if(h0 > 0) rootEl.style.minHeight = h0 + 'px';
     rootEl.innerHTML = sess ? shell() : landing();
     if($('pvf')) studioInit();
     if($('intro')){ introCur = 0; var iv = $('iv'); if(iv){ iv.addEventListener('loadedmetadata', function(){ introDur = iv.duration; introKick(); }); iv.load && 0; } introKick(); }
@@ -2271,7 +2301,8 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     if(keep && $(keep.id)){ $(keep.id).focus({ preventScroll:true }); try{ $(keep.id).setSelectionRange(keep.s, keep.s); }catch(e){} }
     if(sess && $('bill')) billInit();
     if(sess && route().v === 'admin') admInit();
-    if(sess){ window.scrollTo({ top:y, left:0, behavior:'instant' }); rootEl.style.minHeight = ''; if(Math.abs(window.scrollY - y) > 1) requestAnimationFrame(function(){ window.scrollTo({ top:y, left:0, behavior:'instant' }); }); }
+    if(y > 0){ window.scrollTo({ top:y, left:0, behavior:'instant' }); if(Math.abs(window.scrollY - y) > 1) requestAnimationFrame(function(){ window.scrollTo({ top:y, left:0, behavior:'instant' }); }); }
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ rootEl.style.minHeight = ''; }); });
   }
   window.addEventListener('hashchange', function(){ if(sess){ filt = { q:'', m:'' }; render(); window.scrollTo({ top:0, left:0, behavior:'instant' }); } });
   document.addEventListener('visibilitychange', function(){ if(!document.hidden && sess && lastLoad && Date.now() - lastLoad > 60000) load(false); });
@@ -2364,7 +2395,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
     h += '<div class="lv-box"><div class="lv-bh"><b>Add a ready-made box</b></div><form class="lv-addf" data-live="addready"><select aria-label="Ready-made box">' + missing.map(function(q){ return '<option value="' + lvEsc(q[0]) + '">' + lvEsc(q[1]) + '</option>'; }).join('') + '</select><button class="btn sm" type="submit">Add</button></form></div>';
     h += '<div class="lv-box"><div class="lv-bh"><b>Make your own box</b></div><form class="lv-addf" data-live="addcustom"><input type="text" maxlength="24" placeholder="Name, for example Gym" aria-label="Box name"><input type="text" maxlength="30" placeholder="First field, for example Weight" aria-label="First field"><select aria-label="First field type">' + FTYPES.map(function(t){ return '<option value="' + t[0] + '">' + lvEsc(t[1]) + '</option>'; }).join('') + '</select><button class="btn sm" type="submit">Make</button></form></div>';
     if(sv > -1) h += '<p class="hint" style="margin-top:18px"><button type="button" class="btn ghost sm" data-live="look" data-i="' + sv + '">Change name, colours, look or sharing link</button></p>';
-    b.innerHTML = h;
+    var keepTop = b.dataset.tab === LV.tab ? b.scrollTop : 0; b.dataset.tab = LV.tab; b.innerHTML = h; b.scrollTop = keepTop;
   }
   function lvQueue(map){
     LV.pend = map; clearTimeout(LV.timer); lvMsg('Saving…');
