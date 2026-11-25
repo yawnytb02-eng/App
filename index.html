@@ -1792,13 +1792,27 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
   }
   /* Premade packs: a few boxes that belong together, added to Create your own in one tap. Not a logbook of their own. */
   var PACKS = [
-    { id:'student', n:'Student', d:'Reading, Mind & Focus, Night Wind-down', b:['reading', 'mindfocus', 'night'], x:[] },
-    { id:'fitness', n:'Fitness', d:'Movement, Food & Fuel, Night Wind-down', b:['workout', 'dashboard', 'night'], x:[] },
-    { id:'calm', n:'Calm mind', d:'Journal, Night Wind-down, Shower & Hygiene', b:['journal', 'night', 'shower'], x:[] },
-    { id:'deep', n:'Deep work', d:'Mind & Focus, Journal', b:['mindfocus', 'journal'], x:[] },
-    { id:'early', n:'Early riser', d:'Movement, Food & Fuel, Mind & Focus, Night Wind-down', b:['workout', 'dashboard', 'mindfocus', 'night'], x:[] },
-    { id:'selfcare', n:'Self-care', d:'Shower & Hygiene, Journal, Food & Fuel', b:['shower', 'journal', 'dashboard'], x:[] },
-    { id:'whole', n:'Whole day', d:'All seven ready-made boxes', b:['dashboard', 'workout', 'reading', 'mindfocus', 'night', 'journal', 'shower'], x:[] }
+    { id:'student', n:'Student', d:'Study sessions, assignments, reading and a calm night.', b:[], x:[
+      { n:'Study session', i:'book', f:[['Subject', 'short'], ['Minutes studied', 'duration'], ['Focus', 'scale5'], ['What I learned', 'long']] },
+      { n:'Assignments', i:'flag', f:[['To do', 'todo'], ['Deadline note', 'short']] }] },
+    { id:'fitness', n:'Fitness', d:'Training, food, and a body check you can compare over time.', b:[], x:[
+      { n:'Body check', i:'dumbbell', f:[['Weight', 'number', 'kg'], ['Waist', 'number', 'cm'], ['Sleep', 'number', 'hours'], ['Energy', 'scale5'], ['Progress photo', 'photo']] }] },
+    { id:'creator', n:'Creator', d:'Ideas, what you made, where you posted, and how it did.', b:[], x:[
+      { n:'Content log', i:'camera', f:[['Idea', 'long'], ['What I made', 'short'], ['Minutes making', 'duration'], ['Posted', 'toggle'], ['Where', 'multi', 'YouTube, TikTok, Instagram, Blog, Podcast']] },
+      { n:'Numbers', i:'bolt', f:[['Views', 'number', 'views'], ['Followers gained', 'number', 'people']] }] },
+    { id:'calm', n:'Calm mind', d:'Mood, stress, what helped, and quiet time.', b:[], x:[
+      { n:'Mood check', i:'smile', f:[['Mood', 'mood'], ['Stress', 'scale10'], ['What stressed me', 'multi', 'Work, Money, People, Sleep, Health, Other'], ['What helped', 'long']] },
+      { n:'Quiet time', i:'leaf', f:[['Minutes meditated', 'duration'], ['Walked outside', 'toggle']] }] },
+    { id:'money', n:'Money', d:'What you spent, what you saved, and whether it was planned.', b:[], x:[
+      { n:'Daily spend', i:'bag', f:[['Spent today', 'money'], ['Biggest purchase', 'short'], ['Category', 'choice', 'Food, Transport, Bills, Fun, Health, Other'], ['Impulse buy', 'toggle']] },
+      { n:'Saving', i:'target', f:[['Saved today', 'money'], ['Goal progress', 'percent'], ['Note', 'long']] }] },
+    { id:'early', n:'Early riser', d:'A morning start and an evening shutdown.', b:[], x:[
+      { n:'Morning start', i:'sun', f:[['Woke up at', 'time'], ['Out of bed in 5 minutes', 'toggle'], ['Water first', 'toggle'], ['Minutes of morning light', 'duration']] },
+      { n:'Evening shutdown', i:'moon', f:[['Phone down at', 'time'], ['Prepared tomorrow', 'toggle']] }] },
+    { id:'work', n:'Work week', d:'Top task, hours, wins and blockers, plus focus time.', b:[], x:[
+      { n:'Work log', i:'clock', f:[['Top task', 'short'], ['Hours worked', 'number', 'hours'], ['Meetings', 'number', 'meetings'], ['Wins', 'long'], ['Blockers', 'long'], ['Energy', 'scale5']] }] },
+    { id:'language', n:'Language learning', d:'Practice minutes, new words and what you said out loud.', b:[], x:[
+      { n:'Practice', i:'pen', f:[['Language', 'short'], ['Minutes practised', 'duration'], ['New words', 'number', 'words'], ['Spoke today', 'toggle'], ['Notes', 'long']] }] }
   ];
   function packAdd(id){
     var pk = PACKS.filter(function(q){ return q.id === id; })[0]; if(!pk) return '';
@@ -1820,7 +1834,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     return home + '<div id="irs">' + rows + '</div>' + (cs.ord.length ? '' : '<p class="empty">Nothing here yet. Make your first box.</p>')
       + '<button type="button" class="btn ghost xlinks" data-sel="links">Links' + (cs.lk.length ? ' (' + cs.lk.length + ')' : '') + '</button>'
       + '<button type="button" class="btn xnew2" data-xnew="1"' + (cs.x.length >= 5 ? ' disabled' : '') + '>New box</button>'
-      + '<div class="lib packs">' + PACKS.map(function(k){ var nx = k.x.length; return '<button type="button" class="pk" data-pack="' + k.id + '"><b>' + esc(k.n) + '</b><small>' + esc(k.d) + '</small></button>'; }).join('') + '<p class="hint pkmsg" id="pkmsg" role="status"></p></div>'
+      + '<div class="lib packs"><span>Or start from a pack</span>' + PACKS.map(function(k){ var nx = k.x.length; return '<button type="button" class="pk" data-pack="' + k.id + '"><b>' + esc(k.n) + '</b><small>' + esc(k.d) + '</small></button>'; }).join('') + '<p class="hint pkmsg" id="pkmsg" role="status"></p></div>'
       + (lib.length ? '<div class="lib"><span>Or add a ready-made box</span>' + lib.map(function(b){ return '<button type="button" data-addcore="' + b[0] + '">' + esc(b[1]) + '</button>'; }).join('') + '</div>' : '');
   }
   function xEditor(b){
