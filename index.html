@@ -618,14 +618,14 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 .fxw-fin{text-align:center;padding-top:24px}
 .fxw-fin h2{margin:14px 0 4px;font-size:26px}
 .fxw-ring{position:relative;width:104px;height:104px;margin:0 auto}
-.fxw-ring svg{width:104px;height:104px;fill:none;stroke:var(--c);stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round}
-.fxw-ring circle{stroke-dasharray:145;stroke-dashoffset:145;animation:fxDraw .6s ease forwards}
-.fxw-ring path{stroke-dasharray:40;stroke-dashoffset:40;animation:fxDraw .4s .5s ease forwards}
-.fxw-conf i{position:absolute;left:50%;top:50%;width:8px;height:8px;border-radius:50%;opacity:0;animation:fxBurst .9s calc(.55s + var(--d)) ease-out forwards}
+.fxw-ring svg{position:relative;width:104px;height:104px;fill:none;stroke:#fff;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;overflow:visible}
+.fxw-ring circle.bg{fill:var(--c);stroke:none;stroke-dasharray:none;stroke-dashoffset:0;transform-origin:center;animation:fxPop .55s cubic-bezier(.34,1.56,.64,1) both}
+.fxw-ring path{stroke-dasharray:40;stroke-dashoffset:40;animation:fxDraw .35s .38s cubic-bezier(.5,0,.2,1) forwards}
+.fxw-conf i{position:absolute;left:50%;top:50%;width:8px;height:8px;margin:-4px;border-radius:50%;opacity:0;animation:fxBurst 1.15s calc(.34s + var(--d)) cubic-bezier(.2,.7,.3,1) forwards}.fxw-conf i.strip{width:5px;height:12px;border-radius:2px;margin:-6px -2.5px}.fxw-conf i.bit{width:6px;height:6px;border-radius:1.5px;margin:-3px}.fxw-pulse{position:absolute;inset:0;border-radius:50%;border:3px solid var(--c);opacity:0;animation:fxPulse .8s .3s ease-out forwards}.fxw-pulse.p2{animation-delay:.48s}.fxw-fin h2,.fxw-fin .fxw-lead,.fxw-fin .fxw-go,.fxw-fin .fxw-alt{opacity:0;animation:fxRise .45s cubic-bezier(.2,.8,.3,1) forwards}.fxw-fin h2{animation-delay:.5s}.fxw-fin .fxw-lead{animation-delay:.6s}.fxw-fin .fxw-go{animation-delay:.85s}.fxw-fin .fxw-alt{animation-delay:.92s}.fxw-fin .fxw-bars{transform-origin:left;transform:scaleX(0);animation:fxGrow .6s .7s cubic-bezier(.3,.7,.2,1) forwards}
 .fxw-bars{height:6px;border-radius:3px;margin:16px auto 0;max-width:200px}
 @keyframes fxDraw{to{stroke-dashoffset:0}}
-@keyframes fxBurst{0%{opacity:1;transform:rotate(var(--a)) translateY(0)}100%{opacity:0;transform:rotate(var(--a)) translateY(-70px) scale(.5)}}
-@media (prefers-reduced-motion:reduce){.fxw-ring circle,.fxw-ring path{animation:none;stroke-dashoffset:0}.fxw-conf{display:none}.fx-pop{animation:none}}
+@keyframes fxBurst{0%{opacity:1;transform:translate(0,0) rotate(0) scale(.4)}18%{opacity:1;transform:translate(calc(var(--x)*.8),calc(var(--y)*.8)) rotate(calc(var(--r)*.5)) scale(1.1)}100%{opacity:0;transform:translate(var(--x),calc(var(--y) + 70px)) rotate(var(--r)) scale(.7)}}@keyframes fxPop{0%{transform:scale(0)}100%{transform:scale(1)}}@keyframes fxPulse{0%{opacity:.55;transform:scale(1)}100%{opacity:0;transform:scale(1.9)}}@keyframes fxRise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}@keyframes fxGrow{to{transform:scaleX(1)}}
+@media (prefers-reduced-motion:reduce){.fxw-ring circle,.fxw-ring path{animation:none;stroke-dashoffset:0}.fxw-conf,.fxw-pulse{display:none}.fxw-fin h2,.fxw-fin .fxw-lead,.fxw-fin .fxw-go,.fxw-fin .fxw-alt,.fxw-fin .fxw-bars{animation:none;opacity:1;transform:none}.fx-pop{animation:none}}
 
 .fxs .fxw-top{position:static;background:transparent;padding-top:6px}
 .fxs .fxw{padding:0;min-height:0}
@@ -806,9 +806,10 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
       }
       function done(){
         var cols = S.feat === 'link' ? [S.box].concat(S.others).map(cfg.color) : [cfg.color(S.box)], conf = '';
-        for(var i = 0; i < 16; i++) conf += '<i style="--a:' + (i * 22.5) + 'deg;--d:' + (i % 4) * 40 + 'ms;background:' + cols[i % cols.length] + '"></i>';
+        for(var i = 0; i < 28; i++){ var an = (i / 28) * 6.2832 + (i % 3) * .21, dist = 70 + (i * 37 % 60), sh = i % 3 === 0 ? 'strip' : i % 3 === 1 ? 'dot' : 'bit'; conf += '<i class="' + sh + '" style="--x:' + Math.round(Math.cos(an) * dist) + 'px;--y:' + Math.round(Math.sin(an) * dist - 30) + 'px;--r:' + (i * 83 % 360) + 'deg;--d:' + (i % 5) * 35 + 'ms;background:' + cols[i % cols.length] + '"></i>'; }
+        try { if(navigator.vibrate) navigator.vibrate(18); } catch(e){}
         var line = S.feat === 'link' ? [S.box].concat(S.others).map(bname).join(' and ') + ' are linked.' : bname(S.box) + ': ' + (S.field ? S.field.l : '') + ' will fill in ' + daysText(S.days) + '.';
-        return top('All set', false, '') + '<div class="fxw-body fxw-fin"><div class="fxw-ring" style="--c:' + cols[0] + '"><svg viewBox="0 0 52 52" aria-hidden="true"><circle cx="26" cy="26" r="23"/><path d="M15 27l8 8 15-17"/></svg><span class="fxw-conf" aria-hidden="true">' + conf + '</span></div><h2>Done</h2><p class="fxw-lead">' + esc(line) + '</p><div class="fxw-bars" style="background:' + grad(cols) + '"></div><button type="button" class="fxw-go" data-a="new">Set up another</button><button type="button" class="fxw-alt" data-a="home">See everything</button></div>';
+        return top('All set', false, '') + '<div class="fxw-body fxw-fin"><div class="fxw-ring" style="--c:' + cols[0] + '"><b class="fxw-pulse"></b><b class="fxw-pulse p2"></b><svg viewBox="0 0 52 52" aria-hidden="true"><circle class="bg" cx="26" cy="26" r="25"/><path d="M15 27l8 8 15-17"/></svg><span class="fxw-conf" aria-hidden="true">' + conf + '</span></div><h2>Done</h2><p class="fxw-lead">' + esc(line) + '</p><div class="fxw-bars" style="background:' + grad(cols) + '"></div><button type="button" class="fxw-go" data-a="new">Set up another</button><button type="button" class="fxw-alt" data-a="home">See everything</button></div>';
       }
       function noteForm(){
         var h = top('Note for yourself', true, '');
