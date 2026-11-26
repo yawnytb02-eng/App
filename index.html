@@ -374,7 +374,7 @@ ol.steps li:before{content:counter(s);width:26px;height:26px;border-radius:50%;b
 .hm{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,1fr);gap:4px;margin-top:16px}
 .hm i{display:block;aspect-ratio:1;border-radius:4px;background:var(--line);min-width:0}
 .hmw{overflow-x:auto;padding-bottom:4px}
-.hmw .hm{min-width:420px}
+.hmw .hm{min-width:min(100%,calc(var(--w,26) * 15px));max-width:calc(var(--w,26) * 26px)}
 .lg{display:flex;align-items:center;gap:5px;margin-top:12px;font-size:12px;color:var(--mute)}.lg i{width:12px;height:12px;border-radius:3px;display:inline-block}
 .bars{display:flex;align-items:flex-end;gap:10px;height:150px;margin-top:18px}
 .bars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;min-width:0}
@@ -1345,7 +1345,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     var h = '', d = new Date(start), i;
     for(i = 0; i < weeks * 7; i++){ var k = ymd(d), n = d > end ? -1 : getN(k);
       h += n < 0 ? '<i style="background:transparent"></i>' : '<i title="' + k + (n ? ' · ' + n + ' logged' : '') + '"' + (n ? ' style="background:' + rgba(color, ALPHA[level(n, max)]) + '"' : '') + '></i>'; d.setDate(d.getDate() + 1); }
-    return '<div class="hmw"><div class="hm" style="grid-template-columns:repeat(' + weeks + ',1fr)">' + h + '</div></div><div class="lg">Less ' + [1,2,3,4].map(function(l){ return '<i style="background:' + rgba(color, ALPHA[l]) + '"></i>'; }).join('') + ' More</div>';
+    return '<div class="hmw"><div class="hm" style="--w:' + weeks + ';grid-template-columns:repeat(' + weeks + ',1fr)">' + h + '</div></div><div class="lg">Less ' + [1,2,3,4].map(function(l){ return '<i style="background:' + rgba(color, ALPHA[l]) + '"></i>'; }).join('') + ' More</div>';
   }
   function strip(r, n){ var h = '', d, i, k; for(i = n - 1; i >= 0; i--){ d = new Date(); d.setDate(d.getDate() - i); k = ymd(d); h += '<i' + (r.set[k] ? ' style="background:' + esc(r.name.acc) + '"' : '') + '></i>'; } return '<div class="strip" style="grid-template-columns:repeat(' + n + ',1fr)">' + h + '</div>'; }
   function dayLabel(k, o){ return new Date(k + 'T12:00:00').toLocaleDateString(undefined, o || { weekday:'short', month:'short', day:'numeric' }); }
