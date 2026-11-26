@@ -764,9 +764,11 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
         return h + '</div></div>';
       }
       function pickOthers(){
+        var mine = cfg.fields(S.box).filter(linkable).map(kindOf);
+        var cands = boxes().filter(function(b){ return b.id !== S.box && cfg.fields(b.id).some(function(f){ return linkable(f) && mine.indexOf(kindOf(f)) > -1; }); });
         var h = top('Link ' + bname(S.box) + ' with', true, 'Step 3');
         h += '<div class="fxw-body">' + steps(5, 2) + '<p class="fxw-lead">Pick up to three more boxes. Most links use one.</p>' + err() + '<div class="fxw-list">';
-        h += boxes().filter(function(b){ return b.id !== S.box; }).map(function(b){ var on = S.others.indexOf(b.id) > -1; return '<button type="button" class="fxw-opt' + (on ? ' on' : '') + '" data-a="other" data-id="' + esc(b.id) + '" aria-pressed="' + on + '">' + dot(b.id) + '<b>' + esc(b.name) + '</b><span class="fxw-tick">' + (on ? '&#10003;' : '') + '</span></button>'; }).join('');
+        h += (cands.length ? '' : '<p class="fxw-lead">No other box has a matching field yet. Add a box with the same kind of field (short text, rating, yes/no, number or the same choices) and try again.</p>') + cands.map(function(b){ var on = S.others.indexOf(b.id) > -1; return '<button type="button" class="fxw-opt' + (on ? ' on' : '') + '" data-a="other" data-id="' + esc(b.id) + '" aria-pressed="' + on + '">' + dot(b.id) + '<b>' + esc(b.name) + '</b><span class="fxw-tick">' + (on ? '&#10003;' : '') + '</span></button>'; }).join('');
         h += '</div><button type="button" class="fxw-go" data-a="others-next"' + (S.others.length ? '' : ' disabled') + '>Next</button></div>';
         return h;
       }
