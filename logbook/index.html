@@ -191,7 +191,7 @@
   var PRE = {
     'clean-boy':   { n:'Clean Boy',   key:'cleanboy-logbook-v1' },
     'clean-girl':  { n:'Clean Girl',  key:'cleangirl-logbook-v1',  a:'#835A5B', d:'#C98A8C', bg:'#FAF3EF', bgd:'#1E1616', b:['dashboard','workout','shower','night','journal'] },
-    'hustler':     { n:"Hustler's",   key:'hustlers-logbook-v1',   a:'#C81212', d:'#FF6B6E', bg:'#FAFAF7', bgd:'#141110', b:['dashboard','workout','mindfocus','journal'] },
+    'hustler':     { n:"Hustler's",   key:'hustlers-logbook-v1',   a:'#C81212', d:'#FF6B6E', bg:'#FAFAF7', bgd:'#141110', b:['workout','mindfocus','journal'] },
     'reading-boy': { n:'Reading Boy', key:'readingboy-logbook-v1', a:'#4A6350', d:'#7BA484', bg:'#F5F0E8', bgd:'#181C18', icon:'book', b:['reading','mindfocus','journal','night','workout'] },
     'reading-girl':{ n:'Reading Girl',key:'readinggirl-logbook-v1',a:'#C81212', d:'#FF6B6E', bg:'#F7F1EC', bgd:'#1C1716', icon:'book', b:['reading','journal','night','mindfocus'] },
     'sober-boy':   { n:'Sober Boy',   key:'soberboy-logbook-v1',   a:'#3B6889', d:'#7FB0D6', bg:'#EFF3F6', bgd:'#171C22', b:['night','mindfocus','workout','journal','dashboard'] },
@@ -315,6 +315,7 @@
     }catch(e){}
     /* o = the order the owner arranged the boxes in: ready-made ids and cx_<k> for their own */
     P.o = (q.o||'').split(',').filter(function(x){ return /^(cx_[a-z0-9]{1,6}|[a-z]+)$/.test(x); }).slice(0,14);
+    if(!P.o.length && slug === 'hustler') P.o = ['cx_dd','lane','workout','mindfocus','journal'];
     /* Look and feel: typeface (f), corners (c), default mode (th), home-screen mark (m), the line under the date (g), renamed ready-made boxes (bt) */
     P.f = ['serif','round','mono','edit'].indexOf(q.f) > -1 ? q.f : 'sans';
     P.c = ['sharp','round'].indexOf(q.c) > -1 ? q.c : 'soft';
@@ -1062,7 +1063,7 @@ body.sheet-open{position:static!important;width:auto!important;top:auto!importan
   })();
   /* ---- Links card on Home: totals, goals, days-since, rules and carry-over, from what the owner connected in the Studio ---- */
   (function(){
-    var LKS = (ED && ED.lk) || []; if(!LKS.length) return;
+    var LKS = []; return; /* the Home 'Linked' card was retired: repeats and links are managed in Settings */
     var cache = [];
     function nm(ref){ var q = String(ref).split('.'), b = bxDB().boxes[q[0]], f = b && (b.fields || []).filter(function(x){ return x.id === q[1]; })[0]; return f ? f.label : ref; }
     function bn(id){ try{ return bxBoxName(id); }catch(e){ return id; } }
@@ -1825,6 +1826,51 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
       (E.fx.r || []).forEach(function(r, i){ var id = 'sr' + i; if(!F.reps[id]) F.reps[id] = { id:id, box:r.b, k:r.k, v:r.v, days:r.d.slice(), from:t0, to:r.e || '', at:Date.now() }; });
       (E.fx.t || []).forEach(function(g, i){ var id = 'st' + i; if(!F.ties[id]) F.ties[id] = { id:id, m:g.map(function(m){ return { b:m.b, k:m.k }; }), at:Date.now() }; });
       saveDB();
+    }catch(e){}
+  })();
+
+
+  /* ===== Hustler edition: Daily Dashboard, Business path (the lane), Income Streams and Bucket List instead of the Clean Boy wording ===== */
+  (function(){
+    var E = window.__ED; if(!E || E.slug !== 'hustler') return;
+    try{
+      if(!CORE_PAGES.some(function(p){ return p.id === 'lane'; })) CORE_PAGES.push({ id:'lane', name:'Business path', cadence:'daily', icon:'briefcase', status:function(){ return DB.lane ? 'Log the work' : 'Pick your hustle'; } });
+      SETUP_PAGES.forEach(function(s){ if(s.id === 'income') s.name = 'Income Streams'; if(s.id === 'bucket') s.name = 'Bucket List'; });
+      var rm = renderMonthlyPage;
+      renderMonthlyPage = function(t, b){ return rm.call(this, t === 'Products & Perfume Vault' ? 'Income Streams' : t === 'Vision Board' ? 'Bucket List' : t, b); };
+      /* Income Streams: money in, by stream, month by month (the perfume wording belongs to Clean Boy) */
+      incomeBody = function(m){
+        var t = m || currentMonthKey(), locked = isMonthlyPageLocked('income', t), a = getMonthlyPage('income', t);
+        var S = [{ key:'rotation', label:'Stream 1' }, { key:'finished', label:'Stream 2' }, { key:'repurchased', label:'Stream 3' }];
+        S.forEach(function(s){ if(!a[s.key]) a[s.key] = { name:'', brand:'', characteristics:'', note:'', longevity:'', rating:null }; });
+        if(locked){
+          var rows = S.map(function(s){ var x = a[s.key]; return x.name ? '<div class="locked-item-row" style="align-items:flex-start;"><span style="font-weight:700;">' + esc(s.label) + '</span><span class="muted-inline">' + esc(x.name) + (x.characteristics ? ' · ' + esc(x.characteristics) : '') + '</span></div>' : ''; }).join('');
+          return monthlyLockedBody(rows ? '<div class="field-card">' + rows + '</div>' : '<div class="empty-note">Nothing logged yet for ' + monthLabelShort(t) + '.</div>', 'income', t);
+        }
+        return S.map(function(s){ var x = a[s.key];
+          return '<div class="section-label" style="padding:14px 0 8px;">' + esc(s.label) + '</div>' +
+            fieldWrap('Name of stream', null, monthlyTextField('income', t, s.key + '.name', 'Name of stream', x.name)) +
+            fieldWrap('Where it comes from', null, monthlyTextField('income', t, s.key + '.brand', 'Client, platform or business', x.brand)) +
+            fieldWrap('Made this month ($)', null, monthlyTextField('income', t, s.key + '.characteristics', '$', x.characteristics));
+        }).join('') + '<button class="add-row-btn" onclick="lockMonthlyPageNow(\'income\',\'' + t + '\')">' + icon('check', 14) + ' Mark done for ' + monthLabelShort(t) + '</button>';
+      };
+      /* once per copy: the Daily Dashboard box and the Business path box */
+      if(!DB.hz1){
+        DB.hz1 = 1; var td = todayStr(), bx = bxDB();
+        if(!bx.boxes.cx_dd){
+          bx.boxes.cx_dd = { id:'cx_dd', custom:true, name:'Daily Dashboard', icon:'target', from:td, until:null, order:1, labels:{}, hidden:{}, fields:[
+            { id:'f0', label:'Rate your day', type:'scale', max:10, icon:'star', created:td, deleted:null },
+            { id:'f1', label:'Mood', type:'choice', options:DASHBOARD_MOODS.slice(), icon:'target', created:td, deleted:null },
+            { id:'f2', label:'Win of the day', type:'short', icon:'pen', created:td, deleted:null },
+            { id:'f3', label:'Money made today', type:'number', unit:'$', icon:'chart', created:td, deleted:null },
+            { id:'f4', label:'Hours worked', type:'number', unit:'hours', icon:'chart', created:td, deleted:null },
+            { id:'f5', label:'Notes', type:'long', icon:'pen', created:td, deleted:null }] };
+        }
+        try{ bxsEnsure('lane'); }catch(e){}
+        saveDB();
+      }
+      var plh = pagesList, HO = ['cx_dd', 'lane', 'workout', 'mindfocus', 'journal'];
+      pagesList = function(){ var l = plh.apply(this, arguments); return l.map(function(p, i){ return [p, i]; }).sort(function(a, b){ var x = HO.indexOf(a[0].id), y = HO.indexOf(b[0].id); if(x < 0) x = 99; if(y < 0) y = 99; return (x - y) || (a[1] - b[1]); }).map(function(z){ return z[0]; }); };
     }catch(e){}
   })();
   render();

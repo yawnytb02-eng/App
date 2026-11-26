@@ -1654,14 +1654,9 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     return s.slice(0, 6);
   }
   function linksEditor(){
-    var F = fieldOpts(), sg = lkSuggest(), full = cs.lk.length >= 12;
-    return '<div class="xb lkx"><h3 class="xt2">Links</h3>'
-      + '<p class="hint">Links turn what you log into totals, goals and reminders on your Home screen. Example: a yes/no "Workout" field with a goal of 4 a week.</p>'
-      + (F.length ? '' : '<p class="hint lkwarn">Totals and goals use the number and yes/no fields in <b>your own boxes</b>. Add one to start' + (cs.ord.length >= 2 ? ', or link two boxes below.' : '.') + '</p>' + (cs.x.length < 5 ? '<button type="button" class="btn" data-xnew="1">New box</button>' : ''))
-      + (sg.length ? '<h4 class="lkh">Quick ideas for your boxes</h4><div class="lksg">' + sg.map(function(x, i){ return '<button type="button" data-lksug="' + i + '"' + (full ? ' disabled' : '') + '>' + esc(x.label) + '</button>'; }).join('') + '</div>' : '')
-      + (cs.lk.length ? '<h4 class="lkh">Your links</h4><div class="lkl">' + cs.lk.map(lkCard).join('') + '</div>' : '')
-      + (cs.ord.length >= 1 ? '<h4 class="lkh">Repeats and links between boxes</h4><p class="hint">Less typing for the people who use it. A repeat fills a value in a box on chosen days. A link copies one box into another.</p><div id="csfb" class="csfb"></div>' : '')
-      + '<details class="lkmore"' + (!cs.lk.length && !sg.length ? ' open' : '') + '><summary>Make your own link</summary><div class="lkadd">' + Object.keys(LKT).map(function(t){ return '<button type="button" class="lkpick" data-lkadd="' + t + '"' + (full ? ' disabled' : '') + '><b>' + LKT[t] + '</b><small>' + LKX[t] + '</small></button>'; }).join('') + '</div></details></div>';
+    return '<div class="xb lkx"><h3 class="xt2">Repeats and links</h3>'
+      + '<p class="hint">Less typing for the people who use it. A repeat fills a value in a box on the days you choose. A link copies what you type in one box into another.</p>'
+      + (cs.ord.length >= 1 ? '<div id="csfb" class="csfb"></div>' : '<p class="hint">Add a box first.</p>') + '</div>';
   }
   function lkRefresh(){ var e = $('sed'); if(e && cs.sel === 'links'){ e.innerHTML = editorHtml(); fxMount(); } var l = $('sl'); if(l) l.innerHTML = listHtml(); pvRefresh(500); }
   document.addEventListener('click', function(e){
@@ -1832,7 +1827,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     }).join('');
     var lib = BOXES.filter(function(b){ return cs.ord.indexOf(b[0]) < 0; });
     return home + '<div id="irs">' + rows + '</div>' + (cs.ord.length ? '' : '<p class="empty">Nothing here yet. Make your first box.</p>')
-      + '<button type="button" class="btn ghost xlinks" data-sel="links">Links' + (cs.lk.length ? ' (' + cs.lk.length + ')' : '') + '</button>'
+      + '<button type="button" class="btn ghost xlinks" data-sel="links">Repeats and links</button>'
       + '<button type="button" class="btn xnew2" data-xnew="1"' + (cs.x.length >= 5 ? ' disabled' : '') + '>New box</button>'
       + (lib.length ? '<div class="lib"><span>Or add a ready-made box</span>' + lib.map(function(b){ return '<button type="button" data-addcore="' + b[0] + '">' + esc(b[1]) + '</button>'; }).join('') + '</div>' : '');
   }
