@@ -550,7 +550,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 @media(max-width:760px){.mb{grid-template-columns:1fr;padding:24px 20px;gap:18px;text-align:center}.mbn p{margin:0 auto}.mbseal{width:184px;height:184px}.mbdl{grid-template-columns:120px 1fr}}
 @media(prefers-reduced-motion:reduce){.mb *,.mb *:after,.mb *:before{animation:none!important}.mb .mbarc{stroke-dashoffset:var(--to)}.mb .mbdotg{transform:rotate(var(--a))}.mb .mbinf,.mb .mbp .mbt{stroke-dashoffset:0}.mb .mbspk{opacity:.85}.mb .mbseal:before{opacity:1}.mb .mbpt{display:none}}
 
-.packs{margin-top:14px;border-top:1px solid var(--line);padding-top:4px}.packs summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:44px;font-weight:700;font-size:14px;color:var(--soft)}.packs summary::-webkit-details-marker{display:none}.packs summary::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .2s;margin-right:4px}.packs[open] summary::after{transform:rotate(-135deg)}.pkg2{display:grid;align-items:stretch;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:6px 0 4px}.packs .pk{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;text-align:left;gap:4px;width:100%;height:auto;min-height:84px;margin:0;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;font:inherit;transition:border-color .2s}.packs .pk b{font-size:14px;font-weight:700;line-height:1.25}.packs .pk:hover,.packs .pk:focus-visible{background:var(--panel);color:var(--ink);border-color:var(--acc)}.packs .pk small{color:var(--mute);font-size:12.5px;line-height:1.4;font-weight:500}.packs .pkmsg{margin:6px 0 0}.packs .pkmsg:empty{display:none}@media(max-width:420px){.pkg2{grid-template-columns:1fr}.packs .pk{min-height:0}}
+.packs{margin-top:14px;border-top:1px solid var(--line);padding-top:4px}.packs.top{margin:2px 0 12px;border:1.5px solid var(--line);border-radius:14px;padding:0 14px;background:var(--bg)}.packs.top summary{color:var(--ink)}.packs .pkn{font-style:normal;font-weight:600;font-size:12px;color:var(--mute);margin-left:6px}.packs summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;min-height:44px;font-weight:700;font-size:14px;color:var(--soft)}.packs summary::-webkit-details-marker{display:none}.packs summary::after{content:"";width:8px;height:8px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(45deg);transition:transform .2s;margin-right:4px}.packs[open] summary::after{transform:rotate(-135deg)}.pkg2{display:grid;align-items:stretch;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:6px 0 4px}.packs .pk{display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;text-align:left;gap:4px;width:100%;height:auto;min-height:84px;margin:0;padding:12px 14px;border-radius:14px;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer;font:inherit;transition:border-color .2s}.packs .pk b{font-size:14px;font-weight:700;line-height:1.25}.packs .pk:hover,.packs .pk:focus-visible{background:var(--panel);color:var(--ink);border-color:var(--acc)}.packs .pk small{color:var(--mute);font-size:12.5px;line-height:1.4;font-weight:500}.packs .pkmsg{margin:6px 0 0}.packs .pkmsg:empty{display:none}@media(max-width:420px){.pkg2{grid-template-columns:1fr}.packs .pk{min-height:0}}
 .livebox{position:fixed;inset:0;z-index:9000;background:var(--bg);overflow:auto;-webkit-overflow-scrolling:touch;--accent:var(--acc);--surface:var(--panel);--muted:var(--mute);--surface-2:var(--bg)}
 .livebox .lv-top{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:14px;padding:12px 18px;background:var(--bg);border-bottom:1.5px solid var(--line)}
 .livebox .lv-top small{display:block;color:var(--mute);font-size:12.5px}.livebox .lv-x{width:42px;height:42px;border-radius:50%;border:1.5px solid var(--line);background:var(--panel);color:var(--ink);font-size:18px;cursor:pointer}
@@ -629,6 +629,8 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 
 .fxs .fxw-top{position:static;background:transparent;padding-top:6px}
 .fxs .fxw{padding:0;min-height:0}
+
+.bk-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.bk-row:last-child{border-bottom:none}.bk-tick{flex:none;width:28px;height:28px;border-radius:9px;border:2px solid var(--line);background:transparent;color:var(--accent-ink);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}.bk-row.done .bk-tick{background:var(--accent);border-color:var(--accent)}.bk-row.done .bk-text{text-decoration:line-through;opacity:.55}.bk-text{flex:1;min-width:0;text-align:left;border:none;background:transparent;color:var(--ink);font:inherit;font-weight:600;padding:4px 0;cursor:pointer}.bk-text.empty{color:var(--muted);font-weight:500}.bk-tier{flex:none;border:none;border-radius:8px;padding:5px 9px;font:inherit;font-size:10.5px;font-weight:800;letter-spacing:.04em;background:var(--surface-2);color:var(--muted);cursor:pointer}.bk-tier.t-MUST{background:var(--accent);color:var(--accent-ink)}.bk-tier.t-WANT{background:color-mix(in srgb,var(--accent) 22%,var(--surface-2));color:var(--ink)}
 
 </style>
 </head>
@@ -1789,6 +1791,10 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     return { name:cs.bt[id] || BN[id], sub:'Ready-made · ' + (fl.length - off) + ' of ' + fl.length + ' fields', mine:false };
   }
   /* Premade packs: a few boxes that belong together, added to Create your own in one tap. Not a logbook of their own. */
+  var TPLS = [
+    { id:'t-dd', n:'Daily Dashboard', b:[], x:[{ n:'Daily Dashboard', i:'target', f:[['Rate your day', 'scale10'], ['Mood', 'choice', 'Fired up,Steady,Tired,Stressed,Low'], ['Win of the day', 'short'], ['Money made today', 'number', '$'], ['Hours worked', 'number', 'hours'], ['Notes', 'long']] }] },
+    { id:'t-bp', n:'Business path', b:[], x:[{ n:'Business path', i:'bolt', f:[['Main task', 'short'], ['Hours on it', 'number', 'hours'], ['Money in', 'number', '$'], ['Reach or leads', 'number'], ['Focus', 'scale5'], ['Next action', 'short']] }] }
+  ];
   var PACKS = [
     { id:'student', n:'Student', d:'Study sessions, assignments, reading and a calm night.', b:[], x:[
       { n:'Study session', i:'book', f:[['Subject', 'short'], ['Minutes studied', 'duration'], ['Focus', 'scale5'], ['What I learned', 'long']] },
@@ -1813,7 +1819,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
       { n:'Practice', i:'pen', f:[['Language', 'short'], ['Minutes practised', 'duration'], ['New words', 'number', 'words'], ['Spoke today', 'toggle'], ['Notes', 'long']] }] }
   ];
   function packAdd(id){
-    var pk = PACKS.filter(function(q){ return q.id === id; })[0]; if(!pk) return '';
+    var pk = PACKS.concat(TPLS).filter(function(q){ return q.id === id; })[0]; if(!pk) return '';
     var room = 5 - cs.x.length, newX = pk.x.length;
     if(newX > room) return 'This pack adds ' + newX + (newX === 1 ? ' box' : ' boxes') + ' of its own and you can have 5 in total. Remove one of yours first.';
     pk.b.forEach(function(b){ if(cs.ord.indexOf(b) < 0) cs.ord.push(b); });
@@ -1832,7 +1838,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     return home + '<div id="irs">' + rows + '</div>' + (cs.ord.length ? '' : '<p class="empty">Nothing here yet. Make your first box.</p>')
       + '<button type="button" class="btn ghost xlinks" data-sel="links">Repeats and links</button>'
       + '<button type="button" class="btn xnew2" data-xnew="1"' + (cs.x.length >= 5 ? ' disabled' : '') + '>New box</button>'
-      + (lib.length ? '<div class="lib"><span>Or add a ready-made box</span>' + lib.map(function(b){ return '<button type="button" data-addcore="' + b[0] + '">' + esc(b[1]) + '</button>'; }).join('') + '</div>' : '');
+      + '<div class="lib"><span>Or add a ready-made box</span>' + lib.map(function(b){ return '<button type="button" data-addcore="' + b[0] + '">' + esc(b[1]) + '</button>'; }).join('') + TPLS.filter(function(t){ return !cs.x.some(function(x){ return x.n === t.n; }); }).map(function(t){ return '<button type="button" data-pack="' + t.id + '">' + esc(t.n) + '</button>'; }).join('') + '</div><p class="hint pkmsg" id="pkmsg2" role="status"></p>';
   }
   function xEditor(b){
     var last = b.f.length - 1, rows = b.f.map(function(f, j){
@@ -1852,13 +1858,13 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
   }
   var pkOpen = false;
   function packsHtml(){
-    return '<details class="packs"' + (pkOpen ? ' open' : '') + '><summary>Start from a pack</summary><div class="pkg2">' + PACKS.map(function(k){ return '<button type="button" class="pk" data-pack="' + k.id + '"><b>' + esc(k.n) + '</b><small>' + esc(k.d) + '</small></button>'; }).join('') + '</div><p class="hint pkmsg" id="pkmsg" role="status"></p></details>';
+    return '<details class="packs top"' + (pkOpen ? ' open' : '') + '><summary><span>Start from a pack <em class="pkn">' + PACKS.length + ' ready-made</em></span></summary><div class="pkg2">' + PACKS.map(function(k){ return '<button type="button" class="pk" data-pack="' + k.id + '"><b>' + esc(k.n) + '</b><small>' + esc(k.d) + '</small></button>'; }).join('') + '</div><p class="hint pkmsg" id="pkmsg" role="status"></p></details>';
   }
   function homeEditor(){
     var o = { b:cs.b, h:cs.h, x:cs.x }, nf = fieldCount(o);
     return '<div class="xb ov"><h3 class="xt2">' + (cs.edit ? 'Edit your logbook' : 'Build your page') + '</h3>' + (cs.edit ? '<p class="hint lkwarn">You are editing a logbook you already made. Links and looks update on your phone when you open the new link. New boxes and fields only appear on a fresh install.</p>' : '') + '<p class="hint">Every box is a page in your logbook. Make your own from scratch, or add a ready-made one, then drag them into the order you want. The phone shows exactly what you get.</p>'
       + '<div class="ovs"><div><b>' + cs.ord.length + '</b><span>' + (cs.ord.length === 1 ? 'box' : 'boxes') + '</span></div><div><b>' + nf + '</b><span>' + (nf === 1 ? 'field' : 'fields') + '</span></div></div>'
-      + (cs.x.length < 5 ? '<button type="button" class="btn" data-xnew="1">New box</button>' : '<p class="hint">You have made the most boxes of your own (5).</p>') + packsHtml() + '</div>' + lookHtml();
+      + (cs.x.length < 5 ? '<button type="button" class="btn" data-xnew="1">New box</button>' : '<p class="hint">You have made the most boxes of your own (5).</p>') + '</div>' + lookHtml();
   }
   function seg(key, list, render){ return '<div class="seg" role="group">' + list.map(function(o){ var on = cs[key] === o[0]; return '<button type="button" data-lk="' + key + ':' + o[0] + '" aria-pressed="' + on + '"' + (render ? ' class="rich"' : '') + '>' + (render ? render(o) : o[1]) + '</button>'; }).join('') + '</div>'; }
   function lookHtml(){
@@ -1884,7 +1890,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
   function viewCreate(){
     var sw = SWATCH.map(function(c){ return '<button type="button" style="background:' + c + '" data-c="' + c + '" aria-label="Colour ' + c + '" aria-pressed="' + (cs.a.toLowerCase() === c.toLowerCase()) + '"></button>'; }).join('') + '<label title="Pick any colour" aria-label="Pick any colour">+<input type="color" id="ccol" value="' + cs.a + '"></label>';
     return '<div class="studio-c"><div class="studio"><div class="sbar s-a"><label class="field sname"><span>Name</span><input type="text" id="cn" maxlength="22" placeholder="My Gym" autocomplete="off" value="' + esc(cs.n) + '"></label><div class="field"><span class="lab">Colour</span><div class="sw" id="csw">' + sw + '</div></div><button class="btn sfin" data-act="make" type="button">' + (cs.edit ? 'Save changes' : 'Finish and package') + '</button><p class="err" id="cerr" role="alert"></p></div>'
-      + '<section class="s-card s-l" aria-label="Your boxes"><h3>Your page</h3><p class="hint">Drag a box to move it, or use the arrows.</p><div id="sl">' + listHtml() + '</div></section>'
+      + '<section class="s-card s-l" aria-label="Your boxes"><h3>Your page</h3><p class="hint">Drag a box to move it, or use the arrows.</p>' + (cs.edit ? '' : packsHtml()) + '<div id="sl">' + listHtml() + '</div></section>'
       + '<section class="s-card s-e" id="sed" aria-label="Edit">' + editorHtml() + '</section>'
       + '<aside class="s-p" aria-label="Live preview"><div class="s-sticky"><div class="phone big"><div class="scr" id="pvs"><iframe id="pvf" title="Live preview of your logbook" loading="lazy" tabindex="-1"></iframe><div class="pvld" aria-hidden="true"><i></i></div></div></div></div></aside>'
       + '<div class="mine s-d" id="mine">' + mineHtml() + '</div></div></div>';
@@ -2767,7 +2773,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     var mv = e.target.closest('[data-mv]'); if(mv){ if(mv.disabled) return; var mp = mv.dataset.mv.split(':'), mi = cs.ord.indexOf(mp[0]), mj = mi + (+mp[1]); if(mi > -1 && mj > -1 && mj < cs.ord.length){ var tmp = cs.ord[mi]; cs.ord[mi] = cs.ord[mj]; cs.ord[mj] = tmp; xSync(); var again = document.querySelector('[data-mv="' + mv.dataset.mv + '"]'); if(!again || again.disabled) again = document.querySelector('[data-mv="' + mp[0] + ':' + (-(+mp[1])) + '"]'); if(again) again.focus(); pvRefresh(200); } return; }
     var fm = e.target.closest('[data-fmv]'); if(fm){ if(fm.disabled) return; var fp = fm.dataset.fmv.split(':'), fk = fp[0].split('.'), fbx = xFind(fk[0]), fi = +fk[1], fj = fi + (+fp[1]); if(fbx && fj > -1 && fj < fbx.f.length){ var ft = fbx.f[fi]; fbx.f[fi] = fbx.f[fj]; fbx.f[fj] = ft; xSync(); var f2 = document.querySelector('[data-fmv="' + fk[0] + '.' + fj + ':' + fp[1] + '"]'); if(!f2 || f2.disabled) f2 = document.querySelector('[data-fmv="' + fk[0] + '.' + fj + ':' + (-(+fp[1])) + '"]'); if(f2) f2.focus(); pvRefresh(250); } return; }
     var pkd = e.target.closest && e.target.closest('.packs summary'); if(pkd) setTimeout(function(){ var dd = pkd.parentNode; pkOpen = !!(dd && dd.open); }, 0);
-    var pk = e.target.closest('[data-pack]'); if(pk){ var pm = packAdd(pk.dataset.pack); if(pm){ var pe = $('pkmsg'); if(pe) pe.textContent = pm; return; } xSync(); pvRefresh(0); var pe2 = $('pkmsg'); if(pe2) pe2.textContent = 'Added. Change anything you like.'; return; }
+    var pk = e.target.closest('[data-pack]'); if(pk){ var pm = packAdd(pk.dataset.pack); if(pm){ var pe = $('pkmsg'); if(pe) pe.textContent = pm; var pe3 = $('pkmsg2'); if(pe3) pe3.textContent = pm; return; } xSync(); pvRefresh(0); var pe2 = $('pkmsg'); if(pe2) pe2.textContent = 'Added. Change anything you like.'; return; }
     var ac = e.target.closest('[data-addcore]'); if(ac){ var aid = ac.dataset.addcore; if(cs.ord.indexOf(aid) < 0) cs.ord.push(aid); cs.sel = aid; cs.pg = aid; xSync(); pvRefresh(0); return; }
     var rc = e.target.closest('[data-rm]'); if(rc){ cs.ord = cs.ord.filter(function(i2){ return i2 !== rc.dataset.rm; }); xSync(); pvRefresh(0); return; }
     var sl = e.target.closest('[data-sel]'); if(sl){ selectItem(sl.dataset.sel); if(window.innerWidth < 900){ var ed1 = $('sed'); if(ed1) ed1.scrollIntoView({ behavior:'smooth', block:'start' }); } return; }
