@@ -407,13 +407,15 @@ ol.steps li:before{content:counter(s);width:26px;height:26px;border-radius:50%;b
 .empty ol{margin:14px 0 18px 20px;display:grid;gap:6px}
 .sk{height:96px;border-radius:var(--r);background:linear-gradient(90deg,var(--tint),var(--line),var(--tint));background-size:200% 100%;animation:sk 1.2s linear infinite}
 @keyframes sk{to{background-position:-200% 0}}
-.mgh{margin:26px 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}.mgh span{font-size:12px;font-weight:700;color:var(--mute);background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:1px 9px}
-.mgnone{margin:0 0 8px;font-size:14px;line-height:1.55;color:var(--mute);max-width:620px}
-.mgc{border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:10px;background:var(--panel);max-width:760px}.mgc.trash{background:transparent;border-style:dashed}
-.mgt{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.mgt b{font-size:16px}.mgs{margin:6px 0 0;font-size:14px;color:var(--mute);line-height:1.5}.mga{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.chip{font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:99px;padding:2px 10px;color:var(--mute)}.chip.ok{color:#1c6b3a;border-color:#8fc7a1;background:rgba(60,160,100,.1)}.chip.warn{color:#8a5a00;border-color:#e0bf7a;background:rgba(230,170,40,.12)}
-.btn.danger{color:#b3261e;border-color:rgba(179,38,30,.4)}button.btn.danger:not(.ghost){background:#b3261e;color:#fff;border-color:#b3261e}.btn.wide{width:100%;margin:14px 0 4px}
-.mgov{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}.mgd{background:var(--panel);color:var(--ink);border-radius:20px;padding:22px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}.mgd h3{margin:0 0 8px;font-size:19px}.mgd p{margin:0;line-height:1.55;font-size:14.5px}
+.mgh{margin:28px 0 6px;font-size:15px}
+.mgnone{margin:0 0 6px;font-size:14px;line-height:1.55;color:var(--mute);max-width:620px}
+.mgr{display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);max-width:760px}.mgr .dot{flex:none}
+.mgi{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.mgi b{font-size:16px}.mgs{font-size:13.5px;color:var(--mute);display:flex;align-items:center;gap:7px}
+.sdot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--mute)}.sdot.on{background:var(--ink)}.sdot.off{background:transparent;border:1.5px solid var(--mute)}
+.mga{display:flex;gap:14px;align-items:center;flex:none}
+.mgl{background:none;border:0;padding:6px 2px;font:inherit;font-size:14px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer}.mgl:hover{opacity:.7}.mgl.dl{display:block;margin:14px 0 4px}
+.mgov{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}.mgd{background:var(--panel);color:var(--ink);border-radius:20px;padding:22px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}.mgd h3{margin:0 0 8px;font-size:19px}.mgd p{margin:0;line-height:1.55;font-size:14.5px}.mgd .mga{justify-content:flex-end;margin-top:14px}
+@media(max-width:560px){.mga{gap:10px}}
 .acct{display:grid;gap:16px;max-width:720px}.acct dl{display:grid;grid-template-columns:140px 1fr;gap:10px 16px;margin-top:12px;font-size:14.5px}.acct dt{color:var(--mute);font-weight:600}.acct dd{word-break:break-all}
 footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute);font-size:13px}.ft .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
@@ -639,6 +641,8 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 
 .bk-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.bk-row:last-child{border-bottom:none}.bk-tick{flex:none;width:28px;height:28px;border-radius:9px;border:2px solid var(--line);background:transparent;color:var(--accent-ink);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}.bk-row.done .bk-tick{background:var(--accent);border-color:var(--accent)}.bk-row.done .bk-text{text-decoration:line-through;opacity:.55}.bk-text{flex:1;min-width:0;text-align:left;border:none;background:transparent;color:var(--ink);font:inherit;font-weight:600;padding:4px 0;cursor:pointer}.bk-text.empty{color:var(--muted);font-weight:500}.bk-tier{flex:none;border:none;border-radius:8px;padding:5px 9px;font:inherit;font-size:10.5px;font-weight:800;letter-spacing:.04em;background:var(--surface-2);color:var(--muted);cursor:pointer}.bk-tier.t-MUST{background:var(--accent);color:var(--accent-ink)}.bk-tier.t-WANT{background:color-mix(in srgb,var(--accent) 22%,var(--surface-2));color:var(--ink)}
 .cd-kept{font-size:12.5px;font-weight:700;margin-top:8px;color:var(--accent)}.cd-bars{display:flex;align-items:flex-end;gap:6px;height:64px;margin-top:12px}.cd-bar{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}.cd-bar i{display:block;width:100%;min-height:3px;border-radius:5px;background:var(--accent);opacity:.8}.cd-bar span{font-size:9.5px;color:var(--muted);height:12px}
+
+.rm-row{border:none;background:none;color:var(--muted);padding:4px 0;font:inherit;font-size:11px;cursor:pointer;text-decoration:underline}
 
 </style>
 </head>
@@ -1354,7 +1358,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     return { app:r.app, data:data, days:days, keys:keys, cnt:cnt, set:set, use:use, name:nm, cur:streakOf(set), best:bestOf(keys), total:tot, avg:keys.length ? tot / keys.length : 0, month:inMonth, updated:r.updated_at, device:r.device, size:JSON.stringify(data).length,
              url: nm.preset ? urlFor({ preset:nm.preset }) : (nm.custom ? urlFor(nm.custom) : ''), ed: nm.preset ? { preset:nm.preset, n:nm.n, a:nm.a } : (nm.custom || null) };
   }
-  function ago(t){ var s = Math.max(0, (Date.now() - new Date(t).getTime()) / 1000); if(s < 90) return 'just now'; if(s < 3600) return Math.round(s / 60) + ' min ago'; if(s < 86400) return Math.round(s / 3600) + ' h ago'; return Math.round(s / 86400) + ' days ago'; }
+  function ago(t){ var s = Math.max(0, (Date.now() - new Date(t).getTime()) / 1000); if(s < 90) return 'just now'; if(s < 3600) return Math.round(s / 60) + ' min ago'; if(s < 86400) return Math.round(s / 3600) + ' h ago'; var dd = Math.round(s / 86400); return dd + (dd === 1 ? ' day ago' : ' days ago'); }
   function rgba(hex, a){ var h = /^#[0-9a-f]{6}$/i.test(hex) ? hex : '#111111'; return 'rgba(' + parseInt(h.substr(1,2),16) + ',' + parseInt(h.substr(3,2),16) + ',' + parseInt(h.substr(5,2),16) + ',' + a + ')'; }
   function level(n, max){ return n <= 0 ? 0 : Math.min(4, Math.max(1, Math.ceil(n / Math.max(1, max) * 4))); }
   var ALPHA = [0, .28, .5, .75, 1];
@@ -2189,7 +2193,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
 
 
   /* ================= manage logbooks: status, download, trash ================= */
-  var mg = { trash:null, tbusy:false, terr:'', dlg:null, busy:false, msg:'' };
+  var mg = { trash:null, tbusy:false, terr:'', dlg:null, busy:false };
   var LOCAL_RE = /^(cleanboy|cleangirl|hustlers|readingboy|readinggirl|soberboy|sobergirl)-logbook-v1$|^custom-[a-z0-9]+-.+-v1$/;
   function localLogbooks(){
     var out = [], have = {}; (rows || []).forEach(function(r){ have[r.app] = 1; });
@@ -2226,48 +2230,48 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
   function daysLeft(at){ return Math.max(0, Math.ceil(30 - (Date.now() - new Date(at).getTime()) / 864e5)); }
   function viewManage(){
     if(!mg.trash && !mg.tbusy && !mg.terr) setTimeout(function(){ loadTrash(); }, 0);
-    var head = '<div class="vh"><div><h1>Manage logbooks</h1><p class="sub">See what is saved in your account, download a copy, or delete one. Deleted logbooks wait in the trash for 30 days.</p></div><div class="acts"><button class="btn ghost sm" data-act="refresh" type="button">Refresh</button></div></div>';
+    var head = '<div class="vh"><div><h1>Manage logbooks</h1><p class="sub">What is saved in your account, and what is only on this device. Deleted logbooks wait in the trash for 30 days.</p></div></div>';
     if(loading && !rows) return head + '<div class="sk" style="height:160px"></div>';
     if(loadErr && !rows) return head + '<div class="empty"><h3>' + esc(loadErr) + '</h3><button class="btn" data-act="refresh" type="button">Try again</button></div>';
     var cloud = rows || [], loc = localLogbooks().filter(function(l){ return !l.inCloud; });
-    var h = head;
-    h += '<h3 class="mgh">In your account <span>' + cloud.length + '</span></h3>';
-    if(!cloud.length) h += '<p class="hint mgnone">Nothing synced yet. Open a logbook on your phone, go to Settings and turn on sync.</p>';
+    var row = function(name, status, ok, actions){
+      return '<div class="mgr"><span class="dot" style="background:' + esc(name.acc) + '"></span><div class="mgi"><b>' + esc(name.n) + '</b><span class="mgs"><i class="sdot ' + (ok ? 'on' : 'off') + '"></i>' + status + '</span></div><div class="mga">' + actions + '</div></div>';
+    };
+    var openBtn = function(href){ return href ? '<a class="btn sm" href="' + esc(href) + '">Open</a>' : ''; };
+    var h = head + '<h3 class="mgh">In your account</h3>';
+    if(!cloud.length) h += '<p class="mgnone">Nothing synced yet. Open a logbook on your phone, go to Settings and turn on sync.</p>';
     h += cloud.map(function(r){
-      var lc = localOf(r.app), kb = Math.max(1, Math.round(r.size / 1024));
-      return '<div class="mgc"><div class="mgt"><span class="dot" style="background:' + esc(r.name.acc) + '"></span><b>' + esc(r.name.n) + '</b><span class="chip ok">Synced</span>' + (lc ? '<span class="chip">Also on this device</span>' : '') + '</div>'
-        + '<p class="mgs">Last synced ' + esc(ago(r.updated)) + (r.device ? ' from ' + esc(String(r.device).slice(0, 24)) : '') + '. ' + r.keys.length + ' day' + (r.keys.length === 1 ? '' : 's') + ' logged, ' + kb + ' KB.</p>'
-        + '<div class="mga">' + (r.url ? '<a class="btn sm" href="' + esc(r.url) + '">Open</a>' : '') + '<button class="btn ghost sm" type="button" data-act="mgdl" data-app="' + esc(r.app) + '">Download a copy</button><button class="btn ghost sm danger" type="button" data-act="mgdel" data-app="' + esc(r.app) + '">Delete</button></div></div>';
+      return row(r.name, 'Synced ' + esc(ago(r.updated)) + ' · ' + r.keys.length + ' day' + (r.keys.length === 1 ? '' : 's'), true,
+        openBtn(r.url) + '<button class="mgl" type="button" data-act="mgdel" data-app="' + esc(r.app) + '">Delete</button>');
     }).join('');
     if(loc.length){
-      h += '<h3 class="mgh">Only on this device <span>' + loc.length + '</span></h3><p class="hint mgnone">These are not saved in your account. If this device is lost, they are gone. Open one and turn on sync in Settings to keep a copy.</p>';
+      h += '<h3 class="mgh">Only on this device</h3><p class="mgnone">Not saved in your account. If this device is lost, these are gone. Open one and turn on sync in Settings to keep a copy.</p>';
       h += loc.map(function(l){
-        return '<div class="mgc"><div class="mgt"><span class="dot" style="background:' + esc(l.name.acc) + '"></span><b>' + esc(l.name.n) + '</b><span class="chip warn">Not synced</span></div>'
-          + '<p class="mgs">' + l.days + ' day' + (l.days === 1 ? '' : 's') + ' logged on this device only.</p>'
-          + '<div class="mga">' + (l.name.preset ? '<a class="btn sm" href="' + esc(urlFor({ preset:l.name.preset })) + '">Open</a>' : (l.name.custom ? '<a class="btn sm" href="' + esc(urlFor(l.name.custom)) + '">Open</a>' : '')) + '<button class="btn ghost sm" type="button" data-act="mgdl" data-app="' + esc(l.app) + '" data-loc="1">Download a copy</button><button class="btn ghost sm danger" type="button" data-act="mgdel" data-app="' + esc(l.app) + '" data-loc="1">Remove from this device</button></div></div>';
+        var href = l.name.preset ? urlFor({ preset:l.name.preset }) : (l.name.custom ? urlFor(l.name.custom) : '');
+        return row(l.name, 'Not synced · ' + l.days + ' day' + (l.days === 1 ? '' : 's'), false,
+          openBtn(href) + '<button class="mgl" type="button" data-act="mgdel" data-app="' + esc(l.app) + '" data-loc="1">Remove</button>');
       }).join('');
     }
-    h += '<h3 class="mgh">Trash <span>' + (mg.trash ? mg.trash.length : 0) + '</span></h3>';
-    if(mg.tbusy && !mg.trash) h += '<p class="hint mgnone">Opening the trash…</p>';
-    else if(mg.terr) h += '<p class="hint mgnone">' + esc(mg.terr) + ' <button class="btn ghost sm" type="button" data-act="mgtr">Try again</button></p>';
-    else if(!mg.trash || !mg.trash.length) h += '<p class="hint mgnone">The trash is empty. Deleted logbooks stay here for 30 days, then they are erased for good.</p>';
+    h += '<h3 class="mgh">Trash</h3>';
+    if(mg.tbusy && !mg.trash) h += '<p class="mgnone">Opening the trash…</p>';
+    else if(mg.terr) h += '<p class="mgnone">' + esc(mg.terr) + ' <button class="mgl" type="button" data-act="mgtr">Try again</button></p>';
+    else if(!mg.trash || !mg.trash.length) h += '<p class="mgnone">Empty. Deleted logbooks stay here for 30 days, then they are erased for good.</p>';
     else h += mg.trash.map(function(t){
       var d = daysLeft(t.at);
-      return '<div class="mgc trash"><div class="mgt"><span class="dot" style="background:' + esc(t.name.acc) + '"></span><b>' + esc(t.name.n) + '</b><span class="chip warn">' + d + ' day' + (d === 1 ? '' : 's') + ' left</span></div>'
-        + '<p class="mgs">Deleted ' + esc(ago(t.at)) + '. Erased for good after ' + esc(new Date(new Date(t.at).getTime() + 30 * 864e5).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' })) + '.</p>'
-        + '<div class="mga"><button class="btn sm" type="button" data-act="mgrs" data-app="' + esc(t.app) + '">Restore</button><button class="btn ghost sm" type="button" data-act="mgdl" data-app="' + esc(t.app) + '" data-tr="1">Download a copy</button><button class="btn ghost sm danger" type="button" data-act="mgnow" data-app="' + esc(t.app) + '">Delete now</button></div></div>';
+      return row(t.name, d + ' day' + (d === 1 ? '' : 's') + ' left', false,
+        '<button class="btn sm" type="button" data-act="mgrs" data-app="' + esc(t.app) + '">Restore</button><button class="mgl" type="button" data-act="mgnow" data-app="' + esc(t.app) + '">Erase now</button>');
     }).join('');
     if(mg.dlg) h += mgDialog();
     return h;
   }
   function mgDialog(){
     var d = mg.dlg, nm = esc(d.name), t = d.kind, body, go;
-    if(t === 'trash') { body = '<h3>Delete ' + nm + '?</h3><p>It moves to the trash and disappears from your account on all your devices.' + (d.local ? ' This also removes the copy on this device.' : '') + ' You can restore it for 30 days. After that it is erased for good.</p>'; go = 'Move to trash'; }
-    else if(t === 'local') { body = '<h3>Remove ' + nm + ' from this device?</h3><p><b>This one is not saved in your account, so it cannot go to the trash and cannot be restored.</b> Download a copy first if you might want it back.</p>'; go = 'Remove from this device'; }
-    else { body = '<h3>Delete ' + nm + ' for good?</h3><p>It will be erased now instead of in ' + d.days + ' day' + (d.days === 1 ? '' : 's') + '. This cannot be undone.</p>'; go = 'Erase for good'; }
+    if(t === 'trash') { body = '<h3>Delete ' + nm + '?</h3><p>It moves to the trash and disappears from your account on all your devices.' + (d.local ? ' The copy on this device is removed too.' : '') + ' You can restore it for 30 days, then it is erased for good.</p>'; go = 'Move to trash'; }
+    else if(t === 'local') { body = '<h3>Remove ' + nm + ' from this device?</h3><p>It is not saved in your account, so it cannot go to the trash and cannot be restored. Download a copy if you might want it back.</p>'; go = 'Remove'; }
+    else { body = '<h3>Erase ' + nm + ' now?</h3><p>It will be erased instead of waiting ' + d.days + ' more day' + (d.days === 1 ? '' : 's') + '. This cannot be undone.</p>'; go = 'Erase now'; }
     return '<div class="mgov" role="dialog" aria-modal="true" aria-label="Delete a logbook"><div class="mgd">' + body
-      + '<button class="btn ghost wide" type="button" data-act="mgdl" data-app="' + esc(d.app) + '"' + (t === 'local' ? ' data-loc="1"' : '') + (t === 'erase' ? ' data-tr="1"' : '') + '>' + (d.saved ? 'Downloaded. Download again' : 'Download a copy first') + '</button>'
-      + '<div class="mga"><button class="btn ghost" type="button" data-act="mgx">Cancel</button><button class="btn danger" type="button" data-act="mgok"' + (mg.busy ? ' disabled' : '') + '>' + go + '</button></div></div></div>';
+      + '<button class="mgl dl" type="button" data-act="mgdl" data-app="' + esc(d.app) + '"' + (t === 'local' ? ' data-loc="1"' : '') + (t === 'erase' ? ' data-tr="1"' : '') + '>' + (d.saved ? 'Downloaded. Download again' : 'Download a copy first') + '</button>'
+      + '<div class="mga"><button class="btn ghost sm" type="button" data-act="mgx">Cancel</button><button class="btn sm" type="button" data-act="mgok"' + (mg.busy ? ' disabled' : '') + '>' + go + '</button></div></div></div>';
   }
   function mgFind(app){ var r = (rows || []).filter(function(x){ return x.app === app; })[0]; return r; }
   function mgAct(a, b){
