@@ -155,7 +155,7 @@ html[data-tone=night] .intro video{filter:invert(1);mix-blend-mode:screen;opacit
   .studio{grid-template-columns:minmax(280px,320px) minmax(0,1fr) minmax(360px,420px);grid-template-areas:"a a a" "l e p" "d d d"}
   .studio .s-p{grid-row:2}
   .studio .s-l,.studio .s-e{align-self:start}
-  .studio .s-l{position:sticky;top:78px}
+  .studio .s-l{position:sticky;top:78px;max-height:calc(100vh - 96px);max-height:calc(100svh - 96px);overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
 }
 .studio-c{container:studio / inline-size}
 .agree{display:flex;gap:10px;align-items:flex-start;margin:4px 0 14px;font-size:14px;line-height:1.45;cursor:pointer}.agree input{margin-top:3px;width:18px;height:18px;flex:none;accent-color:var(--acc)}.agree a{text-decoration:underline}.err.ok{color:var(--ink)}
@@ -407,6 +407,13 @@ ol.steps li:before{content:counter(s);width:26px;height:26px;border-radius:50%;b
 .empty ol{margin:14px 0 18px 20px;display:grid;gap:6px}
 .sk{height:96px;border-radius:var(--r);background:linear-gradient(90deg,var(--tint),var(--line),var(--tint));background-size:200% 100%;animation:sk 1.2s linear infinite}
 @keyframes sk{to{background-position:-200% 0}}
+.mgh{margin:26px 0 10px;font-size:15px;display:flex;align-items:center;gap:8px}.mgh span{font-size:12px;font-weight:700;color:var(--mute);background:var(--panel);border:1px solid var(--line);border-radius:99px;padding:1px 9px}
+.mgnone{margin:0 0 8px;font-size:14px;line-height:1.55;color:var(--mute);max-width:620px}
+.mgc{border:1px solid var(--line);border-radius:16px;padding:14px 16px;margin-bottom:10px;background:var(--panel);max-width:760px}.mgc.trash{background:transparent;border-style:dashed}
+.mgt{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.mgt b{font-size:16px}.mgs{margin:6px 0 0;font-size:14px;color:var(--mute);line-height:1.5}.mga{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.chip{font-size:12px;font-weight:600;border:1px solid var(--line);border-radius:99px;padding:2px 10px;color:var(--mute)}.chip.ok{color:#1c6b3a;border-color:#8fc7a1;background:rgba(60,160,100,.1)}.chip.warn{color:#8a5a00;border-color:#e0bf7a;background:rgba(230,170,40,.12)}
+.btn.danger{color:#b3261e;border-color:rgba(179,38,30,.4)}button.btn.danger:not(.ghost){background:#b3261e;color:#fff;border-color:#b3261e}.btn.wide{width:100%;margin:14px 0 4px}
+.mgov{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}.mgd{background:var(--panel);color:var(--ink);border-radius:20px;padding:22px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}.mgd h3{margin:0 0 8px;font-size:19px}.mgd p{margin:0;line-height:1.55;font-size:14.5px}
 .acct{display:grid;gap:16px;max-width:720px}.acct dl{display:grid;grid-template-columns:140px 1fr;gap:10px 16px;margin-top:12px;font-size:14.5px}.acct dt{color:var(--mute);font-weight:600}.acct dd{word-break:break-all}
 footer.ft{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute);font-size:13px}.ft .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important;scroll-behavior:auto!important}}
@@ -631,6 +638,7 @@ details.raw{margin:2px 0 8px}details.raw summary{cursor:pointer;font-size:12.5px
 .fxs .fxw{padding:0;min-height:0}
 
 .bk-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}.bk-row:last-child{border-bottom:none}.bk-tick{flex:none;width:28px;height:28px;border-radius:9px;border:2px solid var(--line);background:transparent;color:var(--accent-ink);display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}.bk-row.done .bk-tick{background:var(--accent);border-color:var(--accent)}.bk-row.done .bk-text{text-decoration:line-through;opacity:.55}.bk-text{flex:1;min-width:0;text-align:left;border:none;background:transparent;color:var(--ink);font:inherit;font-weight:600;padding:4px 0;cursor:pointer}.bk-text.empty{color:var(--muted);font-weight:500}.bk-tier{flex:none;border:none;border-radius:8px;padding:5px 9px;font:inherit;font-size:10.5px;font-weight:800;letter-spacing:.04em;background:var(--surface-2);color:var(--muted);cursor:pointer}.bk-tier.t-MUST{background:var(--accent);color:var(--accent-ink)}.bk-tier.t-WANT{background:color-mix(in srgb,var(--accent) 22%,var(--surface-2));color:var(--ink)}
+.cd-kept{font-size:12.5px;font-weight:700;margin-top:8px;color:var(--accent)}.cd-bars{display:flex;align-items:flex-end;gap:6px;height:64px;margin-top:12px}.cd-bar{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:4px}.cd-bar i{display:block;width:100%;min-height:3px;border-radius:5px;background:var(--accent);opacity:.8}.cd-bar span{font-size:9.5px;color:var(--muted);height:12px}
 
 </style>
 </head>
@@ -1007,6 +1015,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
   var IC = {
     home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg>',
     lib:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h12v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5"/></svg>',
+    mg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h16M4 17h10"/><circle cx="19" cy="17" r="2"/></svg>',
     plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
     star:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
     me:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
@@ -1101,6 +1110,13 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
   function sharedRead(){ try{ var o = JSON.parse(localStorage.getItem(SKEY) || 'null'); if(o && o.access_token && o.refresh_token && o.user && o.user.id) return { at:o.access_token, rt:o.refresh_token, exp:(o.expires_at ? o.expires_at * 1000 : 0), id:o.user.id, email:o.user.email }; }catch(e){} return null; }
   function sharedWrite(o){ try{ localStorage.setItem(SKEY, JSON.stringify({ access_token:o.access_token, token_type:'bearer', expires_in:o.expires_in || 3600, expires_at:o.expires_at || (Math.floor(Date.now() / 1000) + (o.expires_in || 3600)), refresh_token:o.refresh_token, user:o.user })); }catch(e){} }
   var sess = (function(){ var s = sharedRead(); if(s) { store('lbs-sess', s); return s; } return store('lbs-sess'); })();
+  /* The list of custom logbooks lives in this browser, so it is tied to the account that made it. Another account on the same device starts clean and gets its own list from the cloud. */
+  function bindOwner(uid){
+    var o = store('lbs-owner');
+    if(uid && o && o !== uid){ saved.length = 0; store('lbs-custom', null); store('steady-int', null); try{ localStorage.removeItem('cr-q'); localStorage.removeItem('cr-qs'); }catch(e){} }
+    if(uid && o !== uid) store('lbs-owner', uid);
+  }
+  bindOwner(sess && sess.id);
   var rows = null, loadErr = '', loading = false, lastLoad = 0;
   var cs = { f:'sans', c:'soft', th:'light', m:'reticle', g:'', bt:{}, n:'My Routine', a:SWATCH[0], ord:['dashboard','workout','mindfocus','night'], b:['dashboard','workout','mindfocus','night'], h:[], r:{}, x:[], lk:[], fx:{ r:[], t:[] }, edit:null, sel:'home', pg:'home' };
   var mode = 'in', filt = { q:'', m:'' };
@@ -1254,8 +1270,8 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     return m || 'Something went wrong. Try again.';
   }
   function setSess(o){
-    if(o && o.access_token){ sess = { at:o.access_token, rt:o.refresh_token, exp:(o.expires_at ? o.expires_at * 1000 : Date.now() + (o.expires_in || 3600) * 1000), id:o.user && o.user.id, email:o.user && o.user.email }; store('lbs-sess', sess); if(o.user && o.user.id) sharedWrite(o); }
-    else { sess = null; rows = null; ent = null; store('lbs-sess', null); try{ localStorage.removeItem(SKEY); }catch(e){} }
+    if(o && o.access_token){ if(o.user && o.user.id) bindOwner(o.user.id); sess = { at:o.access_token, rt:o.refresh_token, exp:(o.expires_at ? o.expires_at * 1000 : Date.now() + (o.expires_in || 3600) * 1000), id:o.user && o.user.id, email:o.user && o.user.email }; store('lbs-sess', sess); if(o.user && o.user.id) sharedWrite(o); }
+    else { sess = null; rows = null; ent = null; store('lbs-sess', null); saved.length = 0; store('lbs-custom', null); store('lbs-owner', null); store('steady-int', null); try{ localStorage.removeItem(SKEY); localStorage.removeItem('cr-q'); localStorage.removeItem('cr-qs'); }catch(e){} }
   }
   /* Take what another tab (or the logbook) already refreshed, instead of using a refresh token that has since been replaced. */
   function adopt(s){ sess = { at:s.at, rt:s.rt, exp:s.exp, id:s.id, email:s.email }; store('lbs-sess', sess); }
@@ -1283,8 +1299,8 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
   window.addEventListener('storage', function(e){
     if(e.key !== SKEY) return;
     var s = sharedRead();
-    if(!s){ if(sess){ sess = null; rows = null; ent = null; store('lbs-sess', null); render(); } return; }
-    if(!sess || sess.id !== s.id){ adopt(s); rows = null; ent = null; render(); load(true); return; }
+    if(!s){ if(sess){ sess = null; rows = null; ent = null; store('lbs-sess', null); saved.length = 0; store('lbs-custom', null); store('lbs-owner', null); render(); } return; }
+    if(!sess || sess.id !== s.id){ bindOwner(s.id); adopt(s); rows = null; ent = null; render(); load(true); return; }
     if(s.rt !== sess.rt && s.exp >= sess.exp) adopt(s);
   });
   function api(path, opt){ return fresh().then(function(t){ opt = opt || {}; var pf = opt.prefer; delete opt.prefer; opt.headers = hdr(t); if(pf) opt.headers.Prefer = pf; return fetch(SB + '/rest/v1/' + path, opt).then(j); }); }
@@ -1917,7 +1933,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
 
   function viewAccount(){
     var size = (rows || []).reduce(function(a, r){ return a + r.size; }, 0);
-    return '<div class="vh"><div><h1>Account</h1></div></div><div class="acct"><div class="box"><h3>Signed in</h3><dl><dt>Email</dt><dd>' + esc(sess.email || '') + '</dd><dt>Logbooks synced</dt><dd>' + (rows ? rows.length : 0) + '</dd><dt>Data stored</dt><dd>' + Math.max(1, Math.round(size / 1024)) + ' KB</dd><dt>Last checked</dt><dd>' + (lastLoad ? esc(ago(new Date(lastLoad))) : 'Not yet') + '</dd></dl><div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn ghost" data-act="refresh" type="button">Refresh</button><button class="btn" data-act="signout" type="button">Sign out</button></div></div>'
+    return '<div class="vh"><div><h1>Account</h1></div></div><div class="acct"><div class="box"><h3>Signed in</h3><dl><dt>Email</dt><dd>' + esc(sess.email || '') + '</dd><dt>Logbooks synced</dt><dd>' + (rows ? rows.length : 0) + '</dd><dt>Data stored</dt><dd>' + Math.max(1, Math.round(size / 1024)) + ' KB</dd><dt>Last checked</dt><dd>' + (lastLoad ? esc(ago(new Date(lastLoad))) : 'Not yet') + '</dd></dl><div style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap"><a class="btn ghost" href="#/manage">Manage logbooks</a><button class="btn ghost" data-act="refresh" type="button">Refresh</button><button class="btn" data-act="signout" type="button">Sign out</button></div></div>'
       + '<div class="box"><h3>Steady</h3><dl><dt>Your plan</dt><dd>' + esc(planLine()) + '</dd></dl><div style="margin-top:16px"><a class="btn ghost" href="#/steady">' + (ent && ent.steady ? 'See Steady' : 'About Steady') + '</a></div></div>'
       + (isAdmin ? '<div class="box"><h3>Anonymous stats (owner only)</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Totals per day. No names, emails, IP addresses or logbook contents are stored.</p><button class="btn ghost sm" type="button" data-act="stats" style="margin-top:14px">Show the last 14 days</button><div id="stout" style="margin-top:14px"></div></div>' : '')
       + (isAdmin ? '<div class="box"><h3>Control panel</h3><p class="hint" style="margin-top:6px;font-size:14px;line-height:1.55">Stats, people, switches, staff and the action log.</p><a class="btn" href="#/admin" style="margin-top:14px">Open the control panel</a></div>' : '')
@@ -2001,7 +2017,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
   window.addEventListener('scroll', introKick, { passive:true }); window.addEventListener('resize', introKick);
 
   /* ================= shell (signed in) ================= */
-  function route(){ var h = location.hash || ''; var m = /^#\/(lb\/(.+)|library|create|account|steady|admin)?$/.exec(h); if(!m) return { v:'dash' }; if(m[2]){ var a; try{ a = decodeURIComponent(m[2]); }catch(e){ a = m[2]; } return { v:'lb', app:a }; } return { v:m[1] || 'dash' }; }
+  function route(){ var h = location.hash || ''; var m = /^#\/(lb\/(.+)|library|create|account|manage|steady|admin)?$/.exec(h); if(!m) return { v:'dash' }; if(m[2]){ var a; try{ a = decodeURIComponent(m[2]); }catch(e){ a = m[2]; } return { v:'lb', app:a }; } return { v:m[1] || 'dash' }; }
 
 
   /* ================= Steady entitlement and free limits ================= */
@@ -2159,17 +2175,129 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     else if(v === 'lb') body = viewLb(rt.app);
     else if(v === 'library') body = '<div class="vh"><div><h1>Library</h1><p class="sub">Open one, or install it on your phone.</p></div></div>' + viewLibrary(true);
     else if(v === 'create') body = '<div class="vh"><div><h1>Create your own</h1><p class="sub">Make your own boxes and fields, put them in the order you want.</p></div></div>' + viewCreate();
+    else if(v === 'manage') body = viewManage();
     else if(v === 'steady') body = viewSteady();
     else if(v === 'admin') body = viewAdmin();
     else body = viewAccount();
     var cur = function(x){ return v === x ? ' aria-current="page"' : ''; };
-    var side = '<aside class="side"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a><nav aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create your own</a><a href="#/steady"' + cur('steady') + '>' + IC.star + 'Steady</a><a href="#/account"' + cur('account') + '>' + IC.me + 'Account</a>' + (isAdmin ? '<a href="#/admin"' + cur('admin') + '>' + IC.adm + 'Control panel</a>' : '') + '</nav>'
+    var side = '<aside class="side"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a><nav aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create your own</a><a href="#/manage"' + cur('manage') + '>' + IC.mg + 'Manage logbooks</a><a href="#/steady"' + cur('steady') + '>' + IC.star + 'Steady</a><a href="#/account"' + cur('account') + '>' + IC.me + 'Account</a>' + (isAdmin ? '<a href="#/admin"' + cur('admin') + '>' + IC.adm + 'Control panel</a>' : '') + '</nav>'
       + '<div class="k">Your logbooks</div><div class="lbl">' + ((rows && rows.length) ? rows.map(function(r){ return '<a href="#/lb/' + encodeURIComponent(r.app) + '"' + (v === 'lb' && rt.app === r.app ? ' aria-current="page"' : '') + '><span class="dot" style="background:' + esc(r.name.acc) + '"></span>' + esc(r.name.n) + '<small title="Current streak in days">' + (r.cur ? r.cur + ' day' + (r.cur === 1 ? '' : 's') : '') + '</small></a>'; }).join('') : '<span style="padding:6px 12px;font-size:13px;color:var(--mute)">' + (loading ? 'Loading…' : 'None synced yet') + '</span>') + '</div>'
       + '<div class="me">' + MODEBTN + '<a href="#/account" style="text-decoration:none;font-weight:700;color:var(--ink);display:block">' + esc(sess.email || 'Account') + '</a><button type="button" data-act="signout">Sign out</button></div></aside>';
     var tabs = '<nav class="tabbar" aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create</a><a href="#/account"' + cur('account') + '>' + IC.me + 'Account</a></nav>';
     return '<div class="shell">' + side + '<main class="main"><div class="mtop"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a>' + MODEBTN + '</div>' + body + '</main></div>' + tabs;
   }
 
+
+  /* ================= manage logbooks: status, download, trash ================= */
+  var mg = { trash:null, tbusy:false, terr:'', dlg:null, busy:false, msg:'' };
+  var LOCAL_RE = /^(cleanboy|cleangirl|hustlers|readingboy|readinggirl|soberboy|sobergirl)-logbook-v1$|^custom-[a-z0-9]+-.+-v1$/;
+  function localLogbooks(){
+    var out = [], have = {}; (rows || []).forEach(function(r){ have[r.app] = 1; });
+    try{
+      for(var i = 0; i < localStorage.length; i++){
+        var k = localStorage.key(i); if(!k || !LOCAL_RE.test(k)) continue;
+        var d = null; try{ d = JSON.parse(localStorage.getItem(k) || 'null'); }catch(e){} if(!d || typeof d !== 'object') continue;
+        var n = Object.keys(d.days || {}).length; if(!n && d.onboarded !== true) continue;
+        var ow = localStorage.getItem(k + '-owner') || ''; if(!ow){ try{ var sm = JSON.parse(localStorage.getItem(k + '-sync') || 'null'); if(sm && sm.uid) ow = sm.uid; }catch(e){} }
+        if(sess && ow && ow !== sess.id) continue;
+        var syncOn = false; try{ var sm2 = JSON.parse(localStorage.getItem(k + '-sync') || 'null'); syncOn = !!(sm2 && sm2.on); }catch(e){}
+        out.push({ app:k, data:d, days:n, name:nameOf(k), syncOn:syncOn, inCloud:!!have[k] });
+      }
+    }catch(e){}
+    return out;
+  }
+  function localOf(app){ var l = localLogbooks().filter(function(x){ return x.app === app; })[0]; return l || null; }
+  function fileSlug(n){ return String(n || 'logbook').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'logbook'; }
+  function saveJson(name, data){
+    try{
+      var a = document.createElement('a'), u = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type:'application/json' }));
+      a.href = u; a.download = fileSlug(name) + '-backup-' + ymd(new Date()) + '.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 2000); toast('Backup downloaded');
+    }catch(e){ toast('Could not make the file. Try again.'); }
+  }
+  function rpc(name, body){ return api('rpc/' + name, { method:'POST', body:JSON.stringify(body || {}) }); }
+  function loadTrash(force){
+    if(!sess || mg.tbusy || (mg.trash && !force)) return; mg.tbusy = true; mg.terr = '';
+    rpc('purge_my_trash').then(function(){ return api('logbook_trash?select=app,deleted_at,synced_at,device&order=deleted_at.desc'); }).then(function(r){
+      mg.tbusy = false;
+      if(!r.ok || !Array.isArray(r.j)){ mg.terr = 'Could not open the trash right now.'; mg.trash = null; } else mg.trash = r.j.map(function(t){ return { app:t.app, name:nameOf(t.app), at:t.deleted_at, synced:t.synced_at }; });
+      if(route().v === 'manage') render();
+    }, function(){ mg.tbusy = false; mg.terr = 'You look offline. Connect and try again.'; if(route().v === 'manage') render(); });
+  }
+  function daysLeft(at){ return Math.max(0, Math.ceil(30 - (Date.now() - new Date(at).getTime()) / 864e5)); }
+  function viewManage(){
+    if(!mg.trash && !mg.tbusy && !mg.terr) setTimeout(function(){ loadTrash(); }, 0);
+    var head = '<div class="vh"><div><h1>Manage logbooks</h1><p class="sub">See what is saved in your account, download a copy, or delete one. Deleted logbooks wait in the trash for 30 days.</p></div><div class="acts"><button class="btn ghost sm" data-act="refresh" type="button">Refresh</button></div></div>';
+    if(loading && !rows) return head + '<div class="sk" style="height:160px"></div>';
+    if(loadErr && !rows) return head + '<div class="empty"><h3>' + esc(loadErr) + '</h3><button class="btn" data-act="refresh" type="button">Try again</button></div>';
+    var cloud = rows || [], loc = localLogbooks().filter(function(l){ return !l.inCloud; });
+    var h = head;
+    h += '<h3 class="mgh">In your account <span>' + cloud.length + '</span></h3>';
+    if(!cloud.length) h += '<p class="hint mgnone">Nothing synced yet. Open a logbook on your phone, go to Settings and turn on sync.</p>';
+    h += cloud.map(function(r){
+      var lc = localOf(r.app), kb = Math.max(1, Math.round(r.size / 1024));
+      return '<div class="mgc"><div class="mgt"><span class="dot" style="background:' + esc(r.name.acc) + '"></span><b>' + esc(r.name.n) + '</b><span class="chip ok">Synced</span>' + (lc ? '<span class="chip">Also on this device</span>' : '') + '</div>'
+        + '<p class="mgs">Last synced ' + esc(ago(r.updated)) + (r.device ? ' from ' + esc(String(r.device).slice(0, 24)) : '') + '. ' + r.keys.length + ' day' + (r.keys.length === 1 ? '' : 's') + ' logged, ' + kb + ' KB.</p>'
+        + '<div class="mga">' + (r.url ? '<a class="btn sm" href="' + esc(r.url) + '">Open</a>' : '') + '<button class="btn ghost sm" type="button" data-act="mgdl" data-app="' + esc(r.app) + '">Download a copy</button><button class="btn ghost sm danger" type="button" data-act="mgdel" data-app="' + esc(r.app) + '">Delete</button></div></div>';
+    }).join('');
+    if(loc.length){
+      h += '<h3 class="mgh">Only on this device <span>' + loc.length + '</span></h3><p class="hint mgnone">These are not saved in your account. If this device is lost, they are gone. Open one and turn on sync in Settings to keep a copy.</p>';
+      h += loc.map(function(l){
+        return '<div class="mgc"><div class="mgt"><span class="dot" style="background:' + esc(l.name.acc) + '"></span><b>' + esc(l.name.n) + '</b><span class="chip warn">Not synced</span></div>'
+          + '<p class="mgs">' + l.days + ' day' + (l.days === 1 ? '' : 's') + ' logged on this device only.</p>'
+          + '<div class="mga">' + (l.name.preset ? '<a class="btn sm" href="' + esc(urlFor({ preset:l.name.preset })) + '">Open</a>' : (l.name.custom ? '<a class="btn sm" href="' + esc(urlFor(l.name.custom)) + '">Open</a>' : '')) + '<button class="btn ghost sm" type="button" data-act="mgdl" data-app="' + esc(l.app) + '" data-loc="1">Download a copy</button><button class="btn ghost sm danger" type="button" data-act="mgdel" data-app="' + esc(l.app) + '" data-loc="1">Remove from this device</button></div></div>';
+      }).join('');
+    }
+    h += '<h3 class="mgh">Trash <span>' + (mg.trash ? mg.trash.length : 0) + '</span></h3>';
+    if(mg.tbusy && !mg.trash) h += '<p class="hint mgnone">Opening the trash…</p>';
+    else if(mg.terr) h += '<p class="hint mgnone">' + esc(mg.terr) + ' <button class="btn ghost sm" type="button" data-act="mgtr">Try again</button></p>';
+    else if(!mg.trash || !mg.trash.length) h += '<p class="hint mgnone">The trash is empty. Deleted logbooks stay here for 30 days, then they are erased for good.</p>';
+    else h += mg.trash.map(function(t){
+      var d = daysLeft(t.at);
+      return '<div class="mgc trash"><div class="mgt"><span class="dot" style="background:' + esc(t.name.acc) + '"></span><b>' + esc(t.name.n) + '</b><span class="chip warn">' + d + ' day' + (d === 1 ? '' : 's') + ' left</span></div>'
+        + '<p class="mgs">Deleted ' + esc(ago(t.at)) + '. Erased for good after ' + esc(new Date(new Date(t.at).getTime() + 30 * 864e5).toLocaleDateString(undefined, { month:'short', day:'numeric', year:'numeric' })) + '.</p>'
+        + '<div class="mga"><button class="btn sm" type="button" data-act="mgrs" data-app="' + esc(t.app) + '">Restore</button><button class="btn ghost sm" type="button" data-act="mgdl" data-app="' + esc(t.app) + '" data-tr="1">Download a copy</button><button class="btn ghost sm danger" type="button" data-act="mgnow" data-app="' + esc(t.app) + '">Delete now</button></div></div>';
+    }).join('');
+    if(mg.dlg) h += mgDialog();
+    return h;
+  }
+  function mgDialog(){
+    var d = mg.dlg, nm = esc(d.name), t = d.kind, body, go;
+    if(t === 'trash') { body = '<h3>Delete ' + nm + '?</h3><p>It moves to the trash and disappears from your account on all your devices.' + (d.local ? ' This also removes the copy on this device.' : '') + ' You can restore it for 30 days. After that it is erased for good.</p>'; go = 'Move to trash'; }
+    else if(t === 'local') { body = '<h3>Remove ' + nm + ' from this device?</h3><p><b>This one is not saved in your account, so it cannot go to the trash and cannot be restored.</b> Download a copy first if you might want it back.</p>'; go = 'Remove from this device'; }
+    else { body = '<h3>Delete ' + nm + ' for good?</h3><p>It will be erased now instead of in ' + d.days + ' day' + (d.days === 1 ? '' : 's') + '. This cannot be undone.</p>'; go = 'Erase for good'; }
+    return '<div class="mgov" role="dialog" aria-modal="true" aria-label="Delete a logbook"><div class="mgd">' + body
+      + '<button class="btn ghost wide" type="button" data-act="mgdl" data-app="' + esc(d.app) + '"' + (t === 'local' ? ' data-loc="1"' : '') + (t === 'erase' ? ' data-tr="1"' : '') + '>' + (d.saved ? 'Downloaded. Download again' : 'Download a copy first') + '</button>'
+      + '<div class="mga"><button class="btn ghost" type="button" data-act="mgx">Cancel</button><button class="btn danger" type="button" data-act="mgok"' + (mg.busy ? ' disabled' : '') + '>' + go + '</button></div></div></div>';
+  }
+  function mgFind(app){ var r = (rows || []).filter(function(x){ return x.app === app; })[0]; return r; }
+  function mgAct(a, b){
+    var app = b.dataset.app;
+    if(a === 'mgdl'){
+      if(b.dataset.tr){ var nmT = nameOf(app).n; api('logbook_trash?app=eq.' + encodeURIComponent(app) + '&select=data').then(function(r){ if(r.ok && r.j && r.j[0]) { saveJson(nmT, r.j[0].data); if(mg.dlg) { mg.dlg.saved = true; render(); } } else toast('Could not get that copy. Try again.'); }); return true; }
+      if(b.dataset.loc){ var l = localOf(app); if(l){ saveJson(l.name.n, l.data); if(mg.dlg){ mg.dlg.saved = true; render(); } } return true; }
+      var r0 = mgFind(app); if(r0){ saveJson(r0.name.n, r0.data); if(mg.dlg){ mg.dlg.saved = true; render(); } } return true;
+    }
+    if(a === 'mgdel'){ mg.dlg = { kind:b.dataset.loc ? 'local' : 'trash', app:app, name:nameOf(app).n, saved:false, local:!b.dataset.loc && !!localOf(app) }; render(); return true; }
+    if(a === 'mgnow'){ var t = (mg.trash || []).filter(function(x){ return x.app === app; })[0]; mg.dlg = { kind:'erase', app:app, name:nameOf(app).n, days:t ? daysLeft(t.at) : 0, saved:false }; render(); return true; }
+    if(a === 'mgx'){ mg.dlg = null; render(); return true; }
+    if(a === 'mgtr'){ mg.terr = ''; mg.trash = null; render(); return true; }
+    if(a === 'mgrs'){
+      b.disabled = true;
+      rpc('restore_logbook', { p_app:app }).then(function(r){
+        if(r.ok && r.j === true){ toast('Restored. It is back in your account.'); mg.trash = null; rows = null; render(); load(true); }
+        else if(r.ok){ toast('Too late: that one was already erased.'); mg.trash = null; render(); }
+        else { var m = (r.j && (r.j.message || r.j.msg)) || ''; toast(/Steady/i.test(m) ? 'Sync needs Steady to bring this back.' : /already/i.test(m) ? 'A logbook with that name is already in your account.' : 'Could not restore. Try again.'); b.disabled = false; }
+      }); return true;
+    }
+    if(a === 'mgok'){
+      var d = mg.dlg; if(!d || mg.busy) return true; mg.busy = true; render();
+      var done = function(msg){ mg.busy = false; mg.dlg = null; mg.trash = null; toast(msg); render(); };
+      if(d.kind === 'local'){ try{ ['', '-sync', '-owner', '-prev'].forEach(function(s){ localStorage.removeItem(d.app + s); }); }catch(e){} done('Removed from this device.'); return true; }
+      if(d.kind === 'trash'){ rpc('trash_logbook', { p_app:d.app }).then(function(r){ if(r.ok){ rows = (rows || []).filter(function(x){ return x.app !== d.app; }); try{ ['', '-sync', '-owner', '-prev'].forEach(function(s){ localStorage.removeItem(d.app + s); }); }catch(e){} done('Moved to the trash. You have 30 days to restore it.'); load(true); } else { mg.busy = false; toast('Could not delete. Try again.'); render(); } }, function(){ mg.busy = false; toast('You look offline. Try again.'); render(); }); return true; }
+      rpc('erase_trashed', { p_app:d.app }).then(function(r){ if(r.ok) done('Erased for good.'); else { mg.busy = false; toast('Could not erase. Try again.'); render(); } }); return true;
+    }
+    return false;
+  }
 
   /* ================= control panel (owners and developers only; every real check happens on the server) ================= */
   var myRole = null;
@@ -2692,7 +2820,8 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     if(b){
       var a = b.dataset.act;
       if(a === 'tone'){ tone = tone === 'night' ? 'day' : 'night'; store('lbs-tone', tone); applyTheme(); var sg = $('choose'); if(sg){ sg.setAttribute('style', themeVars(stTh(stageId))); var om = sg.querySelector('svg.mo'); if(om) om.outerHTML = motif(TH[stageId].mo, stTh(stageId).acc); } else render(); }
-      else if(a === 'refresh'){ load(true); }
+      else if(a === 'refresh'){ mg.trash = null; load(true); }
+      else if(/^mg/.test(a) && mgAct(a, b)){ }
       else if(a === 'signout'){ setSess(null); location.hash = ''; render(); toast('Signed out'); }
       else if(a === 'vchange'){ verifyFor = ''; mode = 'up'; var f1 = $('signin'); if(f1) f1.innerHTML = authForm(); }
       else if(a === 'vdone'){ verifyFor = ''; mode = 'in'; var f2 = $('signin'); if(f2){ f2.innerHTML = authForm(); var ae = $('ae'); if(ae) ae.value = lastEmail; var ap = $('ap'); if(ap) ap.focus(); } }
