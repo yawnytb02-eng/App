@@ -413,7 +413,7 @@ ol.steps li:before{content:counter(s);width:26px;height:26px;border-radius:50%;b
 .mgi{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.mgi b{font-size:16px}.mgs{font-size:13.5px;color:var(--mute);display:flex;align-items:center;gap:7px}
 .sdot{width:7px;height:7px;border-radius:50%;flex:none;background:var(--mute)}.sdot.on{background:var(--ink)}.sdot.off{background:transparent;border:1.5px solid var(--mute)}
 .mga{display:flex;gap:14px;align-items:center;flex:none}
-.mgl{background:none;border:0;padding:6px 2px;font:inherit;font-size:14px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer}.mgl:hover{opacity:.7}.mgl.dl{display:block;margin:14px 0 4px}
+.mgl{background:none;border:0;padding:6px 2px;font:inherit;font-size:14px;font-weight:600;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer}.mgl:hover{opacity:.7}.nwd{display:inline-block;width:8px;height:8px;border-radius:50%;background:#E5171B;margin-left:8px;vertical-align:middle}.mgtop{display:flex;align-items:baseline;justify-content:space-between;gap:12px;max-width:760px}.mgm{position:relative}.mgm summary{list-style:none;cursor:pointer;font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px}.mgm summary::-webkit-details-marker{display:none}.mgm>div{position:absolute;right:0;top:100%;z-index:5;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:6px 12px;display:grid;gap:2px;min-width:120px;text-align:left}.mgarch{max-width:760px;margin-top:10px}.mgarch>summary{cursor:pointer;font-weight:700;padding:10px 0;color:var(--mute)}.mgin{width:100%;font:inherit;padding:12px 14px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink);margin:6px 0 14px}.mgl.dl{display:block;margin:14px 0 4px}
 .mgov{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:16px}.mgd{background:var(--panel);color:var(--ink);border-radius:20px;padding:22px;max-width:420px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3)}.mgd h3{margin:0 0 8px;font-size:19px}.mgd p{margin:0;line-height:1.55;font-size:14.5px}.mgd .mga{justify-content:flex-end;margin-top:14px}
 @media(max-width:560px){.mga{gap:10px}}
 .acct{display:grid;gap:16px;max-width:720px}.acct dl{display:grid;grid-template-columns:140px 1fr;gap:10px 16px;margin-top:12px;font-size:14.5px}.acct dt{color:var(--mute);font-weight:600}.acct dd{word-break:break-all}
@@ -1310,10 +1310,12 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
   function api(path, opt){ return fresh().then(function(t){ opt = opt || {}; var pf = opt.prefer; delete opt.prefer; opt.headers = hdr(t); if(pf) opt.headers.Prefer = pf; return fetch(SB + '/rest/v1/' + path, opt).then(j); }); }
   function pushPrefs(){
     if(!sess) return;
-    api('logbook_sync?on_conflict=user_id,app', { method:'POST', body:JSON.stringify({ user_id:sess.id, app:'site-prefs', data:{ logbooks:saved }, rev:1, edit_at:Date.now(), device:'site' }), prefer:'resolution=merge-duplicates,return=minimal' }).catch(function(){});
+    api('logbook_sync?on_conflict=user_id,app', { method:'POST', body:JSON.stringify({ user_id:sess.id, app:'site-prefs', data:{ logbooks:saved, meta:meta }, rev:1, edit_at:Date.now(), device:'site' }), prefer:'resolution=merge-duplicates,return=minimal' }).catch(function(){});
   }
   function pullPrefs(list){
-    var r = list.filter(function(x){ return x.app === 'site-prefs'; })[0]; if(!r || !r.data || !Array.isArray(r.data.logbooks)) return;
+    var r = list.filter(function(x){ return x.app === 'site-prefs'; })[0]; if(!r || !r.data) return;
+    if(r.data.meta && typeof r.data.meta === 'object'){ var ch = 0; ['names', 'arch'].forEach(function(kd){ var rm = r.data.meta[kd]; if(!rm || typeof rm !== 'object') return; Object.keys(rm).forEach(function(a){ var o = rm[a]; if(o && typeof o.t === 'number' && (!meta[kd][a] || meta[kd][a].t < o.t) && (kd === 'arch' ? (o.v === 0 || o.v === 1 || o.v === true || o.v === false) : (typeof o.v === 'string' && o.v.length < 41))){ meta[kd][a] = { v:o.v, t:o.t }; ch = 1; } }); }); if(ch) store('lbs-meta', meta); }
+    if(!Array.isArray(r.data.logbooks)) return;
     var have = {}; saved.forEach(function(o){ have[o.k] = 1; }); var add = 0;
     r.data.logbooks.forEach(function(o){ if(o && o.k && !have[o.k] && o.n && /^#[0-9A-Fa-f]{6}$/.test(o.a) && Array.isArray(o.b)){ saved.push({ k:String(o.k).replace(/[^a-z0-9]/gi,'').slice(0,8), n:String(o.n).slice(0,22), a:o.a, b:o.b.filter(function(x){ return BN[x]; }) }); add++; } });
     if(add) store('lbs-custom', saved);
@@ -1330,7 +1332,16 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
   }
 
   /* ================= data helpers ================= */
+  function wnNew(){ try{ return localStorage.getItem('cr-wn') !== '1.4'; }catch(e){ return false; } }
+  var meta = store('lbs-meta') || { names:{}, arch:{} };
+  if(!meta.names) meta.names = {}; if(!meta.arch) meta.arch = {};
+  function metaSet(kind, app, v){ meta[kind][app] = { v:v, t:Date.now() }; store('lbs-meta', meta); pushPrefs(); }
+  function isArch(app){ return !!(meta.arch[app] && meta.arch[app].v); }
   function nameOf(app){
+    var r = nameOf0(app), m = meta.names[app];
+    return (m && m.v) ? { n:m.v, preset:r.preset, custom:r.custom, acc:r.acc } : r;
+  }
+  function nameOf0(app){
     var i; for(i = 0; i < PRESETS.length; i++) if(PRESETS[i].key === app) return { n:PRESETS[i].n, preset:PRESETS[i].id, acc:(tone === 'night' ? PAL[PRESETS[i].id].n[3] : PRESETS[i].c) };
     var m = /^custom-([a-z0-9]+)-(.+)-v1$/.exec(app);
     if(m){ var s = null; saved.forEach(function(o){ if(o.k === m[1]) s = o; });
@@ -1408,7 +1419,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     var wmx = Math.max.apply(null, wk.map(function(x){ return x.n; }).concat([1]));
     var chart = '<div class="bars">' + wk.map(function(x){ return '<div><em>' + (x.n || '') + '</em><i style="height:' + Math.max(4, Math.round(x.n / wmx * 118)) + 'px;' + (x.n ? '' : 'background:var(--line)') + '"></i><span>' + dayLabel(x.k, { weekday:'short' }).slice(0, 3) + '</span></div>'; }).join('') + '</div>';
     var hm = heat(freeWeeks(), function(k2){ return ppd[k2] || 0; }, inkHex(), Math.max(4, mx));
-    var cards = rows.map(function(r){ return '<a class="lbc" style="--acc2:' + esc(r.name.acc) + '" href="#/lb/' + encodeURIComponent(r.app) + '"><div class="t"><span class="dot" style="background:' + esc(r.name.acc) + '"></span><h3>' + esc(r.name.n) + '</h3><span class="k">' + esc(ago(r.updated)) + '</span></div><div class="m"><div><b>' + r.cur + '</b><span>Streak</span></div><div><b>' + r.keys.length + '</b><span>Days</span></div><div><b>' + r.best + '</b><span>Best</span></div></div>' + strip(r, 21) + '</a>'; }).join('');
+    var cards = rows.filter(function(r){ return !isArch(r.app); }).map(function(r){ return '<a class="lbc" style="--acc2:' + esc(r.name.acc) + '" href="#/lb/' + encodeURIComponent(r.app) + '"><div class="t"><span class="dot" style="background:' + esc(r.name.acc) + '"></span><h3>' + esc(r.name.n) + '</h3><span class="k">' + esc(ago(r.updated)) + '</span></div><div class="m"><div><b>' + r.cur + '</b><span>Streak</span></div><div><b>' + r.keys.length + '</b><span>Days</span></div><div><b>' + r.best + '</b><span>Best</span></div></div>' + strip(r, 21) + '</a>'; }).join('');
     var feed = []; rows.forEach(function(r){ r.keys.slice(-8).forEach(function(k2){ feed.push({ k:k2, r:r }); }); });
     feed.sort(function(a, b){ return a.k < b.k ? 1 : a.k > b.k ? -1 : 0; });
     var fl = feed.slice(0, 9).map(function(f){ var dd = new Date(f.k + 'T12:00:00'); return '<li><div class="d"><b>' + dd.getDate() + '</b><span>' + dd.toLocaleDateString(undefined, { month:'short' }) + '</span></div><div class="w"><b><span class="dot" style="background:' + esc(f.r.name.acc) + '"></span>' + esc(f.r.name.n) + '</b><p>' + esc(touched(f.r.days[f.k]).map(function(p){ return pageName(p, f.r.data); }).join(', ')) + '</p></div></li>'; }).join('');
@@ -1982,7 +1993,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
       + stageHtml()
       + '<section class="sec" id="all"><div class="wrap"><h2>All seven</h2><p class="sub">Open one to try it, or install it on your phone.</p>' + viewLibrary(false) + '</div></section>'
       + '<section class="band" id="create"><div class="wrap wide"><h2 style="font-size:clamp(28px,4vw,42px)">Create your own</h2><p class="sub">Make your own boxes and fields, put them in the order you want, and watch your phone update. Then package it into one link.</p>' + viewCreate() + '</div></section></main>'
-      + '<footer class="ft"><div class="wrap"><span>&copy; 2026 Clean Routine Co. All rights reserved.</span><span>Made in Ho Chi Minh City</span><span style="opacity:.6">Version 15 Nov, with Steady</span><a href="legal.html#terms">Terms</a><a href="legal.html#privacy">Privacy</a><a href="mailto:hello@cleanroutineco.app">hello@cleanroutineco.app</a></div></footer>';
+      + '<footer class="ft"><div class="wrap"><span>&copy; 2026 Clean Routine Co. All rights reserved.</span><span>Made in Ho Chi Minh City</span><span style="opacity:.6">Version 15 Nov, with Steady</span><a href="whatsnew/">What\'s new</a><a href="legal.html#terms">Terms</a><a href="legal.html#privacy">Privacy</a><a href="mailto:hello@cleanroutineco.app">hello@cleanroutineco.app</a></div></footer>';
   }
 
   /* ---- scroll-driven intro: the video is scrubbed by scroll position ---- */
@@ -2184,8 +2195,8 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     else if(v === 'admin') body = viewAdmin();
     else body = viewAccount();
     var cur = function(x){ return v === x ? ' aria-current="page"' : ''; };
-    var side = '<aside class="side"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a><nav aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create your own</a><a href="#/manage"' + cur('manage') + '>' + IC.mg + 'Manage logbooks</a><a href="#/steady"' + cur('steady') + '>' + IC.star + 'Steady</a><a href="#/account"' + cur('account') + '>' + IC.me + 'Account</a>' + (isAdmin ? '<a href="#/admin"' + cur('admin') + '>' + IC.adm + 'Control panel</a>' : '') + '</nav>'
-      + '<div class="k">Your logbooks</div><div class="lbl">' + ((rows && rows.length) ? rows.map(function(r){ return '<a href="#/lb/' + encodeURIComponent(r.app) + '"' + (v === 'lb' && rt.app === r.app ? ' aria-current="page"' : '') + '><span class="dot" style="background:' + esc(r.name.acc) + '"></span>' + esc(r.name.n) + '<small title="Current streak in days">' + (r.cur ? r.cur + ' day' + (r.cur === 1 ? '' : 's') : '') + '</small></a>'; }).join('') : '<span style="padding:6px 12px;font-size:13px;color:var(--mute)">' + (loading ? 'Loading…' : 'None synced yet') + '</span>') + '</div>'
+    var side = '<aside class="side"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a><nav aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create your own</a><a href="#/manage"' + cur('manage') + '>' + IC.mg + 'Manage logbooks</a><a href="#/steady"' + cur('steady') + '>' + IC.star + 'Steady</a><a href="#/account"' + cur('account') + '>' + IC.me + 'Account</a><a href="whatsnew/">' + IC.star + 'What\'s new' + (wnNew() ? '<i class="nwd" aria-label="New"></i>' : '') + '</a>' + (isAdmin ? '<a href="#/admin"' + cur('admin') + '>' + IC.adm + 'Control panel</a>' : '') + '</nav>'
+      + '<div class="k">Your logbooks</div><div class="lbl">' + ((rows && rows.length) ? rows.filter(function(r){ return !isArch(r.app); }).map(function(r){ return '<a href="#/lb/' + encodeURIComponent(r.app) + '"' + (v === 'lb' && rt.app === r.app ? ' aria-current="page"' : '') + '><span class="dot" style="background:' + esc(r.name.acc) + '"></span>' + esc(r.name.n) + '<small title="Current streak in days">' + (r.cur ? r.cur + ' day' + (r.cur === 1 ? '' : 's') : '') + '</small></a>'; }).join('') : '<span style="padding:6px 12px;font-size:13px;color:var(--mute)">' + (loading ? 'Loading…' : 'None synced yet') + '</span>') + '</div>'
       + '<div class="me">' + MODEBTN + '<a href="#/account" style="text-decoration:none;font-weight:700;color:var(--ink);display:block">' + esc(sess.email || 'Account') + '</a><button type="button" data-act="signout">Sign out</button></div></aside>';
     var tabs = '<nav class="tabbar" aria-label="Main"><a href="#/"' + cur('dash') + '>' + IC.home + 'Dashboard</a><a href="#/library"' + cur('library') + '>' + IC.lib + 'Library</a><a href="#/create"' + cur('create') + '>' + IC.plus + 'Create</a><a href="#/account"' + cur('account') + '>' + IC.me + 'Account</a></nav>';
     return '<div class="shell">' + side + '<main class="main"><div class="mtop"><a class="brand" href="#/"><i aria-hidden="true"></i>Clean Routine Co.</a>' + MODEBTN + '</div>' + body + '</main></div>' + tabs;
@@ -2218,6 +2229,27 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
       a.href = u; a.download = fileSlug(name) + '-backup-' + ymd(new Date()) + '.json'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 2000); toast('Backup downloaded');
     }catch(e){ toast('Could not make the file. Try again.'); }
   }
+  var CRC = (function(){ var t = [], c, n, k; for(n = 0; n < 256; n++){ c = n; for(k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  function crc32(u){ var c = 0xFFFFFFFF; for(var i = 0; i < u.length; i++) c = CRC[(c ^ u[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+  function makeZip(files){
+    var enc = new TextEncoder(), parts = [], cen = [], off = 0, dt = new Date(), time = (dt.getHours() << 11) | (dt.getMinutes() << 5) | (dt.getSeconds() >> 1), date = ((dt.getFullYear() - 1980) << 9) | ((dt.getMonth() + 1) << 5) | dt.getDate();
+    files.forEach(function(f){
+      var nm = enc.encode(f.name), data = enc.encode(f.text), crc = crc32(data), h = new DataView(new ArrayBuffer(30)), c = new DataView(new ArrayBuffer(46));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(8, 0, true); h.setUint16(10, time, true); h.setUint16(12, date, true); h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, nm.length, true); h.setUint16(28, 0, true);
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(10, 0, true); c.setUint16(12, time, true); c.setUint16(14, date, true); c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, nm.length, true); c.setUint32(42, off, true);
+      parts.push(h.buffer, nm, data); cen.push(c.buffer, nm); off += 30 + nm.length + data.length;
+    });
+    var cl = 0; cen.forEach(function(b){ cl += b.byteLength; });
+    var e = new DataView(new ArrayBuffer(22)); e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, cl, true); e.setUint32(16, off, true);
+    return new Blob(parts.concat(cen, [e.buffer]), { type:'application/zip' });
+  }
+  function downloadAll(){
+    var files = [], used = {}, add = function(n, d){ var b = fileSlug(n), nm = b, i = 2; while(used[nm]) nm = b + '-' + (i++); used[nm] = 1; files.push({ name:nm + '-backup-' + ymd(new Date()) + '.json', text:JSON.stringify(d, null, 2) }); };
+    (rows || []).forEach(function(r){ add(r.name.n, r.data); });
+    localLogbooks().filter(function(l){ return !l.inCloud; }).forEach(function(l){ add(l.name.n, l.data); });
+    if(!files.length){ toast('Nothing to download yet.'); return; }
+    try{ var a = document.createElement('a'), u = URL.createObjectURL(makeZip(files)); a.href = u; a.download = 'clean-routine-backup-' + ymd(new Date()) + '.zip'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 3000); toast(files.length + ' logbook' + (files.length === 1 ? '' : 's') + ' saved in one file.'); }catch(e){ toast('Could not make the file. Try again.'); }
+  }
   function rpc(name, body){ return api('rpc/' + name, { method:'POST', body:JSON.stringify(body || {}) }); }
   function loadTrash(force){
     if(!sess || mg.tbusy || (mg.trash && !force)) return; mg.tbusy = true; mg.terr = '';
@@ -2240,10 +2272,16 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     var openBtn = function(href){ return href ? '<a class="btn sm" href="' + esc(href) + '">Open</a>' : ''; };
     var h = head + '<h3 class="mgh">In your account</h3>';
     if(!cloud.length) h += '<p class="mgnone">Nothing synced yet. Open a logbook on your phone, go to Settings and turn on sync.</p>';
-    h += cloud.map(function(r){
+    var live = cloud.filter(function(r){ return !isArch(r.app); }), arch = cloud.filter(function(r){ return isArch(r.app); });
+    if(cloud.length || loc.length) h = h.replace('<h3 class="mgh">In your account</h3>', '<div class="mgtop"><h3 class="mgh">In your account</h3><button class="mgl" type="button" data-act="mgall">Download everything</button></div>');
+    h += live.map(function(r){
       return row(r.name, 'Synced ' + esc(ago(r.updated)) + ' · ' + r.keys.length + ' day' + (r.keys.length === 1 ? '' : 's'), true,
-        openBtn(r.url) + '<button class="mgl" type="button" data-act="mgdel" data-app="' + esc(r.app) + '">Delete</button>');
+        openBtn(r.url) + '<details class="mgm"><summary>More</summary><div><button class="mgl" type="button" data-act="mgren" data-app="' + esc(r.app) + '">Rename</button><button class="mgl" type="button" data-act="mgarc" data-app="' + esc(r.app) + '">Archive</button><button class="mgl" type="button" data-act="mgdel" data-app="' + esc(r.app) + '">Delete</button></div></details>');
     }).join('');
+    if(arch.length) h += '<details class="mgarch"><summary>Archived (' + arch.length + ')</summary>' + arch.map(function(r){
+      return row(r.name, 'Hidden from your dashboard · ' + r.keys.length + ' day' + (r.keys.length === 1 ? '' : 's'), true,
+        '<button class="btn sm" type="button" data-act="mgunarc" data-app="' + esc(r.app) + '">Restore</button><button class="mgl" type="button" data-act="mgdel" data-app="' + esc(r.app) + '">Delete</button>');
+    }).join('') + '</details>';
     if(loc.length){
       h += '<h3 class="mgh">Only on this device</h3><p class="mgnone">Not saved in your account. If this device is lost, these are gone. Open one and turn on sync in Settings to keep a copy.</p>';
       h += loc.map(function(l){
@@ -2266,6 +2304,7 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
   }
   function mgDialog(){
     var d = mg.dlg, nm = esc(d.name), t = d.kind, body, go;
+    if(t === 'rename') return '<div class="mgov" role="dialog" aria-modal="true" aria-label="Rename a logbook"><div class="mgd"><h3>Rename ' + nm + '</h3><p>This changes the name on your website and dashboard. Phones keep their own title.</p><input class="mgin" id="mg-name" maxlength="40" value="' + nm + '" aria-label="New name"><div class="mga"><button class="btn ghost sm" type="button" data-act="mgx">Cancel</button><button class="btn sm" type="button" data-act="mgrn" data-app="' + esc(d.app) + '">Save</button></div></div></div>';
     if(t === 'trash') { body = '<h3>Delete ' + nm + '?</h3><p>It moves to the trash and disappears from your account on all your devices.' + (d.local ? ' The copy on this device is removed too.' : '') + ' You can restore it for 30 days, then it is erased for good.</p>'; go = 'Move to trash'; }
     else if(t === 'local') { body = '<h3>Remove ' + nm + ' from this device?</h3><p>It is not saved in your account, so it cannot go to the trash and cannot be restored. Download a copy if you might want it back.</p>'; go = 'Remove'; }
     else { body = '<h3>Erase ' + nm + ' now?</h3><p>It will be erased instead of waiting ' + d.days + ' more day' + (d.days === 1 ? '' : 's') + '. This cannot be undone.</p>'; go = 'Erase now'; }
@@ -2283,6 +2322,11 @@ var FXC = {"dashboard":[{"k":"energy","l":"Energy today","t":"r","m":5},{"k":"br
     }
     if(a === 'mgdel'){ mg.dlg = { kind:b.dataset.loc ? 'local' : 'trash', app:app, name:nameOf(app).n, saved:false, local:!b.dataset.loc && !!localOf(app) }; render(); return true; }
     if(a === 'mgnow'){ var t = (mg.trash || []).filter(function(x){ return x.app === app; })[0]; mg.dlg = { kind:'erase', app:app, name:nameOf(app).n, days:t ? daysLeft(t.at) : 0, saved:false }; render(); return true; }
+    if(a === 'mgren'){ mg.dlg = { kind:'rename', app:app, name:nameOf(app).n }; render(); setTimeout(function(){ var i = document.getElementById('mg-name'); if(i){ i.focus(); i.select(); } }, 30); return true; }
+    if(a === 'mgrn'){ var i2 = document.getElementById('mg-name'), v2 = i2 ? i2.value.trim().slice(0, 40) : ''; if(!v2){ toast('Type a name first.'); return true; } metaSet('names', app, v2 === nameOf0(app).n ? '' : v2); mg.dlg = null; toast('Renamed.'); render(); return true; }
+    if(a === 'mgarc'){ metaSet('arch', app, 1); toast('Archived. You can restore it from the Archived list.'); render(); return true; }
+    if(a === 'mgunarc'){ metaSet('arch', app, 0); toast('Restored to your dashboard.'); render(); return true; }
+    if(a === 'mgall'){ downloadAll(); return true; }
     if(a === 'mgx'){ mg.dlg = null; render(); return true; }
     if(a === 'mgtr'){ mg.terr = ''; mg.trash = null; render(); return true; }
     if(a === 'mgrs'){
